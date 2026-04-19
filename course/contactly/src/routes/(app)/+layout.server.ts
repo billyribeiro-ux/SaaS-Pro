@@ -33,7 +33,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const { session, user } = await safeGetSession();
 
 	if (!user) {
-		throw redirect(303, `/sign-in?next=${encodeURIComponent(url.pathname)}`);
+		redirect(303, `/sign-in?next=${encodeURIComponent(url.pathname)}`);
 	}
 
 	// Expose to the (app) shell so the header can render `user.email`

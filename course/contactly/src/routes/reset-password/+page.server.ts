@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ locals: { safeGetSession } }) => {
 	if (!user) {
 		// No recovery session → arrived via stale link or directly.
 		// Send to forgot-password so they can request a fresh one.
-		throw redirect(303, '/forgot-password');
+		redirect(303, '/forgot-password');
 	}
 
 	const form = await superValidate(zod4(resetPasswordSchema));
@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ locals: { safeGetSession } }) => {
 export const actions: Actions = {
 	default: async ({ request, locals: { supabase, safeGetSession } }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/forgot-password');
+		if (!user) redirect(303, '/forgot-password');
 
 		const form = await superValidate(request, zod4(resetPasswordSchema));
 		if (!form.valid) return fail(400, { form });
@@ -54,6 +54,6 @@ export const actions: Actions = {
 		// them into the app. We purposely don't bounce to /sign-in
 		// because the session is already valid; making them sign in
 		// again would feel like the reset didn't take.
-		throw redirect(303, '/dashboard?password_reset=1');
+		redirect(303, '/dashboard?password_reset=1');
 	}
 };

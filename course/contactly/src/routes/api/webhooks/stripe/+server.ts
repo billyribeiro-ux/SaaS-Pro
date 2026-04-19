@@ -43,7 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Stripe delivery — almost certainly a curl/scanner probe.
 		// 400 (not 401) because there's no auth scheme to challenge;
 		// the request is just malformed.
-		throw error(400, 'Missing stripe-signature header');
+		error(400, 'Missing stripe-signature header');
 	}
 
 	// `request.text()` returns the body as the exact bytes Stripe
@@ -70,7 +70,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		// network — it's noisy and faintly attacker-useful. Log
 		// server-side, return a generic 400 to the caller.
 		console.warn('[stripe-webhook] signature verification failed:', message);
-		throw error(400, 'Invalid signature');
+		error(400, 'Invalid signature');
 	}
 
 	// Storage-layer idempotency (Module 6.4). The PK on
@@ -89,7 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		// DB write failed (transient blip, RLS misconfig, etc.).
 		// 500 → Stripe retries. We have NOT run the dispatcher, so
 		// no side effect happened either; the retry is safe.
-		throw error(500, 'Failed to record event');
+		error(500, 'Failed to record event');
 	}
 	// 'fresh' OR 'retry' both fall through to dispatch — the latter
 	// means a previous delivery's dispatch did not reach
@@ -131,6 +131,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		// still null, so a later replay (manual or automatic) will
 		// re-run the side effect. That's the right semantic —
 		// failed dispatches are not "done."
-		throw error(500, 'Webhook handler error');
+		error(500, 'Webhook handler error');
 	}
 };

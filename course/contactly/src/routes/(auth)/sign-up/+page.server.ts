@@ -85,6 +85,6 @@ export const actions: Actions = {
 
 		// POST/Redirect/GET. The check-email page reads the email from
 		// the query string so it can show "We sent a link to <email>".
-		throw redirect(303, `/sign-up/check-email?email=${encodeURIComponent(form.data.email)}`);
+		redirect(303, `/sign-up/check-email?email=${encodeURIComponent(form.data.email)}`);
 	}
 };

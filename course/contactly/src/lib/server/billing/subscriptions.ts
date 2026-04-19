@@ -35,7 +35,7 @@ import { withAdmin } from '$lib/server/supabase-admin';
 import type { Database } from '$lib/database.types';
 import { upsertStripePrice } from '$lib/server/billing/products';
 import { stripe } from '$lib/server/stripe';
-import { isLookupKey, parseLookupKey, type LookupKey, type Tier } from '$lib/billing/lookup-keys';
+import { isLookupKey, parseLookupKey, type Tier } from '$lib/billing/lookup-keys';
 
 type SubscriptionInsert = Database['public']['Tables']['stripe_subscriptions']['Insert'];
 type SubscriptionRow = Database['public']['Tables']['stripe_subscriptions']['Row'];
@@ -86,13 +86,9 @@ function readItemPeriod(subscription: Stripe.Subscription): {
 		});
 		return { currentPeriodStart: null, currentPeriodEnd: null };
 	}
-	const period = item as unknown as {
-		current_period_start?: number | null;
-		current_period_end?: number | null;
-	};
 	return {
-		currentPeriodStart: toIso(period.current_period_start),
-		currentPeriodEnd: toIso(period.current_period_end)
+		currentPeriodStart: toIso(item.current_period_start),
+		currentPeriodEnd: toIso(item.current_period_end)
 	};
 }
 
@@ -330,6 +326,6 @@ export async function tierForUser(userId: string): Promise<Tier> {
 		return 'starter';
 	}
 
-	const { tier } = parseLookupKey(lookupKey as LookupKey);
+	const { tier } = parseLookupKey(lookupKey);
 	return tier;
 }

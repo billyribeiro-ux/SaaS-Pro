@@ -51,7 +51,7 @@ export async function getCurrentOrganization(
 
 	if (membershipError) {
 		console.error('[getCurrentOrganization] membership query failed:', membershipError);
-		throw error(500, 'Could not load your workspace.');
+		error(500, 'Could not load your workspace.');
 	}
 
 	if (!membership) {
@@ -62,7 +62,7 @@ export async function getCurrentOrganization(
 		// disabled during a maintenance window). Loud failure beats
 		// silent "no contacts".
 		console.error('[getCurrentOrganization] user has no memberships:', user.id);
-		throw error(500, 'Your account has no workspace. Contact support.');
+		error(500, 'Your account has no workspace. Contact support.');
 	}
 
 	const { data: org, error: orgError } = await supabase
@@ -73,7 +73,7 @@ export async function getCurrentOrganization(
 
 	if (orgError || !org) {
 		console.error('[getCurrentOrganization] org query failed:', orgError);
-		throw error(500, 'Could not load your workspace.');
+		error(500, 'Could not load your workspace.');
 	}
 
 	return org;

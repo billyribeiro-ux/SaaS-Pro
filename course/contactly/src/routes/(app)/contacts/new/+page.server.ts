@@ -37,7 +37,7 @@ export const actions: Actions = {
 		// Layout guard handles unauthed users at the navigation level,
 		// but a direct POST (`fetch`/curl) bypasses navigation and
 		// hits actions straight. Belt-and-suspenders 401-equivalent.
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const form = await superValidate(request, zod4(contactWriteSchema));
 		if (!form.valid) return fail(400, { form });
@@ -75,6 +75,6 @@ export const actions: Actions = {
 		// create" destination; lesson 4.5 grows the contact-detail
 		// page and we'll switch this to `/contacts/${contact.id}`
 		// then.
-		throw redirect(303, '/contacts?created=1');
+		redirect(303, '/contacts?created=1');
 	}
 };

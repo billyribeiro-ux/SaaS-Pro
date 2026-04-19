@@ -35,7 +35,7 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, url }
 	const { user } = await safeGetSession();
 
 	if (user) {
-		throw redirect(303, safeRedirectPath(url.searchParams.get('next'), '/dashboard'));
+		redirect(303, safeRedirectPath(url.searchParams.get('next'), '/dashboard'));
 	}
 
 	return {};

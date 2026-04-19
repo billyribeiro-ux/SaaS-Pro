@@ -76,7 +76,7 @@ export const actions: Actions = {
 			return setError(form, '', 'Invalid email or password.');
 		}
 
-		throw redirect(303, next);
+		redirect(303, next);
 	},
 
 	magic: async ({ request, locals: { supabase }, url }) => {
@@ -110,6 +110,6 @@ export const actions: Actions = {
 			console.warn('[sign-in/magic] signInWithOtp error (suppressed):', error.message);
 		}
 
-		throw redirect(303, `/sign-in/check-email?email=${encodeURIComponent(form.data.email)}`);
+		redirect(303, `/sign-in/check-email?email=${encodeURIComponent(form.data.email)}`);
 	}
 };

@@ -25,7 +25,7 @@ import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	throw error(405, 'POST to /sign-out to log out.');
+	error(405, 'POST to /sign-out to log out.');
 };
 
 export const actions: Actions = {
@@ -52,6 +52,6 @@ export const actions: Actions = {
 		// (auth) layout-load won't immediately bounce them back to
 		// /dashboard — they're signed out now, no inverse-guard
 		// trigger.
-		throw redirect(303, '/');
+		redirect(303, '/');
 	}
 };

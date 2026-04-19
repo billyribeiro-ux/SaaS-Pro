@@ -63,11 +63,11 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	};
 
 	if (!tokenHash || !rawType) {
-		throw redirect(303, errorRedirect('missing_token'));
+		redirect(303, errorRedirect('missing_token'));
 	}
 
 	if (!ALLOWED_TYPES.has(rawType)) {
-		throw redirect(303, errorRedirect('invalid_type'));
+		redirect(303, errorRedirect('invalid_type'));
 	}
 
 	const { error } = await supabase.auth.verifyOtp({
@@ -81,15 +81,15 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 		// server-side but expose only a generic reason to the URL —
 		// don't leak token internals to the client.
 		console.error('[auth/confirm] verifyOtp failed:', error.message);
-		throw redirect(303, errorRedirect('verify_failed'));
+		redirect(303, errorRedirect('verify_failed'));
 	}
 
 	// Recovery flow lands on the password-update page (built in Lesson
 	// 3.6). For all other types, send the user to `next` (validated
 	// above as a same-origin path).
 	if (rawType === 'recovery') {
-		throw redirect(303, '/account/password');
+		redirect(303, '/account/password');
 	}
 
-	throw redirect(303, next);
+	redirect(303, next);
 };

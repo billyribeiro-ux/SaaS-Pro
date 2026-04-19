@@ -42,10 +42,10 @@ export const load: PageServerLoad = async ({ parent, locals: { supabase } }) => 
 
 	if (dbError) {
 		if (dbError.code === 'PGRST116') {
-			throw error(404, 'Profile row not found. Sign out and back in to recreate.');
+			error(404, 'Profile row not found. Sign out and back in to recreate.');
 		}
 		console.error('[account/load] profile query failed:', dbError);
-		throw error(500, 'Could not load your profile right now.');
+		error(500, 'Could not load your profile right now.');
 	}
 
 	// Each Superforms instance is `id`-scoped so the page can mount
@@ -75,7 +75,7 @@ export const load: PageServerLoad = async ({ parent, locals: { supabase } }) => 
 export const actions: Actions = {
 	update_profile: async ({ request, locals: { supabase, safeGetSession } }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const form = await superValidate(request, zod4(updateProfileSchema), { id: 'update_profile' });
 		if (!form.valid) return fail(400, { updateProfileForm: form });
@@ -100,7 +100,7 @@ export const actions: Actions = {
 
 	change_email: async ({ request, locals: { supabase, safeGetSession }, url }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const form = await superValidate(request, zod4(changeEmailSchema), { id: 'change_email' });
 		if (!form.valid) return fail(400, { changeEmailForm: form });
@@ -136,7 +136,7 @@ export const actions: Actions = {
 
 	change_password: async ({ request, locals: { supabase, safeGetSession } }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const form = await superValidate(request, zod4(changePasswordSchema), {
 			id: 'change_password'
@@ -162,7 +162,7 @@ export const actions: Actions = {
 
 	delete_account: async ({ request, locals: { supabase, safeGetSession }, cookies }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const form = await superValidate(request, zod4(deleteAccountSchema), {
 			id: 'delete_account'
@@ -198,6 +198,6 @@ export const actions: Actions = {
 			if (name.startsWith('sb-')) cookies.delete(name, { path: '/' });
 		}
 
-		throw redirect(303, '/?deleted=1');
+		redirect(303, '/?deleted=1');
 	}
 };

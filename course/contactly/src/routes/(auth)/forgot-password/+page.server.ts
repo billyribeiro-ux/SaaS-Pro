@@ -43,9 +43,6 @@ export const actions: Actions = {
 			console.warn('[forgot-password] resetPasswordForEmail (suppressed):', error.message);
 		}
 
-		throw redirect(
-			303,
-			`/forgot-password/check-email?email=${encodeURIComponent(form.data.email)}`
-		);
+		redirect(303, `/forgot-password/check-email?email=${encodeURIComponent(form.data.email)}`);
 	}
 };

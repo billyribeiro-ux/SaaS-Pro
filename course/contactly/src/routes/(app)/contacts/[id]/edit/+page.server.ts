@@ -26,9 +26,9 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 		.single();
 
 	if (dbError) {
-		if (dbError.code === 'PGRST116') throw error(404, 'Contact not found');
+		if (dbError.code === 'PGRST116') error(404, 'Contact not found');
 		console.error('[contact edit load] query failed:', dbError);
-		throw error(500, 'Could not load this contact.');
+		error(500, 'Could not load this contact.');
 	}
 
 	// Hydrate the form with the existing values. Anything that's NULL
@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 export const actions: Actions = {
 	default: async ({ request, params, locals: { supabase, safeGetSession } }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const form = await superValidate(request, zod4(contactWriteSchema));
 		if (!form.valid) return fail(400, { form });
@@ -81,6 +81,6 @@ export const actions: Actions = {
 		// Successful update lands the user back on the detail view —
 		// the canonical "thing I just edited" page. POST/Redirect/GET
 		// so refresh doesn't resubmit the form.
-		throw redirect(303, `/contacts/${params.id}?saved=1`);
+		redirect(303, `/contacts/${params.id}?saved=1`);
 	}
 };

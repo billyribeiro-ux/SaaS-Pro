@@ -33,9 +33,9 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 	if (dbError) {
 		// PGRST116 = "no rows returned". Either the id doesn't exist
 		// or RLS hid it. Either way the public-facing answer is 404.
-		if (dbError.code === 'PGRST116') throw error(404, 'Contact not found');
+		if (dbError.code === 'PGRST116') error(404, 'Contact not found');
 		console.error('[contact load] query failed:', dbError);
-		throw error(500, 'Could not load this contact.');
+		error(500, 'Could not load this contact.');
 	}
 
 	return { contact };
@@ -58,7 +58,7 @@ export const actions: Actions = {
 	 */
 	delete: async ({ params, locals: { supabase, safeGetSession } }) => {
 		const { user } = await safeGetSession();
-		if (!user) throw redirect(303, '/sign-in');
+		if (!user) redirect(303, '/sign-in');
 
 		const { error: deleteError, count } = await supabase
 			.from('contacts')
@@ -76,9 +76,9 @@ export const actions: Actions = {
 			// Both surface the same way to the user — 404. We don't
 			// distinguish, because a "you can't touch this" message
 			// would leak that the row exists.
-			throw error(404, 'Contact not found');
+			error(404, 'Contact not found');
 		}
 
-		throw redirect(303, '/contacts?deleted=1');
+		redirect(303, '/contacts?deleted=1');
 	}
 };
