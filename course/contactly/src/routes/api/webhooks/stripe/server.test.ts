@@ -10,6 +10,14 @@ vi.mock('$lib/server/env', () => ({
 	}
 }));
 
+// Default: every event looks `fresh` so the dispatcher runs. Tests
+// that need a different storage outcome re-mock per case via
+// `vi.doMock`.
+vi.mock('$lib/server/stripe-events-store', () => ({
+	recordStripeEvent: vi.fn().mockResolvedValue('fresh'),
+	markStripeEventProcessed: vi.fn().mockResolvedValue(undefined)
+}));
+
 /**
  * Compose the canonical `Stripe-Signature` header value the SDK
  * verifies against. Mirrors `stripe.webhooks.generateTestHeaderString`
@@ -103,6 +111,58 @@ describe('POST /api/webhooks/stripe', () => {
 		// Re-mock the dispatch module to throw.
 		vi.doMock('$lib/server/stripe-events', () => ({
 			dispatchStripeEvent: vi.fn().mockRejectedValue(new Error('boom: db down'))
+		}));
+		const body = makeEventBody('invoice.paid');
+		const req = new Request('http://localhost/api/webhooks/stripe', {
+			method: 'POST',
+			headers: { 'stripe-signature': signPayload(body, TEST_SECRET) },
+			body
+		});
+		await expect(callPost(req)).rejects.toMatchObject({ status: 500 });
+	});
+
+	it('returns 200 + duplicate flag when the event has already been processed', async () => {
+		vi.doMock('$lib/server/stripe-events-store', () => ({
+			recordStripeEvent: vi.fn().mockResolvedValue('already-processed'),
+			markStripeEventProcessed: vi.fn()
+		}));
+		const body = makeEventBody('invoice.paid');
+		const req = new Request('http://localhost/api/webhooks/stripe', {
+			method: 'POST',
+			headers: { 'stripe-signature': signPayload(body, TEST_SECRET) },
+			body
+		});
+		const res = await callPost(req);
+		expect(res.status).toBe(200);
+		await expect(res.json()).resolves.toEqual({ received: true, duplicate: true });
+	});
+
+	it('still dispatches when the event row exists but processing previously failed (retry)', async () => {
+		const dispatchSpy = vi.fn().mockResolvedValue({ kind: 'handled', type: 'invoice.paid' });
+		const markSpy = vi.fn().mockResolvedValue(undefined);
+		vi.doMock('$lib/server/stripe-events-store', () => ({
+			recordStripeEvent: vi.fn().mockResolvedValue('retry'),
+			markStripeEventProcessed: markSpy
+		}));
+		vi.doMock('$lib/server/stripe-events', () => ({
+			dispatchStripeEvent: dispatchSpy
+		}));
+		const body = makeEventBody('invoice.paid');
+		const req = new Request('http://localhost/api/webhooks/stripe', {
+			method: 'POST',
+			headers: { 'stripe-signature': signPayload(body, TEST_SECRET) },
+			body
+		});
+		const res = await callPost(req);
+		expect(res.status).toBe(200);
+		expect(dispatchSpy).toHaveBeenCalledOnce();
+		expect(markSpy).toHaveBeenCalledOnce();
+	});
+
+	it('returns 500 when the storage layer fails to record the event', async () => {
+		vi.doMock('$lib/server/stripe-events-store', () => ({
+			recordStripeEvent: vi.fn().mockResolvedValue('failed'),
+			markStripeEventProcessed: vi.fn()
 		}));
 		const body = makeEventBody('invoice.paid');
 		const req = new Request('http://localhost/api/webhooks/stripe', {

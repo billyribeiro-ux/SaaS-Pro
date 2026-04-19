@@ -193,6 +193,68 @@ export type Database = {
 					}
 				];
 			};
+			stripe_customers: {
+				Row: {
+					user_id: string;
+					stripe_customer_id: string;
+					email: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					user_id: string;
+					stripe_customer_id: string;
+					email?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					user_id?: string;
+					stripe_customer_id?: string;
+					email?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'stripe_customers_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: true;
+						referencedRelation: 'profiles';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			stripe_events: {
+				Row: {
+					id: string;
+					type: string;
+					payload: Json;
+					received_at: string;
+					processed_at: string | null;
+					livemode: boolean;
+					api_version: string | null;
+				};
+				Insert: {
+					id: string;
+					type: string;
+					payload: Json;
+					received_at?: string;
+					processed_at?: string | null;
+					livemode: boolean;
+					api_version?: string | null;
+				};
+				Update: {
+					id?: string;
+					type?: string;
+					payload?: Json;
+					received_at?: string;
+					processed_at?: string | null;
+					livemode?: boolean;
+					api_version?: string | null;
+				};
+				Relationships: [];
+			};
 		};
 		Views: {
 			[_ in never]: never;

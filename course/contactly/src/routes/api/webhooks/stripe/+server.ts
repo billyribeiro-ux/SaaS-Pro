@@ -34,6 +34,7 @@ import { json, error } from '@sveltejs/kit';
 import { stripe } from '$lib/server/stripe';
 import { serverEnv } from '$lib/server/env';
 import { dispatchStripeEvent } from '$lib/server/stripe-events';
+import { markStripeEventProcessed, recordStripeEvent } from '$lib/server/stripe-events-store';
 
 export const POST: RequestHandler = async ({ request }) => {
 	const signature = request.headers.get('stripe-signature');
@@ -72,6 +73,28 @@ export const POST: RequestHandler = async ({ request }) => {
 		throw error(400, 'Invalid signature');
 	}
 
+	// Storage-layer idempotency (Module 6.4). The PK on
+	// `stripe_events.id` makes the duplicate check atomic — Postgres
+	// arbitrates between two concurrent webhook deliveries for the
+	// same event.id without an application-level lock.
+	const recorded = await recordStripeEvent(event);
+	if (recorded === 'already-processed') {
+		console.info('[stripe-webhook] duplicate event already-processed, skipping', {
+			id: event.id,
+			type: event.type
+		});
+		return json({ received: true, duplicate: true });
+	}
+	if (recorded === 'failed') {
+		// DB write failed (transient blip, RLS misconfig, etc.).
+		// 500 → Stripe retries. We have NOT run the dispatcher, so
+		// no side effect happened either; the retry is safe.
+		throw error(500, 'Failed to record event');
+	}
+	// 'fresh' OR 'retry' both fall through to dispatch — the latter
+	// means a previous delivery's dispatch did not reach
+	// markStripeEventProcessed and we're getting a second chance.
+
 	try {
 		const result = await dispatchStripeEvent(event);
 		if (result.kind === 'unhandled') {
@@ -84,6 +107,11 @@ export const POST: RequestHandler = async ({ request }) => {
 				type: result.type
 			});
 		}
+		// Stamp `processed_at` so unprocessed-event monitoring (the
+		// `stripe_events_unprocessed_idx` partial index) can flag
+		// stuck events. Failure here is logged but not fatal — see
+		// markStripeEventProcessed for the rationale.
+		await markStripeEventProcessed(event.id);
 		// 200 is the "stop retrying" signal. Keep the body small —
 		// Stripe doesn't read it; `received: true` is purely so
 		// curl-against-the-endpoint debugging is informative.
@@ -95,10 +123,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			type: event.type,
 			error: message
 		});
-		// 500 — NOT 200 — so Stripe retries. The handler's job is to
-		// be idempotent; on retry we'll either succeed or fail in
-		// the same idempotent way until the underlying issue is
-		// fixed and a manual replay clears the backlog.
+		// 500 — NOT 200 — so Stripe retries. The dispatcher is
+		// itself written to be idempotent (Module 6.2), and the
+		// stored `stripe_events` row will dedupe on the second
+		// delivery — except, deliberately, in this failure path:
+		// the row DID get inserted above, but `processed_at` is
+		// still null, so a later replay (manual or automatic) will
+		// re-run the side effect. That's the right semantic —
+		// failed dispatches are not "done."
 		throw error(500, 'Webhook handler error');
 	}
 };
