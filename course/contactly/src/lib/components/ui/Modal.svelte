@@ -43,6 +43,13 @@
 
 	let dialog: HTMLDialogElement | null = $state(null);
 
+	// Remember whatever element opened the modal so we can put focus
+	// back there on close. Without this, a screen-reader user (and
+	// every keyboard user) lands at <body> after Esc — disorienting,
+	// and the WAI-ARIA Authoring Practices for dialogs explicitly
+	// call this out as a requirement.
+	let returnFocusTo: HTMLElement | null = null;
+
 	// $derived so any future "modal id changes at runtime" use case
 	// stays correct — also silences `state_referenced_locally`.
 	const titleId = $derived(`${id}-title`);
@@ -50,10 +57,11 @@
 
 	$effect(() => {
 		if (!dialog) return;
-		// Sync DOM state to the prop. `showModal()` and `close()` are
-		// idempotent enough that we don't need to track the previous
-		// value.
 		if (open && !dialog.open) {
+			// Capture the element that triggered open *before* the
+			// browser steals focus to the dialog.
+			const active = document.activeElement;
+			returnFocusTo = active instanceof HTMLElement ? active : null;
 			dialog.showModal();
 		} else if (!open && dialog.open) {
 			dialog.close();
@@ -63,6 +71,14 @@
 	function handleClose() {
 		// Esc / form-method=dialog cancellation — keep the prop in sync.
 		open = false;
+		// `requestAnimationFrame` so focus restoration happens after
+		// the dialog has fully unwound. Calling `.focus()` synchronously
+		// during the close handler is a no-op in some browsers.
+		if (returnFocusTo) {
+			const target = returnFocusTo;
+			returnFocusTo = null;
+			requestAnimationFrame(() => target.focus());
+		}
 	}
 
 	/**

@@ -11,6 +11,23 @@
 	let showDeleteModal = $state(false);
 	let deleting = $state(false);
 
+	// Mirror the action's deleteError into local state so we can
+	// dismiss it when the user re-opens the modal — otherwise an
+	// already-acknowledged failure keeps shouting at them above the
+	// contact card. The mirror is one-way (SvelteKit owns `form`,
+	// we only pull from it).
+	let displayDeleteError: string | undefined = $state(undefined);
+	$effect(() => {
+		if (form?.deleteError) displayDeleteError = form.deleteError;
+	});
+
+	// Clear the stale error the moment the user re-opens the modal:
+	// they're trying again, and an old banner about a previous
+	// failure is just noise.
+	$effect(() => {
+		if (showDeleteModal) displayDeleteError = undefined;
+	});
+
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {
 		dateStyle: 'medium',
 		timeStyle: 'short'
@@ -72,13 +89,13 @@
 		</div>
 	</header>
 
-	{#if form?.deleteError}
+	{#if displayDeleteError}
 		<div
 			class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
 			role="alert"
 			data-testid="delete-error"
 		>
-			{form.deleteError}
+			{displayDeleteError}
 		</div>
 	{/if}
 
