@@ -211,8 +211,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
   if (user) {
     const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
-    throw redirect(303, safeRedirect)
+    const safeRedirect =
+      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
+    redirect(303, safeRedirect)
   }
 
   return {}
@@ -247,8 +248,9 @@ export const actions: Actions = {
     }
 
     const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
-    throw redirect(303, safeRedirect)
+    const safeRedirect =
+      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
+    redirect(303, safeRedirect)
   }
 }
 ```
@@ -288,8 +290,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
   if (user) {
     const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
-    throw redirect(303, safeRedirect)
+    const safeRedirect =
+      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
+    redirect(303, safeRedirect)
   }
 
   return {}
@@ -308,9 +311,9 @@ Why does this matter?
 
 **`url.searchParams.get('redirectTo')`** — `url` is a `URL` object; `searchParams` is its query-string API. `get('redirectTo')` returns the string value or `null` if the param isn't set.
 
-**`redirectTo.startsWith('/') ? redirectTo : '/dashboard'`** — the open-redirect defense. Read the next section carefully; this single line blocks a whole class of attacks.
+**`redirectTo.startsWith('/') && !redirectTo.startsWith('//')`** — the open-redirect defense. Read the next section carefully; this single expression blocks a whole class of attacks, including the protocol-relative (`//evil.com`) edge case.
 
-**`throw redirect(303, safeRedirect)`** — we already covered this in 3.1. Status 303 tells the browser "go GET this URL." The `throw` keyword is how SvelteKit receives the signal that we want to redirect (it's caught internally, not an actual uncaught exception).
+**`redirect(303, safeRedirect)`** — we already covered this in 3.1. Status 303 tells the browser "go GET this URL." In SvelteKit 2+, `redirect()` throws internally, so calling it halts the `load` function without you writing `throw` yourself.
 
 ---
 
@@ -324,7 +327,7 @@ Imagine we wrote the redirect naively:
 
 ```typescript
 const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-throw redirect(303, redirectTo) // NO VALIDATION
+redirect(303, redirectTo) // NO VALIDATION
 ```
 
 A phishing attacker sends an email:
@@ -340,27 +343,26 @@ The trick: the attacker leveraged **our login page's trust** (real domain, real 
 ### The defense
 
 ```typescript
-const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
-```
-
-Only allow redirect targets that start with `/`. That means only same-origin paths. `https://evil.com/...`? Rejected. `//evil.com/...`? Rejected (doesn't start with `/` — wait, it does… keep reading). `/dashboard/contacts`? Allowed.
-
-### Gotcha: protocol-relative URLs
-
-A URL like `//evil.com` **does start with `/`**. Browsers interpret it as "same protocol, different host." So our check above isn't actually complete.
-
-A more paranoid version:
-
-```typescript
 const safeRedirect =
   redirectTo.startsWith('/') && !redirectTo.startsWith('//')
     ? redirectTo
     : '/dashboard'
 ```
 
-This rejects both protocol-relative (`//evil.com`) and absolute URLs (`https://evil.com`), allowing only paths like `/dashboard/contacts?foo=bar`.
+Only allow redirect targets that start with `/` **and** aren't protocol-relative. That means only same-origin paths. `https://evil.com/...`? Rejected (doesn't start with `/`). `//evil.com/...`? Rejected (the `!startsWith('//')` guard). `/dashboard/contacts`? Allowed.
 
-For this course we'll use the simpler `startsWith('/')` check **and** document the protocol-relative edge case as a Principal Engineer note below. In production code, you'd do the paranoid version.
+### Gotcha: protocol-relative URLs
+
+You might wonder why the second check — `!startsWith('//')` — is necessary. A URL like `//evil.com` **does start with `/`**, so a naïve `startsWith('/')` check alone would let it through. Browsers interpret protocol-relative URLs as "same protocol, different host." That means if we redirected to `//evil.com`, the browser would happily go to `https://evil.com` — the exact phishing attack we're trying to block.
+
+A naïve version that only checks one slash is **not** enough:
+
+```typescript
+// ❌ INCOMPLETE — lets //evil.com through
+const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
+```
+
+Always combine the two conditions.
 
 ### Even safer: whitelist approach
 
@@ -407,8 +409,9 @@ export const actions: Actions = {
     }
 
     const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
-    throw redirect(303, safeRedirect)
+    const safeRedirect =
+      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
+    redirect(303, safeRedirect)
   }
 }
 ```
@@ -509,8 +512,9 @@ What if the user genuinely mistyped their password three times in a row? They sh
 
 ```typescript
 const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
-throw redirect(303, safeRedirect)
+const safeRedirect =
+  redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
+redirect(303, safeRedirect)
 ```
 
 Same pattern as the `load` function. Note we read `redirectTo` from `url` **inside the action** — `url` here is the URL of the request being handled (including query params from the original navigation). If the user was sent to `/login?redirectTo=/dashboard/contacts` by the auth guard, that query param is still on the URL when they submit the form, and we honor it here.
@@ -567,7 +571,7 @@ Granular errors are great on registration (the user wants to know which field fa
 
 ```typescript
 // ❌ DON'T
-throw redirect(303, url.searchParams.get('redirectTo') ?? '/dashboard')
+redirect(303, url.searchParams.get('redirectTo') ?? '/dashboard')
 ```
 
 You just built a free open redirect for phishing campaigns. Always validate that the target is a same-origin path.

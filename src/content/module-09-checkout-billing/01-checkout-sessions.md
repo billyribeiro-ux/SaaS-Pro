@@ -396,6 +396,32 @@ The pricing page in Module 8 has a "Subscribe" button per tier. Here's how the c
 
 **Why `window.location.href = url`, not `goto(url)`?** `goto` is SvelteKit's client-side navigation helper — it works for internal URLs. `checkout.stripe.com` is external; we need a full page navigation. `window.location.href` does that.
 
+**The `alert(message)` is placeholder-grade UX.** Fine for today's "make it work" pass; painful in production — it blocks the main thread, can't be styled, and users trained to dismiss browser alerts will never read it. Lesson 13.1 replaces every `alert` in the codebase with a proper toast system (`$state`-backed queue, ARIA live regions, auto-dismiss). When you reach that lesson, come back to this endpoint's client and swap `alert(message)` for `toast.error(message)`.
+
+### Principal Engineer Note — Remote Functions as a future-state refactor
+
+SvelteKit 2.57+ ships a `$app/server` primitive called **remote functions** (`query`, `form`, `command`) that lets server code be imported directly from Svelte components. A `command` is a server-only function the client can await as if it were local — SvelteKit handles the RPC under the hood with typed inputs/outputs, CSRF protection, and Zod-style validation built in.
+
+We stuck with a classic `+server.ts` endpoint here because it's the pattern every SvelteKit engineer on any team recognizes, and because the third-party redirect target (`checkout.stripe.com`) means we're returning a URL rather than streaming data the UI renders. If you were building this in a greenfield SvelteKit 2.57+ codebase today, the equivalent using remote functions would look like:
+
+```typescript
+// src/lib/billing.remote.ts
+import { command } from '$app/server'
+import * as z from 'zod'
+import { PRICING_LOOKUP_KEYS } from '$config/pricing.config'
+
+const validKeys = Object.values(PRICING_LOOKUP_KEYS) as [string, ...string[]]
+
+export const createCheckoutUrl = command(
+  z.object({ lookup_key: z.enum(validKeys) }),
+  async ({ lookup_key }, { locals }) => {
+    // same body as POST above, return { url }
+  }
+)
+```
+
+The pricing-page button becomes `const { url } = await createCheckoutUrl({ lookup_key: 'pro_monthly' })` — no `fetch`, no JSON plumbing, no manual validation. Bonus lesson 14.7 covers this pattern end-to-end.
+
 ---
 
 ## Step 6: Test the Flow End to End

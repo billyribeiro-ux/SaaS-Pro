@@ -3,23 +3,64 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
+/*
+ * Dark mode uses the `class` strategy so it can be toggled by a `.dark` class on <html>
+ * (see bonus-06-dark-mode). The @custom-variant wires Tailwind v4's `dark:` utilities to
+ * that selector — without this line, `dark:` classes in our markup would only apply via
+ * the OS media query, which defeats user toggles.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
+	/* Typography: system stack first, one display face for marquee text. */
 	--font-sans:
 		'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
 		Arial, sans-serif;
 	--font-mono:
 		'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-	--color-brand-50: oklch(0.98 0.02 260);
-	--color-brand-100: oklch(0.95 0.04 260);
-	--color-brand-200: oklch(0.89 0.08 260);
-	--color-brand-300: oklch(0.82 0.12 260);
-	--color-brand-400: oklch(0.72 0.16 260);
-	--color-brand-500: oklch(0.62 0.2 260);
-	--color-brand-600: oklch(0.55 0.2 260);
-	--color-brand-700: oklch(0.48 0.18 260);
-	--color-brand-800: oklch(0.4 0.15 260);
-	--color-brand-900: oklch(0.32 0.12 260);
+	/*
+	 * Brand + semantic palette. OKLCH keeps perceptual lightness steady across hues so
+	 * our dark-mode inversions don't lose chroma. Brand hue = 268 (refined indigo/violet) —
+	 * chosen over Svelte orange because this is a SaaS course, and indigo reads as
+	 * "technical / trustworthy" (Linear, Vercel, Stripe all live in cool neutrals).
+	 */
+	--color-brand-50: oklch(0.975 0.012 268);
+	--color-brand-100: oklch(0.945 0.03 268);
+	--color-brand-200: oklch(0.885 0.07 268);
+	--color-brand-300: oklch(0.805 0.12 268);
+	--color-brand-400: oklch(0.705 0.17 268);
+	--color-brand-500: oklch(0.62 0.2 268);
+	--color-brand-600: oklch(0.545 0.21 268);
+	--color-brand-700: oklch(0.475 0.185 268);
+	--color-brand-800: oklch(0.4 0.15 268);
+	--color-brand-900: oklch(0.325 0.115 268);
+	--color-brand-950: oklch(0.225 0.08 268);
+
+	/* Radii — tight but not sharp. Matches the Linear/Vercel aesthetic. */
+	--radius-xs: 0.25rem;
+	--radius-sm: 0.375rem;
+	--radius-md: 0.5rem;
+	--radius-lg: 0.75rem;
+	--radius-xl: 1rem;
+	--radius-2xl: 1.5rem;
+
+	/* Motion — expo & spring-ish curves. Used with Tailwind's transition- utilities. */
+	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+	--duration-fast: 120ms;
+	--duration-base: 200ms;
+	--duration-slow: 320ms;
+
+	/* Layered, very subtle shadows. Dark mode inverts via utility (see below). */
+	--shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+	--shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.03);
+	--shadow-md: 0 4px 10px -2px rgb(0 0 0 / 0.06), 0 2px 6px -2px rgb(0 0 0 / 0.04);
+	--shadow-lg: 0 12px 28px -8px rgb(0 0 0 / 0.12), 0 4px 10px -2px rgb(0 0 0 / 0.06);
+	--shadow-xl: 0 28px 60px -18px rgb(0 0 0 / 0.2), 0 8px 20px -8px rgb(0 0 0 / 0.1);
+	--shadow-glow: 0 0 0 1px oklch(0.62 0.2 268 / 0.3), 0 10px 40px -10px oklch(0.62 0.2 268 / 0.35);
 }
 
 :root {
@@ -28,6 +69,18 @@
 
 html {
 	font-family: var(--font-sans);
+	/* Slightly tighter default tracking for technical copy. */
+	letter-spacing: -0.011em;
+}
+
+/*
+ * Display face — applied to hero / section headings via .font-display.
+ * `font-variation-settings` nudges optical sizing when Inter Variable is available.
+ */
+.font-display {
+	letter-spacing: -0.028em;
+	font-feature-settings: 'ss01', 'cv11';
+	font-variation-settings: 'opsz' 32;
 }
 
 code,
@@ -35,4 +88,156 @@ pre,
 kbd,
 samp {
 	font-family: var(--font-mono);
+}
+
+/*
+ * Decorative background utilities used across marketing surfaces. Pure CSS — no
+ * images, no JS, respects dark mode, easy to strip in prefers-reduced-motion checks.
+ */
+.bg-grid {
+	background-image:
+		linear-gradient(to right, oklch(0 0 0 / 0.04) 1px, transparent 1px),
+		linear-gradient(to bottom, oklch(0 0 0 / 0.04) 1px, transparent 1px);
+	background-size: 64px 64px;
+}
+.dark .bg-grid {
+	background-image:
+		linear-gradient(to right, oklch(1 0 0 / 0.05) 1px, transparent 1px),
+		linear-gradient(to bottom, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+}
+
+.bg-dots {
+	background-image: radial-gradient(oklch(0 0 0 / 0.09) 1px, transparent 1px);
+	background-size: 20px 20px;
+}
+.dark .bg-dots {
+	background-image: radial-gradient(oklch(1 0 0 / 0.08) 1px, transparent 1px);
+}
+
+/* Radial fade mask so grids/dots never hit the viewport edge. */
+.mask-radial-fade {
+	mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+	-webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+/* Subtle gradient mesh behind the hero. Composed of three oklch blobs. */
+.bg-mesh {
+	background-image:
+		radial-gradient(at 20% 15%, oklch(0.62 0.2 268 / 0.18) 0px, transparent 50%),
+		radial-gradient(at 80% 10%, oklch(0.7 0.15 200 / 0.14) 0px, transparent 50%),
+		radial-gradient(at 60% 85%, oklch(0.65 0.18 320 / 0.12) 0px, transparent 55%);
+}
+.dark .bg-mesh {
+	background-image:
+		radial-gradient(at 20% 15%, oklch(0.55 0.22 268 / 0.25) 0px, transparent 50%),
+		radial-gradient(at 80% 10%, oklch(0.6 0.18 200 / 0.18) 0px, transparent 50%),
+		radial-gradient(at 60% 85%, oklch(0.55 0.2 320 / 0.16) 0px, transparent 55%);
+}
+
+/* Focus ring shared by inputs, buttons, links — consistent look, brand-tinted. */
+.focus-ring {
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+	transition: outline-color var(--duration-fast) ease;
+}
+.focus-ring:focus-visible {
+	outline-color: var(--color-brand-500);
+}
+
+/*
+ * Animations — defined once, referenced by components via `animate-*` utilities.
+ * Keep them short; award-winning UIs move decisively, never sluggishly.
+ */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+.animate-fade-in {
+	animation: fade-in var(--duration-base) var(--ease-out-expo) both;
+}
+.animate-slide-up {
+	animation: slide-up var(--duration-slow) var(--ease-out-expo) both;
+}
+.animate-scale-in {
+	animation: scale-in var(--duration-base) var(--ease-out-expo) both;
+}
+
+/*
+ * Respect reduced-motion — kills decorative animations but leaves transitions that
+ * communicate state (e.g. focus rings, loading spinners) alone at a short duration.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.animate-fade-in,
+	.animate-slide-up,
+	.animate-scale-in {
+		animation: none;
+	}
+	* {
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/*
+ * Prose overrides — tighten the reading column for lesson content. Tailwind's `prose`
+ * defaults are good, but we want slightly denser line-height at desktop sizes and a
+ * branded accent for links so the reading surface feels on-brand.
+ */
+.prose {
+	--tw-prose-links: var(--color-brand-700);
+	--tw-prose-invert-links: var(--color-brand-300);
+}
+.prose :where(code):not(pre code) {
+	background-color: oklch(0.95 0.01 268);
+	border-radius: var(--radius-xs);
+	padding: 0.15em 0.35em;
+	font-size: 0.875em;
+	font-weight: 500;
+}
+.dark .prose :where(code):not(pre code) {
+	background-color: oklch(0.25 0.02 268);
+	color: oklch(0.92 0.02 268);
+}
+.prose :where(pre) {
+	background-color: oklch(0.185 0.015 260);
+	border: 1px solid oklch(0.28 0.02 260);
+}
+
+/*
+ * Selection — branded, high-contrast.
+ */
+::selection {
+	background-color: oklch(0.62 0.2 268 / 0.25);
 }

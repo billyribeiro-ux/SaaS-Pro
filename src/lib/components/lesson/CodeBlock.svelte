@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Check from '$components/icons/Check.svelte';
 	import { cn } from '$utils/cn';
 
 	type Props = {
@@ -24,19 +25,37 @@
 	}
 </script>
 
-<div class={cn('relative overflow-hidden rounded-md border border-slate-200 bg-slate-950 dark:border-slate-800', className)}>
-	{#if language}
-		<div class="border-b border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-400">
-			{language}
+<div
+	class={cn(
+		'group relative overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-sm',
+		'dark:border-slate-800',
+		className
+	)}
+>
+	<div class="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-2">
+		<div class="flex items-center gap-2">
+			<div class="flex items-center gap-1.5" aria-hidden="true">
+				<span class="size-2.5 rounded-full bg-red-500/70"></span>
+				<span class="size-2.5 rounded-full bg-amber-500/70"></span>
+				<span class="size-2.5 rounded-full bg-emerald-500/70"></span>
+			</div>
+			{#if language}
+				<span class="font-mono text-xs text-slate-400">{language}</span>
+			{/if}
 		</div>
-	{/if}
-	<button
-		type="button"
-		onclick={copy}
-		class="absolute right-2 top-2 rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-200 opacity-0 transition-opacity hover:bg-slate-700 focus-visible:opacity-100 group-hover:opacity-100"
-		style:opacity={copied ? '1' : undefined}
-	>
-		{copied ? 'Copied' : 'Copy'}
-	</button>
-	<pre class="overflow-x-auto p-4 text-sm text-slate-100"><code>{code}</code></pre>
+		<button
+			type="button"
+			onclick={copy}
+			aria-label={copied ? 'Copied' : 'Copy code to clipboard'}
+			class="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800/70 px-2 py-1 text-xs font-medium text-slate-200 transition-all hover:border-slate-600 hover:bg-slate-700"
+		>
+			{#if copied}
+				<Check size="xs" class="text-emerald-400" />
+				Copied
+			{:else}
+				Copy
+			{/if}
+		</button>
+	</div>
+	<pre class="overflow-x-auto p-4 text-sm leading-relaxed text-slate-100"><code>{code}</code></pre>
 </div>

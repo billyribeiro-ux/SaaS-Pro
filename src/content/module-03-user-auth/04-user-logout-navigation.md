@@ -19,7 +19,7 @@ This lesson will look deceptively small — maybe fifty lines of code once you c
 
 - Lesson 3.1 complete — registration exists at `/register`.
 - Lesson 3.2 complete — login exists at `/login`.
-- Lesson 3.3 complete — the `(app)` route group redirects unauthenticated users to `/login`, and `locals.user` is populated from `event.locals.getUser()` in `hooks.server.ts`.
+- Lesson 3.3 complete — the `(app)` route group redirects unauthenticated users to `/login`, and `locals.getUser()` is wired up in `hooks.server.ts` for verified access to the current user.
 - Module 2 complete — a client-side Supabase client is set up in the root layout.
 
 ## What You'll Build
@@ -106,7 +106,7 @@ import type { Actions } from './$types';
 export const actions: Actions = {
   signout: async ({ locals }) => {
     await locals.supabase.auth.signOut();
-    throw redirect(303, '/');
+    redirect(303, '/');
   }
 };
 ```
@@ -115,12 +115,12 @@ That's the whole thing. Seven functional lines. Let's walk through them.
 
 #### Line-by-line
 
-- **`import { redirect } from '@sveltejs/kit'`** — the same `redirect` helper you used in registration. It throws internally, so calling it immediately halts the action.
+- **`import { redirect } from '@sveltejs/kit'`** — the same `redirect` helper you used in registration. SvelteKit 2+ throws it internally, so calling it immediately halts the action — no `throw` keyword needed on your side.
 - **`import type { Actions } from './$types'`** — the type for the `actions` export of this specific page. SvelteKit generates it from your folder structure. Typing the export gives you autocomplete on `event.locals`, `event.request`, etc.
 - **`export const actions: Actions = { ... }`** — the standard SvelteKit pattern for exposing server-side form handlers.
 - **`signout: async ({ locals }) => { ... }`** — a named action. The name `signout` is what we'll target from the form with `action="?/signout"`. Everything inside the braces runs when the form is submitted.
 - **`await locals.supabase.auth.signOut()`** — the Supabase SDK call that ends the session. We'll dig into what this does server-side in a moment. The `await` matters: if we didn't wait for it, the redirect could race ahead and the user's cookie might survive.
-- **`throw redirect(303, '/')`** — after logout, send the user to the home/marketing page. `303 See Other` ensures the browser follows with a GET, preserving the POST/Redirect/GET pattern you met in Lesson 3.1.
+- **`redirect(303, '/')`** — after logout, send the user to the home/marketing page. `303 See Other` ensures the browser follows with a GET, preserving the POST/Redirect/GET pattern you met in Lesson 3.1.
 
 #### Why redirect to `/` (home) instead of `/login`?
 
@@ -402,7 +402,7 @@ Update it to render the Navbar above the page content:
 ### Walkthrough
 
 - **`import Navbar from '$lib/components/layout/Navbar.svelte'`** — `$lib` resolves to `src/lib/`. Importing through it keeps paths stable no matter how deeply nested the consuming file is.
-- **`let { data, children }: Props = $props()`** — we destructure `data` (the load data from `+layout.server.ts`) and the `children` snippet. Recall from Lesson 3.3 that the `(app)` layout's load function returned `{ user: locals.user, ... }`, so `data.user` is a typed Supabase `User`.
+- **`let { data, children }: Props = $props()`** — we destructure `data` (the load data from `+layout.server.ts`) and the `children` snippet. Recall from Lesson 3.3 that the `(app)` layout's load function returned `{ user }`, where `user` came from `await locals.getUser()`. So `data.user` is a typed Supabase `User`.
 - **`<Navbar userEmail={data.user?.email} />`** — we pass the user's email. The `?.` (optional chaining) is paranoia: the route guard should already have kicked out unauthenticated users, but a typed-narrow `data.user` might still be inferred as `User | null`. Optional chaining gives us `undefined` when `user` is null, which our Navbar's `userEmail` type accepts.
 - **`{@render children()}`** — Svelte 5's replacement for `<slot />`. It renders whichever page is currently mounted inside the layout — `/dashboard`, `/account`, or anything else under `(app)`.
 
@@ -445,7 +445,7 @@ Behind the scenes, every navigation updates `page.url.pathname`, which forces th
 1. Click **Sign out**.
 2. The button posts to `/account?/signout`. The `signout` action runs, calls `supabase.auth.signOut()`, and redirects to `/`.
 3. You land on the home page, logged out. The Navbar is gone (because `/` is not in `(app)`).
-4. Try manually navigating to `/dashboard`. The `(app)` layout's route guard redirects you to `/login?next=/dashboard`. Confirmation: session is invalidated.
+4. Try manually navigating to `/dashboard`. The `(app)` layout's route guard redirects you to `/login?redirectTo=%2Fdashboard`. Confirmation: session is invalidated.
 
 ### Verify the cookie is gone
 
@@ -487,7 +487,7 @@ Behind the scenes, every navigation updates `page.url.pathname`, which forces th
 
 6. **Why not an `onclick` instead of a form?** If JavaScript is loaded, `<button onclick={...}>` calling `fetch('/logout', { method: 'POST' })` would work. But it fails the no-JS case — the button literally does nothing. Forms give you both worlds: no-JS submission, plus a `use:enhance` layer for enhanced UX. In a SvelteKit app, always prefer forms for state-changing actions over JS-only onclick handlers.
 
-7. **Logout auditing (future).** For a real SaaS, you'll eventually want to log sign-out events (timestamp, IP, device). The easiest place to add this is inside the `signout` action, before `throw redirect(...)`. Something like `await supabase.from('auth_events').insert({ user_id: user.id, type: 'signout' })`. You'll add this kind of audit log in Module 11.
+7. **Logout auditing (future).** For a real SaaS, you'll eventually want to log sign-out events (timestamp, IP, device). The easiest place to add this is inside the `signout` action, before the `redirect(...)` call. Something like `await supabase.from('auth_events').insert({ user_id: user.id, type: 'signout' })`. You'll add this kind of audit log in Module 11.
 
 ---
 

@@ -7,9 +7,18 @@ const loginSchema = z.object({
 	password: z.string().min(8).max(200)
 });
 
+// Rejects protocol-relative (`//evil.com`) and backslash-tricks (`/\evil.com`)
+// as well as anything with a scheme. Keep in sync with (auth)/+layout.server.ts.
+function safeNext(next: string | null): string {
+	if (!next) return '/dashboard';
+	if (!next.startsWith('/')) return '/dashboard';
+	if (next.startsWith('//') || next.startsWith('/\\')) return '/dashboard';
+	return next;
+}
+
 export const load: PageServerLoad = async ({ url }) => {
 	return {
-		next: url.searchParams.get('next') ?? '/dashboard',
+		next: safeNext(url.searchParams.get('next')),
 		errorHint: url.searchParams.get('error')
 	};
 };
@@ -34,7 +43,6 @@ export const actions: Actions = {
 			return fail(401, { email: parsed.data.email, error: error.message });
 		}
 
-		const next = url.searchParams.get('next');
-		throw redirect(303, next && next.startsWith('/') ? next : '/dashboard');
+		throw redirect(303, safeNext(url.searchParams.get('next')));
 	}
 };
