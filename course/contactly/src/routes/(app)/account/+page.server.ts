@@ -29,7 +29,7 @@ import {
 	deleteAccountSchema,
 	updateProfileSchema
 } from '$lib/schemas/auth';
-import { supabaseAdmin } from '$lib/server/supabase-admin';
+import { withAdmin } from '$lib/server/supabase-admin';
 
 export const load: PageServerLoad = async ({ parent, locals: { supabase } }) => {
 	const { user } = await parent();
@@ -175,8 +175,11 @@ export const actions: Actions = {
 		//      form body — the request body never names a user id.
 		//   3. The schema required the literal "DELETE" string.
 		// Only AFTER all three are satisfied do we reach for the
-		// privileged client.
-		const { error: deleteError } = await supabaseAdmin().auth.admin.deleteUser(user.id);
+		// privileged client. `withAdmin` wraps the call in audit log
+		// lines (Lesson 4.4 pattern) so we always know who did this.
+		const { error: deleteError } = await withAdmin('account.delete', user, (admin) =>
+			admin.auth.admin.deleteUser(user.id)
+		);
 
 		if (deleteError) {
 			console.error('[account/delete_account] admin delete failed:', deleteError);

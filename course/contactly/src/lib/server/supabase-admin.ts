@@ -77,3 +77,53 @@ export function supabaseAdmin() {
 	}
 	return cached;
 }
+
+/**
+ * Audit-wrapped service-role operation.
+ *
+ * The thing that distinguishes a safe service-role usage from a
+ * dangerous one is whether you can answer "who did this and why"
+ * after the fact. `withAdmin` makes that the path of least
+ * resistance: every call site declares the operation name and the
+ * acting user (or `'system'`), the wrapper logs entry/exit/failure
+ * with structured context, and the underlying admin client is only
+ * passed *into* the callback (so you can't accidentally leak it out
+ * of the audited boundary).
+ *
+ * In Module 12 we'll replace these `console.*` calls with `pino`
+ * structured logs and a `audit_log` table insert. The signature
+ * stays the same.
+ */
+export async function withAdmin<T>(
+	operation: string,
+	actingUser: { id: string; email?: string | null } | 'system',
+	fn: (admin: ReturnType<typeof supabaseAdmin>) => Promise<T>
+): Promise<T> {
+	const actor =
+		actingUser === 'system'
+			? { actor_kind: 'system' as const }
+			: { actor_kind: 'user' as const, actor_id: actingUser.id, actor_email: actingUser.email };
+
+	const startedAt = Date.now();
+	console.info('[admin]', { event: 'start', operation, ...actor });
+
+	try {
+		const result = await fn(supabaseAdmin());
+		console.info('[admin]', {
+			event: 'ok',
+			operation,
+			...actor,
+			duration_ms: Date.now() - startedAt
+		});
+		return result;
+	} catch (err) {
+		console.error('[admin]', {
+			event: 'fail',
+			operation,
+			...actor,
+			duration_ms: Date.now() - startedAt,
+			error: err instanceof Error ? err.message : String(err)
+		});
+		throw err;
+	}
+}
