@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import crypto from 'node:crypto';
+import { signWebhookBody } from '$lib/testing/webhook-signing';
 
 const TEST_SECRET = 'whsec_unit_test_placeholder_secret_DO_NOT_USE';
 
@@ -27,19 +27,13 @@ vi.mock('$lib/server/stripe-events-store', () => ({
 
 /**
  * Compose the canonical `Stripe-Signature` header value the SDK
- * verifies against. Mirrors `stripe.webhooks.generateTestHeaderString`
- * but inlined so we don't depend on an SDK helper that might move.
- *
- * Format: `t=<timestamp>,v1=<HMAC-SHA256(secret, "<timestamp>.<payload>")>`
+ * verifies against. Delegates to `$lib/testing/webhook-signing`
+ * (Lesson 12.2) so the production receiver test and the cassette
+ * playback driver share one signing implementation; if the scheme
+ * ever changes (it has not since 2018), one place updates.
  */
-function signPayload(
-	payload: string,
-	secret: string,
-	timestampSeconds = Math.floor(Date.now() / 1000)
-) {
-	const signedPayload = `${timestampSeconds}.${payload}`;
-	const signature = crypto.createHmac('sha256', secret).update(signedPayload).digest('hex');
-	return `t=${timestampSeconds},v1=${signature}`;
+function signPayload(payload: string, secret: string, timestampSeconds?: number): string {
+	return signWebhookBody(payload, secret, { timestampSeconds }).signature;
 }
 
 function makeEventBody(type: string, id = 'evt_test_unit') {
