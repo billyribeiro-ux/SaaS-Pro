@@ -1,10 +1,10 @@
 ---
-title: "8.2 - Seeding Stripe Data"
+title: '8.2 - Seeding Stripe Data'
 module: 8
 lesson: 2
-moduleSlug: "module-08-pricing-page"
-lessonSlug: "02-seeding-stripe-data"
-description: "Write a script to programmatically create Stripe test data so setup is reproducible."
+moduleSlug: 'module-08-pricing-page'
+lessonSlug: '02-seeding-stripe-data'
+description: 'Write a script to programmatically create Stripe test data so setup is reproducible.'
 duration: 10
 preview: false
 ---
@@ -90,7 +90,7 @@ pnpm exec tsx path/to/file.ts
 
 Before we write the script, a quick note on environment variables, because scripts behave differently from your SvelteKit app.
 
-Your SvelteKit code imports secrets via `$env/static/private` (e.g. `import { STRIPE_SECRET_KEY } from '$env/static/private'`). That works because Vite is the one reading `.env` and injecting values at build time. It only works *inside* modules that Vite compiles — i.e. inside `src/`.
+Your SvelteKit code imports secrets via `$env/static/private` (e.g. `import { STRIPE_SECRET_KEY } from '$env/static/private'`). That works because Vite is the one reading `.env` and injecting values at build time. It only works _inside_ modules that Vite compiles — i.e. inside `src/`.
 
 A plain Node script run via `tsx` doesn't go through Vite. It's a raw Node process. Vite's `$env` magic isn't there, so `process.env.STRIPE_SECRET_KEY` is what we use.
 
@@ -102,7 +102,7 @@ But Node doesn't read `.env` by itself either. You have two options:
 We'll use the CLI flag approach for the initial run because it's zero-dependency. If you prefer the `dotenv` version (a lot of teams standardize on it for consistency across tooling), add `import 'dotenv/config'` as the very first line of the script.
 
 > [!NOTE]
-> **Two different env systems on one project.** Your *app* uses `$env/static/private` (Vite-powered, build-time). Your *scripts* use `process.env` directly (Node-native, run-time). Both read the same `.env` file, they just do it through different pipelines. That's a feature, not a bug: app code gets type-safe auto-completion for env vars, while scripts get the loose, flexible Node API. Don't try to import `$env/static/private` in a script — the resolver isn't there and you'll get a cryptic error about "virtual modules".
+> **Two different env systems on one project.** Your _app_ uses `$env/static/private` (Vite-powered, build-time). Your _scripts_ use `process.env` directly (Node-native, run-time). Both read the same `.env` file, they just do it through different pipelines. That's a feature, not a bug: app code gets type-safe auto-completion for env vars, while scripts get the loose, flexible Node API. Don't try to import `$env/static/private` in a script — the resolver isn't there and you'll get a cryptic error about "virtual modules".
 
 ---
 
@@ -112,51 +112,51 @@ Create `scripts/seed-stripe.ts`:
 
 ```typescript
 // scripts/seed-stripe.ts
-import Stripe from 'stripe'
-import { PRICING_LOOKUP_KEYS } from '../src/lib/config/pricing.config'
+import Stripe from 'stripe';
+import { PRICING_LOOKUP_KEYS } from '../src/lib/config/pricing.config';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 
 async function seedStripe() {
-  console.log('Seeding Stripe test data...')
+	console.log('Seeding Stripe test data...');
 
-  const product = await stripe.products.create({
-    name: 'Contactly Pro',
-    description: 'Full access to Contactly — unlimited contacts and all features'
-  })
+	const product = await stripe.products.create({
+		name: 'Contactly Pro',
+		description: 'Full access to Contactly — unlimited contacts and all features'
+	});
 
-  await stripe.prices.create({
-    product: product.id,
-    unit_amount: 9700,
-    currency: 'usd',
-    recurring: { interval: 'month' },
-    lookup_key: PRICING_LOOKUP_KEYS.monthly,
-    transfer_lookup_key: true
-  })
+	await stripe.prices.create({
+		product: product.id,
+		unit_amount: 9700,
+		currency: 'usd',
+		recurring: { interval: 'month' },
+		lookup_key: PRICING_LOOKUP_KEYS.monthly,
+		transfer_lookup_key: true
+	});
 
-  await stripe.prices.create({
-    product: product.id,
-    unit_amount: 99700,
-    currency: 'usd',
-    recurring: { interval: 'year' },
-    lookup_key: PRICING_LOOKUP_KEYS.yearly,
-    transfer_lookup_key: true
-  })
+	await stripe.prices.create({
+		product: product.id,
+		unit_amount: 99700,
+		currency: 'usd',
+		recurring: { interval: 'year' },
+		lookup_key: PRICING_LOOKUP_KEYS.yearly,
+		transfer_lookup_key: true
+	});
 
-  await stripe.prices.create({
-    product: product.id,
-    unit_amount: 499700,
-    currency: 'usd',
-    lookup_key: PRICING_LOOKUP_KEYS.lifetime,
-    transfer_lookup_key: true
-  })
+	await stripe.prices.create({
+		product: product.id,
+		unit_amount: 499700,
+		currency: 'usd',
+		lookup_key: PRICING_LOOKUP_KEYS.lifetime,
+		transfer_lookup_key: true
+	});
 
-  console.log('✅ Stripe seeding complete')
+	console.log('✅ Stripe seeding complete');
 }
 
-seedStripe().catch(console.error)
+seedStripe().catch(console.error);
 ```
 
 Don't run it yet. Let's walk through it line by line, because every line is a decision.
@@ -167,7 +167,7 @@ The Stripe Node library ships a default export that is a class. We instantiate i
 
 ### `import { PRICING_LOOKUP_KEYS } from '../src/lib/config/pricing.config'`
 
-We import from the app's own config file. This is the critical choice: the *same constant* that the pricing page uses to look prices up is the one this script uses to create them. There is no way for the two sides to disagree on the lookup keys — they're literally the same symbol. Change `contactly_monthly` to `contactly_pro_monthly` in the config, and both the script and the page change in lockstep.
+We import from the app's own config file. This is the critical choice: the _same constant_ that the pricing page uses to look prices up is the one this script uses to create them. There is no way for the two sides to disagree on the lookup keys — they're literally the same symbol. Change `contactly_monthly` to `contactly_pro_monthly` in the config, and both the script and the page change in lockstep.
 
 Without this shared import, you'd write `contactly_monthly` twice (once here, once in the config) and one day one of them would drift.
 
@@ -199,7 +199,7 @@ Lookup keys are unique across a Stripe account. If a Price with the same lookup 
 
 This is exactly what we want for a seed/update workflow: if you run the script, then later need to change the monthly price from $97 to $99, you'd archive the old $97 Price and create a new $99 Price with the same lookup key. The transfer flag re-points `contactly_monthly` at the new Price. Your application code, which queries by lookup key, immediately starts getting $99.
 
-It's also what makes the script *somewhat* safe to re-run: the lookup keys don't collide with the previous run's prices, so subsequent price creations succeed. We cover the re-run story honestly in Step 5.
+It's also what makes the script _somewhat_ safe to re-run: the lookup keys don't collide with the previous run's prices, so subsequent price creations succeed. We cover the re-run story honestly in Step 5.
 
 ### `seedStripe().catch(console.error)`
 
@@ -228,7 +228,7 @@ Hop into the Stripe dashboard (test mode). Product catalog → Contactly Pro. Yo
 
 ### What happens if I run it twice?
 
-Run it again. The script will succeed — Stripe will happily create a *second* Contactly Pro product. Your dashboard will now have two of them. The three prices from the second run will attach to the second product, and the `transfer_lookup_key: true` flag will move the lookup keys from the first run's prices to the second run's prices.
+Run it again. The script will succeed — Stripe will happily create a _second_ Contactly Pro product. Your dashboard will now have two of them. The three prices from the second run will attach to the second product, and the `transfer_lookup_key: true` flag will move the lookup keys from the first run's prices to the second run's prices.
 
 Your first product is now orphaned — it exists in Stripe, has prices, has no lookup keys, and nothing refers to it. You can archive it via the dashboard, but you can also ignore it. Test mode accumulates cruft; that's fine.
 
@@ -243,11 +243,11 @@ Running the long command every time is tedious. Add it to `package.json`:
 
 ```json
 {
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "seed:stripe": "tsx --env-file=.env scripts/seed-stripe.ts"
-  }
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"seed:stripe": "tsx --env-file=.env scripts/seed-stripe.ts"
+	}
 }
 ```
 
@@ -284,7 +284,7 @@ Omit the `apiVersion` option and Stripe uses your account's default. Two months 
 ### Mistake 4: Hardcoding the lookup keys in the script
 
 ```typescript
-lookup_key: 'contactly_monthly' // DON'T DO THIS
+lookup_key: 'contactly_monthly'; // DON'T DO THIS
 ```
 
 That's the same string our app config has, but now it's in two places. Rename one and you've silently broken the integration.
@@ -333,33 +333,33 @@ For real production onboarding, you'd write something like:
 
 ```typescript
 async function findOrCreateProduct(name: string, description: string) {
-  const existing = await stripe.products.search({
-    query: `name:"${name}" AND active:"true"`,
-    limit: 1
-  })
-  if (existing.data.length > 0) return existing.data[0]
-  return stripe.products.create({ name, description })
+	const existing = await stripe.products.search({
+		query: `name:"${name}" AND active:"true"`,
+		limit: 1
+	});
+	if (existing.data.length > 0) return existing.data[0];
+	return stripe.products.create({ name, description });
 }
 
 async function findOrCreatePrice(opts: {
-  product: string
-  unit_amount: number
-  currency: string
-  recurring?: Stripe.PriceCreateParams.Recurring
-  lookup_key: string
+	product: string;
+	unit_amount: number;
+	currency: string;
+	recurring?: Stripe.PriceCreateParams.Recurring;
+	lookup_key: string;
 }) {
-  const existing = await stripe.prices.list({
-    lookup_keys: [opts.lookup_key],
-    active: true,
-    limit: 1
-  })
-  if (existing.data.length > 0) {
-    const p = existing.data[0]
-    if (p.unit_amount === opts.unit_amount) return p
-    // amount changed → archive old, create new, transfer key
-    await stripe.prices.update(p.id, { active: false })
-  }
-  return stripe.prices.create({ ...opts, transfer_lookup_key: true })
+	const existing = await stripe.prices.list({
+		lookup_keys: [opts.lookup_key],
+		active: true,
+		limit: 1
+	});
+	if (existing.data.length > 0) {
+		const p = existing.data[0];
+		if (p.unit_amount === opts.unit_amount) return p;
+		// amount changed → archive old, create new, transfer key
+		await stripe.prices.update(p.id, { active: false });
+	}
+	return stripe.prices.create({ ...opts, transfer_lookup_key: true });
 }
 ```
 
@@ -367,15 +367,15 @@ It's not rocket science — it's 30 extra lines for full idempotency. Worth it f
 
 ### 4. Env-var loading strategies: know the full matrix
 
-| Context                               | How env is loaded            | Who reads `.env`? |
-|---------------------------------------|------------------------------|--------------------|
-| `vite dev` / `vite build` (SvelteKit) | `$env/static/*`, `$env/dynamic/*` | Vite            |
-| `tsx` with `--env-file=.env`          | `process.env.*`              | Node (native)     |
-| `tsx` with `import 'dotenv/config'`   | `process.env.*`              | `dotenv` package  |
-| Node process in production            | `process.env.*`              | Deployment platform (Vercel/Fly/etc.) |
-| CI (GitHub Actions, etc.)             | `process.env.*`              | CI config (secrets as env) |
+| Context                               | How env is loaded                 | Who reads `.env`?                     |
+| ------------------------------------- | --------------------------------- | ------------------------------------- |
+| `vite dev` / `vite build` (SvelteKit) | `$env/static/*`, `$env/dynamic/*` | Vite                                  |
+| `tsx` with `--env-file=.env`          | `process.env.*`                   | Node (native)                         |
+| `tsx` with `import 'dotenv/config'`   | `process.env.*`                   | `dotenv` package                      |
+| Node process in production            | `process.env.*`                   | Deployment platform (Vercel/Fly/etc.) |
+| CI (GitHub Actions, etc.)             | `process.env.*`                   | CI config (secrets as env)            |
 
-The lesson here isn't the detail; it's that **there's always *someone* reading `.env` — it's never magic, and knowing who reads it in each context is how you debug missing-variable errors in 30 seconds instead of 30 minutes.**
+The lesson here isn't the detail; it's that **there's always _someone_ reading `.env` — it's never magic, and knowing who reads it in each context is how you debug missing-variable errors in 30 seconds instead of 30 minutes.**
 
 ### 5. Why the script lives in the repo, not in a "devops" folder
 

@@ -1,9 +1,9 @@
 ---
-title: "9.6 - Subscription & Email Settings"
+title: '9.6 - Subscription & Email Settings'
 module: 9
 lesson: 6
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "06-subscription-email-settings"
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '06-subscription-email-settings'
 description: "Configure Stripe's automatic email notifications for receipts, failed payments, and renewals."
 duration: 8
 preview: false
@@ -82,6 +82,7 @@ Stripe Dashboard → **Settings** → **Branding**. Upload:
 Set these once. Every future email uses them. The visual consistency with your app is usually indistinguishable from a custom-built emailer.
 
 Important: branding applies to:
+
 - Invoices (hosted and emailed).
 - The Checkout page.
 - The customer portal.
@@ -113,10 +114,12 @@ For most SaaS, Stripe's billing emails are the right choice. But there are legit
 ### The hybrid approach
 
 Enable Stripe emails for the operationally-critical subset:
+
 - **Receipts** — Stripe.
 - **Failed payments (dunning)** — Stripe. It's the highest-revenue email; don't build custom unless you know what you're doing.
 
 And build your own for:
+
 - **Trial-ending** — your side. You want to combine "trial ending" with product-usage stats ("you've created 47 contacts, don't lose them"), which Stripe can't do.
 - **Renewal-coming-up on annual** — your side. Combine with a "here's what changed this year" recap.
 - **Cancellation confirmation + win-back sequence** — your side. Cancellation emails can link to a "what went wrong?" survey and begin a win-back sequence.
@@ -130,6 +133,7 @@ The hybrid is the most common mature setup. Ship with Stripe-everything on day 1
 ### CAN-SPAM / GDPR
 
 Stripe's emails are already compliant:
+
 - They include the sender's physical address (your business's, which you set in dashboard).
 - They include unsubscribe links for non-transactional messages (note: receipts and dunning emails are **transactional** and exempt from unsubscribe requirements; trial/renewal reminders are transactional borderline but Stripe includes opt-outs anyway).
 - They honor the contact's communication preferences Stripe stores.
@@ -139,6 +143,7 @@ If you move emails to your own system, you inherit all these requirements. Don't
 ### Deliverability
 
 Stripe's sending infrastructure has high IP reputation. Emails from Stripe are rarely marked as spam. If you build your own system, you'll need to:
+
 - Set up SPF, DKIM, DMARC records on your domain.
 - Warm up new IPs/domains gradually.
 - Monitor bounce rates and complaint rates.

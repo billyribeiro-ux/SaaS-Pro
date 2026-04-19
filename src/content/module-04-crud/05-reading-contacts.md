@@ -1,10 +1,10 @@
 ---
-title: "4.5 - Reading Contacts"
+title: '4.5 - Reading Contacts'
 module: 4
 lesson: 5
-moduleSlug: "module-04-crud"
-lessonSlug: "05-reading-contacts"
-description: "Build the contacts list page — loading, displaying, and searching all contacts for the logged-in user."
+moduleSlug: 'module-04-crud'
+lessonSlug: '05-reading-contacts'
+description: 'Build the contacts list page — loading, displaying, and searching all contacts for the logged-in user.'
 duration: 12
 preview: false
 ---
@@ -74,29 +74,29 @@ Create `src/routes/(app)/contacts/+page.server.ts`:
 
 ```typescript
 // src/routes/(app)/contacts/+page.server.ts
-import { error } from '@sveltejs/kit'
-import type { PageServerLoad } from './$types'
+import { error } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) error(401, 'Unauthorized')
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { data: contacts, error: contactsError } = await locals.supabase
-    .from('contacts')
-    .select('*')
-    .order('last_name', { ascending: true })
-    .order('first_name', { ascending: true })
+	const { data: contacts, error: contactsError } = await locals.supabase
+		.from('contacts')
+		.select('*')
+		.order('last_name', { ascending: true })
+		.order('first_name', { ascending: true });
 
-  if (contactsError) error(500, 'Failed to load contacts')
+	if (contactsError) error(500, 'Failed to load contacts');
 
-  return { contacts: contacts ?? [] }
-}
+	return { contacts: contacts ?? [] };
+};
 ```
 
 ### Line-by-line walkthrough
 
 ```typescript
-import { error } from '@sveltejs/kit'
+import { error } from '@sveltejs/kit';
 ```
 
 **`error`** throws an HTTP error from a load function. `error(500, 'Failed to load contacts')` **throws** — execution stops, SvelteKit renders the nearest `+error.svelte` with a 500 status. It's a `throw` in disguise, so never write `return error(...)`.
@@ -104,7 +104,7 @@ import { error } from '@sveltejs/kit'
 TypeScript-wise, `error()` returns `never`, so code after it is unreachable. After `if (!user) error(401, 'Unauthorized')`, `user` is narrowed to non-null for the rest of the function — runtime safety and compile-time narrowing in one line.
 
 ```typescript
-import type { PageServerLoad } from './$types'
+import type { PageServerLoad } from './$types';
 ```
 
 **`./$types`** is auto-generated per route. `PageServerLoad` knows what `locals` contains (from `app.d.ts`), what `params` this route accepts, and ties the return type of `load` to `PageData` in `+page.svelte`. Add a field to the returned object and `PageData` updates everywhere.
@@ -116,18 +116,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 **`load`** is the magic name — SvelteKit runs it before rendering. Its return becomes the `data` prop in `+page.svelte`. **`async`** because we await twice. **`({ locals })`** destructures the only field we need.
 
 ```typescript
-const user = await locals.getUser()
-if (!user) error(401, 'Unauthorized')
+const user = await locals.getUser();
+if (!user) error(401, 'Unauthorized');
 ```
 
 **Defense in depth.** The `(app)` group's `+layout.server.ts` already redirects unauthenticated users, so in practice `user` is always set. Still worth it: (1) future-proofing — if someone restructures the group or refactors the guard, this page doesn't silently leak, it fails loud; (2) type narrowing — without it, `user` is `User | null` everywhere below. We use `error(401, ...)` rather than `redirect()` because reaching this point is a **bug**, not a user flow. Bugs belong in logs.
 
 ```typescript
 const { data: contacts, error: contactsError } = await locals.supabase
-  .from('contacts')
-  .select('*')
-  .order('last_name', { ascending: true })
-  .order('first_name', { ascending: true })
+	.from('contacts')
+	.select('*')
+	.order('last_name', { ascending: true })
+	.order('first_name', { ascending: true });
 ```
 
 **Destructure and rename.** Supabase returns `{ data, error }` from every query. Writing `{ data, error }` would shadow the imported `error` helper — the next `error(500, ...)` would call the Supabase error object as a function. Renaming dodges it.
@@ -137,8 +137,8 @@ const { data: contacts, error: contactsError } = await locals.supabase
 **Two `.order()` calls** produce a **stable** sort: ties on `last_name` break on `first_name`. Postgres emits `ORDER BY last_name ASC, first_name ASC`. Without the tiebreaker, two Smiths appear in a different order on every reload — the list "flickers" between refreshes. A stable sort renders identically every time. Cheap to add, big UX win. `{ ascending: true }` is the default, but being explicit reads better.
 
 ```typescript
-if (contactsError) error(500, 'Failed to load contacts')
-return { contacts: contacts ?? [] }
+if (contactsError) error(500, 'Failed to load contacts');
+return { contacts: contacts ?? [] };
 ```
 
 If the query fails — network blip, Postgres down, RLS rejection — bail with a 500. Don't leak the raw error; it'd expose internals. Generic message for the user, full error in server logs. **500, not 400:** 4xx = client's fault, 5xx = server's fault. A user asking for their own contacts hasn't done anything wrong.
@@ -194,108 +194,106 @@ Create `src/routes/(app)/contacts/+page.svelte`:
 
 ```svelte
 <script lang="ts">
-  import type { PageData } from './$types'
+	import type { PageData } from './$types';
 
-  let { data }: { data: PageData } = $props()
+	let { data }: { data: PageData } = $props();
 
-  let search = $state('')
+	let search = $state('');
 
-  const filtered = $derived(
-    search.trim() === ''
-      ? data.contacts
-      : data.contacts.filter((c) =>
-          `${c.first_name} ${c.last_name} ${c.email ?? ''} ${c.company ?? ''}`
-            .toLowerCase()
-            .includes(search.toLowerCase())
-        )
-  )
+	const filtered = $derived(
+		search.trim() === ''
+			? data.contacts
+			: data.contacts.filter((c) =>
+					`${c.first_name} ${c.last_name} ${c.email ?? ''} ${c.company ?? ''}`
+						.toLowerCase()
+						.includes(search.toLowerCase())
+				)
+	);
 </script>
 
-<div class="max-w-5xl mx-auto px-4 py-8">
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">Contacts</h1>
-      <p class="text-sm text-gray-500">{data.contacts.length} total</p>
-    </div>
-    <a
-      href="/contacts/new"
-      class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-    >
-      New contact
-    </a>
-  </div>
+<div class="mx-auto max-w-5xl px-4 py-8">
+	<div class="mb-6 flex items-center justify-between">
+		<div>
+			<h1 class="text-2xl font-bold text-gray-900">Contacts</h1>
+			<p class="text-sm text-gray-500">{data.contacts.length} total</p>
+		</div>
+		<a
+			href="/contacts/new"
+			class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+		>
+			New contact
+		</a>
+	</div>
 
-  {#if data.contacts.length === 0}
-    <div class="bg-white border border-gray-200 rounded-xl p-12 text-center">
-      <h2 class="text-lg font-semibold text-gray-900 mb-2">No contacts yet</h2>
-      <p class="text-gray-500 mb-4">Get started by adding your first contact.</p>
-      <a
-        href="/contacts/new"
-        class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm"
-      >
-        Create your first contact
-      </a>
-    </div>
-  {:else}
-    <div class="mb-4">
-      <input
-        type="search"
-        bind:value={search}
-        placeholder="Search contacts..."
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
+	{#if data.contacts.length === 0}
+		<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
+			<h2 class="mb-2 text-lg font-semibold text-gray-900">No contacts yet</h2>
+			<p class="mb-4 text-gray-500">Get started by adding your first contact.</p>
+			<a
+				href="/contacts/new"
+				class="inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+			>
+				Create your first contact
+			</a>
+		</div>
+	{:else}
+		<div class="mb-4">
+			<input
+				type="search"
+				bind:value={search}
+				placeholder="Search contacts..."
+				class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+			/>
+		</div>
 
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th class="text-left px-4 py-2 font-medium text-gray-700">Name</th>
-            <th class="text-left px-4 py-2 font-medium text-gray-700">Email</th>
-            <th class="text-left px-4 py-2 font-medium text-gray-700">Company</th>
-            <th class="text-right px-4 py-2 font-medium text-gray-700">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each filtered as contact (contact.id)}
-            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-              <td class="px-4 py-2 text-gray-900">
-                {contact.first_name} {contact.last_name}
-              </td>
-              <td class="px-4 py-2 text-gray-600">{contact.email ?? '—'}</td>
-              <td class="px-4 py-2 text-gray-600">{contact.company ?? '—'}</td>
-              <td class="px-4 py-2 text-right">
-                <a
-                  href="/contacts/{contact.id}/edit"
-                  class="text-blue-600 hover:underline mr-3"
-                >
-                  Edit
-                </a>
-                <form method="POST" action="?/delete" class="inline">
-                  <input type="hidden" name="id" value={contact.id} />
-                  <button
-                    type="submit"
-                    class="text-red-600 hover:underline"
-                    onclick={(e) => {
-                      if (!confirm('Delete this contact?')) e.preventDefault()
-                    }}
-                  >
-                    Delete
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {:else}
-            <tr>
-              <td colspan="4" class="px-4 py-8 text-center text-gray-500">
-                No contacts match "{search}".
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  {/if}
+		<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+			<table class="w-full text-sm">
+				<thead class="border-b border-gray-200 bg-gray-50">
+					<tr>
+						<th class="px-4 py-2 text-left font-medium text-gray-700">Name</th>
+						<th class="px-4 py-2 text-left font-medium text-gray-700">Email</th>
+						<th class="px-4 py-2 text-left font-medium text-gray-700">Company</th>
+						<th class="px-4 py-2 text-right font-medium text-gray-700">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each filtered as contact (contact.id)}
+						<tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+							<td class="px-4 py-2 text-gray-900">
+								{contact.first_name}
+								{contact.last_name}
+							</td>
+							<td class="px-4 py-2 text-gray-600">{contact.email ?? '—'}</td>
+							<td class="px-4 py-2 text-gray-600">{contact.company ?? '—'}</td>
+							<td class="px-4 py-2 text-right">
+								<a href="/contacts/{contact.id}/edit" class="mr-3 text-blue-600 hover:underline">
+									Edit
+								</a>
+								<form method="POST" action="?/delete" class="inline">
+									<input type="hidden" name="id" value={contact.id} />
+									<button
+										type="submit"
+										class="text-red-600 hover:underline"
+										onclick={(e) => {
+											if (!confirm('Delete this contact?')) e.preventDefault();
+										}}
+									>
+										Delete
+									</button>
+								</form>
+							</td>
+						</tr>
+					{:else}
+						<tr>
+							<td colspan="4" class="px-4 py-8 text-center text-gray-500">
+								No contacts match "{search}".
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/if}
 </div>
 ```
 
@@ -304,29 +302,29 @@ A lot of markup. Four bites: script, header, empty state, table.
 ### The script block
 
 ```typescript
-import type { PageData } from './$types'
+import type { PageData } from './$types';
 
-let { data }: { data: PageData } = $props()
+let { data }: { data: PageData } = $props();
 ```
 
 **`PageData`** is SvelteKit's auto-generated type for whatever `load` returned — here, `{ contacts: Tables<'contacts'>[] }`. Edit the load function and `PageData` updates everywhere. **`$props()`** returns a reactive proxy; destructuring `data` means when a parent re-renders with new data, `data` here updates automatically.
 
 ```typescript
-let search = $state('')
+let search = $state('');
 ```
 
 **`$state('')`** creates a reactive variable. When `search` changes, any template expression that reads it re-renders. We'll wire it to `<input bind:value={search} />` below.
 
 ```typescript
 const filtered = $derived(
-  search.trim() === ''
-    ? data.contacts
-    : data.contacts.filter((c) =>
-        `${c.first_name} ${c.last_name} ${c.email ?? ''} ${c.company ?? ''}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      )
-)
+	search.trim() === ''
+		? data.contacts
+		: data.contacts.filter((c) =>
+				`${c.first_name} ${c.last_name} ${c.email ?? ''} ${c.company ?? ''}`
+					.toLowerCase()
+					.includes(search.toLowerCase())
+			)
+);
 ```
 
 `$derived(expression)` recomputes every time any `$state` it reads changes. This one reads `search` (and `data.contacts`, reactive via `$props()`), so it re-filters on every keystroke.
@@ -386,12 +384,12 @@ Our search runs **entirely in the browser**. The server ships all contacts on pa
 
 For 100–1,000 contacts, this is the right call. The math:
 
-| Contacts | Payload | Filter time | Verdict |
-| --- | --- | --- | --- |
-| 100 | ~15 KB | <1 ms | Great |
-| 1,000 | ~150 KB | ~5 ms | Fine |
-| 10,000 | ~1.5 MB | ~50 ms | Janky initial load |
-| 100,000 | ~15 MB | Frozen tab | Broken |
+| Contacts | Payload | Filter time | Verdict            |
+| -------- | ------- | ----------- | ------------------ |
+| 100      | ~15 KB  | <1 ms       | Great              |
+| 1,000    | ~150 KB | ~5 ms       | Fine               |
+| 10,000   | ~1.5 MB | ~50 ms      | Janky initial load |
+| 100,000  | ~15 MB  | Frozen tab  | Broken             |
 
 Crossover around **5,000–10,000 rows**. Below, client-side wins (no spinners, no debouncing, no endpoint). Above, switch to server-side `ilike` queries with debouncing plus pagination. Don't over-engineer day one — ship the simple version, revisit in Module 10.
 

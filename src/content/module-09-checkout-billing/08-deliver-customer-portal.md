@@ -1,10 +1,10 @@
 ---
-title: "9.8 - Deliver Customer Portal"
+title: '9.8 - Deliver Customer Portal'
 module: 9
 lesson: 8
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "08-deliver-customer-portal"
-description: "Build the billing portal endpoint and add the Manage Subscription button to the account page."
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '08-deliver-customer-portal'
+description: 'Build the billing portal endpoint and add the Manage Subscription button to the account page.'
 duration: 10
 preview: false
 ---
@@ -15,7 +15,7 @@ The customer portal is configured (9.7). Now we deliver it to users. The work is
 
 Think of this as the mirror of 9.1. `POST /api/billing/checkout` creates a Checkout session and returns the hosted URL; `POST /api/billing/portal` creates a portal session and returns the hosted URL. Same shape, different Stripe object. Same client-side handling (`fetch`, then `window.location.href = url`).
 
-What makes this worth a dedicated lesson — not a paragraph — is the decisions around *who* gets the button, *when* they see it, *what* happens if they click it without a subscription, and *how* you gracefully handle the return. Ten minutes of code, but each line expresses a choice.
+What makes this worth a dedicated lesson — not a paragraph — is the decisions around _who_ gets the button, _when_ they see it, _what_ happens if they click it without a subscription, and _how_ you gracefully handle the return. Ten minutes of code, but each line expresses a choice.
 
 ## Prerequisites
 
@@ -38,31 +38,31 @@ Create `src/routes/api/billing/portal/+server.ts`:
 
 ```typescript
 // src/routes/api/billing/portal/+server.ts
-import { json, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
-import { PUBLIC_APP_URL } from '$env/static/public'
-import type { RequestHandler } from './$types'
+import { json, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
+import { PUBLIC_APP_URL } from '$env/static/public';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) error(401, 'Unauthorized')
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { data: customer } = await supabaseAdmin
-    .from('customers')
-    .select('stripe_customer_id')
-    .eq('id', user.id)
-    .single()
+	const { data: customer } = await supabaseAdmin
+		.from('customers')
+		.select('stripe_customer_id')
+		.eq('id', user.id)
+		.single();
 
-  if (!customer?.stripe_customer_id) error(400, 'No billing account found')
+	if (!customer?.stripe_customer_id) error(400, 'No billing account found');
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customer.stripe_customer_id,
-    return_url: `${PUBLIC_APP_URL}/account`
-  })
+	const session = await stripe.billingPortal.sessions.create({
+		customer: customer.stripe_customer_id,
+		return_url: `${PUBLIC_APP_URL}/account`
+	});
 
-  return json({ url: session.url })
-}
+	return json({ url: session.url });
+};
 ```
 
 Walkthrough:
@@ -77,8 +77,8 @@ Walkthrough:
 ### Auth gate
 
 ```typescript
-const user = await locals.getUser()
-if (!user) error(401, 'Unauthorized')
+const user = await locals.getUser();
+if (!user) error(401, 'Unauthorized');
 ```
 
 Identical pattern to 9.1. No session, no portal.
@@ -87,15 +87,15 @@ Identical pattern to 9.1. No session, no portal.
 
 ```typescript
 const { data: customer } = await supabaseAdmin
-  .from('customers')
-  .select('stripe_customer_id')
-  .eq('id', user.id)
-  .single()
+	.from('customers')
+	.select('stripe_customer_id')
+	.eq('id', user.id)
+	.single();
 
-if (!customer?.stripe_customer_id) error(400, 'No billing account found')
+if (!customer?.stripe_customer_id) error(400, 'No billing account found');
 ```
 
-Why not call `getOrCreateCustomer` like 9.1 does? Because if the user has never paid (or trialed), they *don't* have a Stripe customer, and creating one just to open the portal would pollute Stripe with empty customers. The portal is only useful if you have billing history; if you don't, there's nothing to manage.
+Why not call `getOrCreateCustomer` like 9.1 does? Because if the user has never paid (or trialed), they _don't_ have a Stripe customer, and creating one just to open the portal would pollute Stripe with empty customers. The portal is only useful if you have billing history; if you don't, there's nothing to manage.
 
 **`.single()`** vs **`.maybeSingle()`** — the shape of error we want to throw tells us which. `.single()` throws if no rows match; `.maybeSingle()` returns `null` if no match. We want "no match" to be a user-facing 400 with a clear message, so we use `.single()` and let the destructure give us `data: null` for missing rows, then guard with the `?.` chain.
 
@@ -107,9 +107,9 @@ Actually — re-reading Supabase's client API — `.single()` returns `{ data, e
 
 ```typescript
 const session = await stripe.billingPortal.sessions.create({
-  customer: customer.stripe_customer_id,
-  return_url: `${PUBLIC_APP_URL}/account`
-})
+	customer: customer.stripe_customer_id,
+	return_url: `${PUBLIC_APP_URL}/account`
+});
 ```
 
 `stripe.billingPortal.sessions.create` accepts:
@@ -125,7 +125,7 @@ For our basic Manage Subscription button, `customer` + `return_url` is enough.
 ### The response
 
 ```typescript
-return json({ url: session.url })
+return json({ url: session.url });
 ```
 
 Unlike Checkout sessions, `billingPortal.sessions.create` always returns a non-null `url`, so we don't guard against null here. The URL looks like `https://billing.stripe.com/session/...` and is single-use — it expires after the user's visit ends.
@@ -138,34 +138,34 @@ Load the customer in `src/routes/(app)/account/+page.server.ts`:
 
 ```typescript
 // src/routes/(app)/account/+page.server.ts
-import { redirect } from '@sveltejs/kit'
-import { supabaseAdmin } from '$server/supabase'
-import type { PageServerLoad } from './$types'
+import { redirect } from '@sveltejs/kit';
+import { supabaseAdmin } from '$server/supabase';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) redirect(303, '/login')
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
 
-  const { data: customer } = await supabaseAdmin
-    .from('customers')
-    .select('stripe_customer_id')
-    .eq('id', user.id)
-    .maybeSingle()
+	const { data: customer } = await supabaseAdmin
+		.from('customers')
+		.select('stripe_customer_id')
+		.eq('id', user.id)
+		.maybeSingle();
 
-  const { data: subscription } = await supabaseAdmin
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+	const { data: subscription } = await supabaseAdmin
+		.from('subscriptions')
+		.select('*')
+		.eq('user_id', user.id)
+		.order('created_at', { ascending: false })
+		.limit(1)
+		.maybeSingle();
 
-  return {
-    user,
-    hasBilling: !!customer?.stripe_customer_id,
-    subscription
-  }
-}
+	return {
+		user,
+		hasBilling: !!customer?.stripe_customer_id,
+		subscription
+	};
+};
 ```
 
 We use `.maybeSingle()` here because a user viewing their account page without a customer record is a normal state (they've never paid). Not an error.
@@ -175,68 +175,68 @@ Render the button in `+page.svelte`:
 ```svelte
 <!-- src/routes/(app)/account/+page.svelte -->
 <script lang="ts">
-  let { data } = $props()
+	let { data } = $props();
 
-  let loading = $state(false)
+	let loading = $state(false);
 
-  async function openPortal() {
-    loading = true
-    try {
-      const response = await fetch('/api/billing/portal', { method: 'POST' })
-      if (!response.ok) {
-        const { message } = await response.json()
-        alert(message ?? 'Unable to open billing portal')
-        return
-      }
-      const { url } = await response.json()
-      window.location.href = url
-    } finally {
-      loading = false
-    }
-  }
+	async function openPortal() {
+		loading = true;
+		try {
+			const response = await fetch('/api/billing/portal', { method: 'POST' });
+			if (!response.ok) {
+				const { message } = await response.json();
+				alert(message ?? 'Unable to open billing portal');
+				return;
+			}
+			const { url } = await response.json();
+			window.location.href = url;
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
-<div class="max-w-2xl mx-auto p-6 space-y-6">
-  <h1 class="text-2xl font-bold text-gray-900">Account</h1>
+<div class="mx-auto max-w-2xl space-y-6 p-6">
+	<h1 class="text-2xl font-bold text-gray-900">Account</h1>
 
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-2">Profile</h2>
-    <p class="text-gray-700">{data.user.email}</p>
-  </section>
+	<section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+		<h2 class="mb-2 text-lg font-semibold text-gray-900">Profile</h2>
+		<p class="text-gray-700">{data.user.email}</p>
+	</section>
 
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Billing</h2>
+	<section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+		<h2 class="mb-4 text-lg font-semibold text-gray-900">Billing</h2>
 
-    {#if data.subscription}
-      <div class="mb-4">
-        <p class="text-sm text-gray-600">Current plan</p>
-        <p class="font-medium text-gray-900">
-          {data.subscription.status === 'trialing'
-            ? 'Trial ends soon'
-            : data.subscription.status === 'active'
-              ? 'Active'
-              : data.subscription.status}
-        </p>
-      </div>
-    {/if}
+		{#if data.subscription}
+			<div class="mb-4">
+				<p class="text-sm text-gray-600">Current plan</p>
+				<p class="font-medium text-gray-900">
+					{data.subscription.status === 'trialing'
+						? 'Trial ends soon'
+						: data.subscription.status === 'active'
+							? 'Active'
+							: data.subscription.status}
+				</p>
+			</div>
+		{/if}
 
-    {#if data.hasBilling}
-      <button
-        onclick={openPortal}
-        disabled={loading}
-        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-      >
-        {loading ? 'Opening…' : 'Manage subscription'}
-      </button>
-    {:else}
-      <a
-        href="/pricing"
-        class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-      >
-        View plans
-      </a>
-    {/if}
-  </section>
+		{#if data.hasBilling}
+			<button
+				onclick={openPortal}
+				disabled={loading}
+				class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+			>
+				{loading ? 'Opening…' : 'Manage subscription'}
+			</button>
+		{:else}
+			<a
+				href="/pricing"
+				class="inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+			>
+				View plans
+			</a>
+		{/if}
+	</section>
 </div>
 ```
 
@@ -302,17 +302,18 @@ You can pre-open specific portal flows for contextual UX. For example, the past-
 
 ```typescript
 const session = await stripe.billingPortal.sessions.create({
-  customer: customer.stripe_customer_id,
-  return_url: `${PUBLIC_APP_URL}/account`,
-  flow_data: {
-    type: 'payment_method_update'
-  }
-})
+	customer: customer.stripe_customer_id,
+	return_url: `${PUBLIC_APP_URL}/account`,
+	flow_data: {
+		type: 'payment_method_update'
+	}
+});
 ```
 
 Available flow types include `subscription_cancel`, `subscription_update`, `payment_method_update`, `subscription_update_confirm`. Pass `flow_data.type` and optional `flow_data.subscription_cancel.subscription` (or similar per flow).
 
 Useful for:
+
 - Cancel link in a retention email → `subscription_cancel`.
 - Past-due banner → `payment_method_update`.
 - Upsell CTAs → `subscription_update` with the target price.
@@ -345,7 +346,7 @@ For SaaS-Pro we ship the basic "landing page" portal for all cases; add flow-spe
 
 2. **PCI scope reduction is a strategic asset.** Every interaction with card data happens on Stripe's domains (Checkout, Portal). Your auditors look at your codebase, see zero card-handling code, and your SAQ A compliance is straightforward. This compounds when you pursue SOC 2 or enterprise security reviews — "we don't touch card data" is a clean answer.
 
-3. **Instrument portal usage.** You can't track what happens *inside* the portal without advanced integrations, but you can track *entries*: log every successful `stripe.billingPortal.sessions.create` call. Correlate with your `subscriptions` table changes to see which portal visits converted to cancellations, upgrades, or card updates. Those metrics inform retention product work.
+3. **Instrument portal usage.** You can't track what happens _inside_ the portal without advanced integrations, but you can track _entries_: log every successful `stripe.billingPortal.sessions.create` call. Correlate with your `subscriptions` table changes to see which portal visits converted to cancellations, upgrades, or card updates. Those metrics inform retention product work.
 
 4. **The portal's cancellation flow is where you read the room.** Cancellation reasons and custom questions generate churn data for free. Review them monthly. If "too expensive" dominates, it's a pricing problem; if "missing feature X" dominates, it's a roadmap problem; if "not using it enough" dominates, it's an activation problem. All three need different responses.
 

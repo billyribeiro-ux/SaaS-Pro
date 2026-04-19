@@ -1,10 +1,10 @@
 ---
-title: "Resources"
+title: 'Resources'
 module: 0
 lesson: 3
-moduleSlug: "module-00-introduction"
-lessonSlug: "03-resources"
-description: "Every tool, doc, and external resource referenced across the course."
+moduleSlug: 'module-00-introduction'
+lessonSlug: '03-resources'
+description: 'Every tool, doc, and external resource referenced across the course.'
 duration: 2
 preview: true
 ---

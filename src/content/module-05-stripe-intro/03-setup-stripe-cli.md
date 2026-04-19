@@ -1,10 +1,10 @@
 ---
-title: "5.3 - Setup Stripe CLI"
+title: '5.3 - Setup Stripe CLI'
 module: 5
 lesson: 3
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "03-setup-stripe-cli"
-description: "Install and configure the Stripe CLI for local webhook testing and event simulation."
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '03-setup-stripe-cli'
+description: 'Install and configure the Stripe CLI for local webhook testing and event simulation.'
 duration: 10
 preview: false
 ---
@@ -314,7 +314,7 @@ A common typo: `--forward-to https://localhost:5173/...` (with `https://` — Sv
 
 ### Mistake 4: Sharing a `whsec_...` from your laptop with teammates
 
-Each developer running their own `stripe listen` gets their own secret. You can't meaningfully share them — each secret is bound to one CLI instance and one account. If your teammate's webhook isn't firing, the answer isn't "send me your whsec_"; it's "run `stripe listen` on your own machine."
+Each developer running their own `stripe listen` gets their own secret. You can't meaningfully share them — each secret is bound to one CLI instance and one account. If your teammate's webhook isn't firing, the answer isn't "send me your whsec\_"; it's "run `stripe listen` on your own machine."
 
 ### Mistake 5: Forgetting the CLI is dev-only
 

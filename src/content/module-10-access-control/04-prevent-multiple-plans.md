@@ -1,10 +1,10 @@
 ---
-title: "10.4 - Prevent Multiple Plans"
+title: '10.4 - Prevent Multiple Plans'
 module: 10
 lesson: 4
-moduleSlug: "module-10-access-control"
-lessonSlug: "04-prevent-multiple-plans"
-description: "Prevent users from subscribing to a new plan when they already have an active subscription."
+moduleSlug: 'module-10-access-control'
+lessonSlug: '04-prevent-multiple-plans'
+description: 'Prevent users from subscribing to a new plan when they already have an active subscription.'
 duration: 10
 preview: false
 ---
@@ -39,30 +39,30 @@ Our current checkout action (from Module 9) looks roughly like:
 
 ```typescript
 // src/routes/(app)/pricing/+page.server.ts — the version we're about to fix
-import { redirect } from '@sveltejs/kit'
-import { PUBLIC_APP_URL } from '$env/static/public'
-import { stripe } from '$server/stripe'
-import type { Actions } from './$types'
+import { redirect } from '@sveltejs/kit';
+import { PUBLIC_APP_URL } from '$env/static/public';
+import { stripe } from '$server/stripe';
+import type { Actions } from './$types';
 
 export const actions: Actions = {
-  subscribe: async ({ locals, request }) => {
-    const user = await locals.getUser()
-    if (!user) redirect(303, '/login')
+	subscribe: async ({ locals, request }) => {
+		const user = await locals.getUser();
+		if (!user) redirect(303, '/login');
 
-    const formData = await request.formData()
-    const priceId = formData.get('priceId') as string
+		const formData = await request.formData();
+		const priceId = formData.get('priceId') as string;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer_email: user.email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success`,
-      cancel_url: `${PUBLIC_APP_URL}/pricing`
-    })
+		const session = await stripe.checkout.sessions.create({
+			mode: 'subscription',
+			customer_email: user.email,
+			line_items: [{ price: priceId, quantity: 1 }],
+			success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success`,
+			cancel_url: `${PUBLIC_APP_URL}/pricing`
+		});
 
-    redirect(303, session.url!)
-  }
-}
+		redirect(303, session.url!);
+	}
+};
 ```
 
 Problem: **no check for existing subscription.** A Pro user clicks "Subscribe to Team" → new Checkout session → new Stripe subscription → new `invoice.paid` webhook → new row in our `subscriptions` table. Two active subscriptions. Two monthly charges.
@@ -77,73 +77,73 @@ Here's the fixed version. Changed lines are annotated.
 
 ```typescript
 // src/routes/(app)/pricing/+page.server.ts
-import { fail, redirect } from '@sveltejs/kit'
-import { PUBLIC_APP_URL } from '$env/static/public'
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
-import { hasActiveSubscription } from '$lib/utils/access'
-import type { Actions } from './$types'
+import { fail, redirect } from '@sveltejs/kit';
+import { PUBLIC_APP_URL } from '$env/static/public';
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
+import { hasActiveSubscription } from '$lib/utils/access';
+import type { Actions } from './$types';
 
 export const actions: Actions = {
-  subscribe: async ({ locals, request }) => {
-    const user = await locals.getUser()
-    if (!user) redirect(303, '/login')
+	subscribe: async ({ locals, request }) => {
+		const user = await locals.getUser();
+		if (!user) redirect(303, '/login');
 
-    // NEW: block duplicate subscriptions up front.
-    if (await hasActiveSubscription(user.id)) {
-      const portalUrl = await createPortalUrl(user.id)
-      if (!portalUrl) {
-        return fail(500, {
-          error: 'Could not open billing portal. Please try again.'
-        })
-      }
-      redirect(303, portalUrl)
-    }
+		// NEW: block duplicate subscriptions up front.
+		if (await hasActiveSubscription(user.id)) {
+			const portalUrl = await createPortalUrl(user.id);
+			if (!portalUrl) {
+				return fail(500, {
+					error: 'Could not open billing portal. Please try again.'
+				});
+			}
+			redirect(303, portalUrl);
+		}
 
-    const formData = await request.formData()
-    const priceId = formData.get('priceId') as string
+		const formData = await request.formData();
+		const priceId = formData.get('priceId') as string;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer_email: user.email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success`,
-      cancel_url: `${PUBLIC_APP_URL}/pricing`
-    })
+		const session = await stripe.checkout.sessions.create({
+			mode: 'subscription',
+			customer_email: user.email,
+			line_items: [{ price: priceId, quantity: 1 }],
+			success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success`,
+			cancel_url: `${PUBLIC_APP_URL}/pricing`
+		});
 
-    redirect(303, session.url!)
-  },
+		redirect(303, session.url!);
+	},
 
-  manage: async ({ locals }) => {
-    const user = await locals.getUser()
-    if (!user) redirect(303, '/login')
+	manage: async ({ locals }) => {
+		const user = await locals.getUser();
+		if (!user) redirect(303, '/login');
 
-    const portalUrl = await createPortalUrl(user.id)
-    if (!portalUrl) {
-      return fail(500, { error: 'Could not open billing portal.' })
-    }
-    redirect(303, portalUrl)
-  }
-}
+		const portalUrl = await createPortalUrl(user.id);
+		if (!portalUrl) {
+			return fail(500, { error: 'Could not open billing portal.' });
+		}
+		redirect(303, portalUrl);
+	}
+};
 
 async function createPortalUrl(userId: string): Promise<string | null> {
-  // `.maybeSingle()` returns `null` when no row matches (instead of throwing).
-  // A user with no `subscriptions` row is a normal state — don't blow up on it.
-  const { data: sub } = await supabaseAdmin
-    .from('subscriptions')
-    .select('stripe_customer_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .maybeSingle()
+	// `.maybeSingle()` returns `null` when no row matches (instead of throwing).
+	// A user with no `subscriptions` row is a normal state — don't blow up on it.
+	const { data: sub } = await supabaseAdmin
+		.from('subscriptions')
+		.select('stripe_customer_id')
+		.eq('user_id', userId)
+		.limit(1)
+		.maybeSingle();
 
-  if (!sub?.stripe_customer_id) return null
+	if (!sub?.stripe_customer_id) return null;
 
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: sub.stripe_customer_id,
-    return_url: `${PUBLIC_APP_URL}/dashboard`
-  })
+	const portal = await stripe.billingPortal.sessions.create({
+		customer: sub.stripe_customer_id,
+		return_url: `${PUBLIC_APP_URL}/dashboard`
+	});
 
-  return portal.url
+	return portal.url;
 }
 ```
 
@@ -153,11 +153,11 @@ async function createPortalUrl(userId: string): Promise<string | null> {
 
 ```typescript
 if (await hasActiveSubscription(user.id)) {
-  const portalUrl = await createPortalUrl(user.id)
-  if (!portalUrl) {
-    return fail(500, { error: 'Could not open billing portal. Please try again.' })
-  }
-  redirect(303, portalUrl)
+	const portalUrl = await createPortalUrl(user.id);
+	if (!portalUrl) {
+		return fail(500, { error: 'Could not open billing portal. Please try again.' });
+	}
+	redirect(303, portalUrl);
 }
 ```
 
@@ -176,21 +176,21 @@ Plan changes involve proration. If a user on Pro ($10/mo) upgrades to Team ($30/
 
 Doing this in our own code means building proration math, handling invoices, managing edge cases (trial periods, annual plans, tax). The portal does all of it, tested and hosted by Stripe.
 
-The rule: **don't build what the portal gives you for free.** Use Checkout for *initial* sign-ups; use the portal for *every subsequent change*.
+The rule: **don't build what the portal gives you for free.** Use Checkout for _initial_ sign-ups; use the portal for _every subsequent change_.
 
 #### The `manage` action
 
 ```typescript
 manage: async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) redirect(303, '/login')
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
 
-  const portalUrl = await createPortalUrl(user.id)
-  if (!portalUrl) {
-    return fail(500, { error: 'Could not open billing portal.' })
-  }
-  redirect(303, portalUrl)
-}
+	const portalUrl = await createPortalUrl(user.id);
+	if (!portalUrl) {
+		return fail(500, { error: 'Could not open billing portal.' });
+	}
+	redirect(303, portalUrl);
+};
 ```
 
 A named action the UI can post to explicitly. The pricing page's "Manage subscription" button will target `?/manage` to trigger this branch. Reusing `createPortalUrl` keeps the portal-creation logic in one spot.
@@ -199,21 +199,21 @@ A named action the UI can post to explicitly. The pricing page's "Manage subscri
 
 ```typescript
 async function createPortalUrl(userId: string): Promise<string | null> {
-  const { data: sub } = await supabaseAdmin
-    .from('subscriptions')
-    .select('stripe_customer_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .maybeSingle()
+	const { data: sub } = await supabaseAdmin
+		.from('subscriptions')
+		.select('stripe_customer_id')
+		.eq('user_id', userId)
+		.limit(1)
+		.maybeSingle();
 
-  if (!sub?.stripe_customer_id) return null
+	if (!sub?.stripe_customer_id) return null;
 
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: sub.stripe_customer_id,
-    return_url: `${PUBLIC_APP_URL}/dashboard`
-  })
+	const portal = await stripe.billingPortal.sessions.create({
+		customer: sub.stripe_customer_id,
+		return_url: `${PUBLIC_APP_URL}/dashboard`
+	});
 
-  return portal.url
+	return portal.url;
 }
 ```
 
@@ -236,56 +236,50 @@ Assume `+layout.server.ts` already passes `isSubscribed` (from Lesson 10.3). In 
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import type { PageData } from './$types'
+	import { enhance } from '$app/forms';
+	import type { PageData } from './$types';
 
-  let { data }: { data: PageData } = $props()
+	let { data }: { data: PageData } = $props();
 
-  let isSubscribed = $derived(data.isSubscribed)
+	let isSubscribed = $derived(data.isSubscribed);
 </script>
 
-<div class="max-w-4xl mx-auto py-12">
-  <h1 class="text-3xl font-bold mb-2">Pricing</h1>
+<div class="mx-auto max-w-4xl py-12">
+	<h1 class="mb-2 text-3xl font-bold">Pricing</h1>
 
-  {#if isSubscribed}
-    <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-      <h2 class="text-lg font-semibold text-green-900 mb-2">
-        You're on a paid plan
-      </h2>
-      <p class="text-green-800 mb-4">
-        Upgrade, downgrade, update your card, or cancel from your billing portal.
-      </p>
-      <form method="POST" action="?/manage" use:enhance>
-        <button
-          class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg"
-        >
-          Manage Subscription
-        </button>
-      </form>
-    </div>
-  {:else}
-    <p class="text-gray-600 mb-8">
-      Start with 10 free contacts. Upgrade any time for unlimited.
-    </p>
+	{#if isSubscribed}
+		<div class="mb-8 rounded-lg border border-green-200 bg-green-50 p-6">
+			<h2 class="mb-2 text-lg font-semibold text-green-900">You're on a paid plan</h2>
+			<p class="mb-4 text-green-800">
+				Upgrade, downgrade, update your card, or cancel from your billing portal.
+			</p>
+			<form method="POST" action="?/manage" use:enhance>
+				<button class="rounded-lg bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-700">
+					Manage Subscription
+				</button>
+			</form>
+		</div>
+	{:else}
+		<p class="mb-8 text-gray-600">Start with 10 free contacts. Upgrade any time for unlimited.</p>
 
-    <!-- Your existing pricing cards, each with a form posting to ?/subscribe -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Pro plan card -->
-      <form method="POST" action="?/subscribe" use:enhance>
-        <input type="hidden" name="priceId" value={data.proPriceId} />
-        <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium">
-          Subscribe to Pro
-        </button>
-      </form>
-      <!-- Team plan card -->
-      <form method="POST" action="?/subscribe" use:enhance>
-        <input type="hidden" name="priceId" value={data.teamPriceId} />
-        <button class="w-full bg-purple-600 text-white py-3 rounded-lg font-medium">
-          Subscribe to Team
-        </button>
-      </form>
-    </div>
-  {/if}
+		<!-- Your existing pricing cards, each with a form posting to ?/subscribe -->
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+			<!-- Pro plan card -->
+			<form method="POST" action="?/subscribe" use:enhance>
+				<input type="hidden" name="priceId" value={data.proPriceId} />
+				<button class="w-full rounded-lg bg-blue-600 py-3 font-medium text-white">
+					Subscribe to Pro
+				</button>
+			</form>
+			<!-- Team plan card -->
+			<form method="POST" action="?/subscribe" use:enhance>
+				<input type="hidden" name="priceId" value={data.teamPriceId} />
+				<button class="w-full rounded-lg bg-purple-600 py-3 font-medium text-white">
+					Subscribe to Team
+				</button>
+			</form>
+		</div>
+	{/if}
 </div>
 ```
 
@@ -367,7 +361,7 @@ Stripe test mode makes this trivial:
 
 The one-sentence summary of why this lesson exists: **a double-charge is worse than a missed signup.** The CAC you spent to get the user is lost anyway when they churn in fury; plus you get a chargeback, plus Stripe's dispute fee ($15), plus a support ticket that will consume 20 minutes of human time to unwind. Worst case, a Twitter post with your product name in it.
 
-Guard the checkout endpoint. Not because of the unit economics of a single user, but because the cost of *being caught* running this bug is enormous. Every pricing-page redesign, every new plan launch, every regression test should verify this guard still fires.
+Guard the checkout endpoint. Not because of the unit economics of a single user, but because the cost of _being caught_ running this bug is enormous. Every pricing-page redesign, every new plan launch, every regression test should verify this guard still fires.
 
 ### The portal is a product, not a plumbing detail
 
@@ -375,7 +369,7 @@ Many engineering teams treat the Stripe customer portal as a necessary evil — 
 
 What this means in practice: put the "Manage Subscription" link in more places than just the pricing page. Put it in your account settings, in your dashboard footer, in the "failed payment" banner. The easier users can self-serve, the fewer support tickets you handle. Every click into the portal is a click you didn't spend.
 
-Flip side: don't build custom plan-change flows inside your app "for brand consistency." Every custom flow is a proration bug waiting to happen. The portal's UX inconsistency with your app is a fair trade for *correctness*.
+Flip side: don't build custom plan-change flows inside your app "for brand consistency." Every custom flow is a proration bug waiting to happen. The portal's UX inconsistency with your app is a fair trade for _correctness_.
 
 ### Proration math, briefly
 
@@ -390,7 +384,7 @@ If the user is on an **annual** plan, or was in a **trial**, or has **unused cre
 
 ### The one-time + subscription combo edge case
 
-If your product ever sells both subscriptions *and* one-time purchases (e.g., an "annual license" plus a "setup fee"), the portal gets tricky:
+If your product ever sells both subscriptions _and_ one-time purchases (e.g., an "annual license" plus a "setup fee"), the portal gets tricky:
 
 - Portal manages subscription state, not one-time products.
 - If you let users buy a one-time product while subscribed, you need a separate Checkout flow for that product (`mode: 'payment'` instead of `mode: 'subscription'`).
@@ -404,9 +398,9 @@ Stripe recommends idempotency keys for all mutation calls. A POST to `billingPor
 
 ```typescript
 await stripe.billingPortal.sessions.create(
-  { customer: sub.stripe_customer_id, return_url: '...' },
-  { idempotencyKey: `portal-${userId}-${Date.now().toString().slice(0, -3)}` }
-)
+	{ customer: sub.stripe_customer_id, return_url: '...' },
+	{ idempotencyKey: `portal-${userId}-${Date.now().toString().slice(0, -3)}` }
+);
 ```
 
 The `.slice(0, -3)` truncates the timestamp to 1-second granularity — retries within the same second collapse to one session. Perfect for a double-click; a full 24-hour idempotency window would be wrong (the user legitimately needs a new session tomorrow).

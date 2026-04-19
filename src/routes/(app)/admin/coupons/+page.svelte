@@ -19,18 +19,22 @@
 </script>
 
 {#if form?.success}
-	<div class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">
+	<div
+		class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+	>
 		{form.action} succeeded.
 	</div>
 {:else if form && 'error' in form && form.error}
-	<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+	<div
+		class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+	>
 		{form.error}
 	</div>
 {/if}
 
 <div class="grid gap-6 lg:grid-cols-2">
 	<Card>
-		<h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+		<h2 class="mb-3 text-sm font-semibold tracking-wider text-slate-500 uppercase">
 			Create coupon
 		</h2>
 		<form
@@ -139,7 +143,7 @@
 	</Card>
 
 	<Card>
-		<h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+		<h2 class="mb-3 text-sm font-semibold tracking-wider text-slate-500 uppercase">
 			Create promotion code
 		</h2>
 		<form
@@ -192,7 +196,7 @@
 
 <div class="mt-8 grid gap-6 lg:grid-cols-2">
 	<Card>
-		<h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+		<h2 class="mb-3 text-sm font-semibold tracking-wider text-slate-500 uppercase">
 			Coupons ({data.coupons.length})
 		</h2>
 		{#if data.coupons.length === 0}
@@ -206,7 +210,8 @@
 							<div class="text-xs text-slate-500">{c.name ?? '—'} · {describeCoupon(c)}</div>
 						</div>
 						<div class="flex items-center gap-2">
-							<Badge variant={c.valid ? 'success' : 'danger'}>{c.valid ? 'valid' : 'invalid'}</Badge>
+							<Badge variant={c.valid ? 'success' : 'danger'}>{c.valid ? 'valid' : 'invalid'}</Badge
+							>
 							<span class="text-xs text-slate-500">
 								{c.times_redeemed}{c.max_redemptions ? ` / ${c.max_redemptions}` : ''}
 							</span>
@@ -218,7 +223,7 @@
 	</Card>
 
 	<Card>
-		<h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">
+		<h2 class="mb-3 text-sm font-semibold tracking-wider text-slate-500 uppercase">
 			Promotion codes ({data.promotionCodes.length})
 		</h2>
 		{#if data.promotionCodes.length === 0}
@@ -232,7 +237,8 @@
 							<div class="text-xs text-slate-500">→ coupon {p.coupon_id}</div>
 						</div>
 						<div class="flex items-center gap-2">
-							<Badge variant={p.active ? 'success' : 'default'}>{p.active ? 'active' : 'off'}</Badge>
+							<Badge variant={p.active ? 'success' : 'default'}>{p.active ? 'active' : 'off'}</Badge
+							>
 							<span class="text-xs text-slate-500">
 								{p.times_redeemed}{p.max_redemptions ? ` / ${p.max_redemptions}` : ''}
 							</span>

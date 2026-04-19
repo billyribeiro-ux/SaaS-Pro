@@ -23,9 +23,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const totalLessons = CURRICULUM.reduce((sum, mod) => sum + mod.lessons.length, 0);
 
 	// Find the next incomplete lesson in curriculum order — that's the "Resume" target.
-	const completedSet = new Set(
-		completedRows.map((r) => `${r.module_slug}/${r.lesson_slug}`)
-	);
+	const completedSet = new Set(completedRows.map((r) => `${r.module_slug}/${r.lesson_slug}`));
 	let nextLesson: {
 		moduleSlug: string;
 		moduleTitle: string;

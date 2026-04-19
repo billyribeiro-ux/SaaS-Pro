@@ -1,10 +1,10 @@
 ---
-title: "10.2 - Restricting Actions"
+title: '10.2 - Restricting Actions'
 module: 10
 lesson: 2
-moduleSlug: "module-10-access-control"
-lessonSlug: "02-restricting-actions"
-description: "Gate server-side form actions behind subscription checks — free users are limited, paid users get full access."
+moduleSlug: 'module-10-access-control'
+lessonSlug: '02-restricting-actions'
+description: 'Gate server-side form actions behind subscription checks — free users are limited, paid users get full access.'
 duration: 15
 preview: false
 ---
@@ -18,7 +18,7 @@ The gate lives in the server-side form action for "create contact." Before we in
 1. "Does this user have an active subscription?" — if yes, skip all limits.
 2. "Has this free-tier user hit the 10-contact limit?" — if yes, return `fail(403, ...)` with an upgrade message and redirect to `/pricing?upgrade=true`.
 
-It's a small amount of code. The important part is *where* the code lives: exclusively on the server, in the action function, before the insert. We'll unpack why that position matters (and why no amount of client-side UI can substitute for it) in the Principal Engineer Notes.
+It's a small amount of code. The important part is _where_ the code lives: exclusively on the server, in the action function, before the insert. We'll unpack why that position matters (and why no amount of client-side UI can substitute for it) in the Principal Engineer Notes.
 
 ## Prerequisites
 
@@ -65,88 +65,88 @@ Here's the full `+page.server.ts` for `/contacts/new`. We'll walk it after.
 
 ```typescript
 // src/routes/(app)/contacts/new/+page.server.ts
-import { fail, redirect } from '@sveltejs/kit'
-import * as z from 'zod'
-import type { Actions } from './$types'
-import { hasActiveSubscription } from '$lib/utils/access'
+import { fail, redirect } from '@sveltejs/kit';
+import * as z from 'zod';
+import type { Actions } from './$types';
+import { hasActiveSubscription } from '$lib/utils/access';
 
-const FREE_TIER_LIMIT = 10
+const FREE_TIER_LIMIT = 10;
 
 const contactSchema = z.object({
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().min(1, 'Last name is required').max(100),
-  email: z.string().email('Invalid email').or(z.literal('')).optional(),
-  phone: z.string().max(40).optional(),
-  company: z.string().max(200).optional()
-})
+	first_name: z.string().min(1, 'First name is required').max(100),
+	last_name: z.string().min(1, 'Last name is required').max(100),
+	email: z.string().email('Invalid email').or(z.literal('')).optional(),
+	phone: z.string().max(40).optional(),
+	company: z.string().max(200).optional()
+});
 
 export const actions: Actions = {
-  default: async ({ request, locals }) => {
-    const user = await locals.getUser()
-    if (!user) redirect(303, '/login?redirectTo=/contacts/new')
+	default: async ({ request, locals }) => {
+		const user = await locals.getUser();
+		if (!user) redirect(303, '/login?redirectTo=/contacts/new');
 
-    const formData = await request.formData()
-    const raw = {
-      first_name: formData.get('first_name'),
-      last_name: formData.get('last_name'),
-      email: formData.get('email'),
-      phone: formData.get('phone'),
-      company: formData.get('company')
-    }
+		const formData = await request.formData();
+		const raw = {
+			first_name: formData.get('first_name'),
+			last_name: formData.get('last_name'),
+			email: formData.get('email'),
+			phone: formData.get('phone'),
+			company: formData.get('company')
+		};
 
-    const parsed = contactSchema.safeParse(raw)
-    if (!parsed.success) {
-      return fail(400, {
-        error: parsed.error.issues[0]?.message ?? 'Invalid input',
-        data: raw
-      })
-    }
+		const parsed = contactSchema.safeParse(raw);
+		if (!parsed.success) {
+			return fail(400, {
+				error: parsed.error.issues[0]?.message ?? 'Invalid input',
+				data: raw
+			});
+		}
 
-    const isSubscribed = await hasActiveSubscription(user.id)
+		const isSubscribed = await hasActiveSubscription(user.id);
 
-    if (!isSubscribed) {
-      const { count, error: countError } = await locals.supabase
-        .from('contacts')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
+		if (!isSubscribed) {
+			const { count, error: countError } = await locals.supabase
+				.from('contacts')
+				.select('*', { count: 'exact', head: true })
+				.eq('user_id', user.id);
 
-      if (countError) {
-        return fail(500, {
-          error: 'Could not verify your plan limits. Try again.',
-          data: raw
-        })
-      }
+			if (countError) {
+				return fail(500, {
+					error: 'Could not verify your plan limits. Try again.',
+					data: raw
+				});
+			}
 
-      if ((count ?? 0) >= FREE_TIER_LIMIT) {
-        return fail(403, {
-          error: `Free plan is capped at ${FREE_TIER_LIMIT} contacts. Upgrade to add more.`,
-          upgradeRequired: true,
-          upgradeUrl: '/pricing?upgrade=true',
-          data: raw
-        })
-      }
-    }
+			if ((count ?? 0) >= FREE_TIER_LIMIT) {
+				return fail(403, {
+					error: `Free plan is capped at ${FREE_TIER_LIMIT} contacts. Upgrade to add more.`,
+					upgradeRequired: true,
+					upgradeUrl: '/pricing?upgrade=true',
+					data: raw
+				});
+			}
+		}
 
-    const { email, phone, company, ...rest } = parsed.data
+		const { email, phone, company, ...rest } = parsed.data;
 
-    const { error: insertError } = await locals.supabase.from('contacts').insert({
-      user_id: user.id,
-      ...rest,
-      email: email && email !== '' ? email : null,
-      phone: phone && phone !== '' ? phone : null,
-      company: company && company !== '' ? company : null
-    })
+		const { error: insertError } = await locals.supabase.from('contacts').insert({
+			user_id: user.id,
+			...rest,
+			email: email && email !== '' ? email : null,
+			phone: phone && phone !== '' ? phone : null,
+			company: company && company !== '' ? company : null
+		});
 
-    if (insertError) {
-      return fail(500, {
-        error: 'Failed to create contact. Please try again.',
-        data: raw
-      })
-    }
+		if (insertError) {
+			return fail(500, {
+				error: 'Failed to create contact. Please try again.',
+				data: raw
+			});
+		}
 
-    redirect(303, '/contacts')
-  }
-}
+		redirect(303, '/contacts');
+	}
+};
 ```
 
 ### Line-by-line breakdown of the new pieces
@@ -154,9 +154,9 @@ export const actions: Actions = {
 #### Import and constant
 
 ```typescript
-import { hasActiveSubscription } from '$lib/utils/access'
+import { hasActiveSubscription } from '$lib/utils/access';
 
-const FREE_TIER_LIMIT = 10
+const FREE_TIER_LIMIT = 10;
 ```
 
 `FREE_TIER_LIMIT = 10` is a constant, not a config option (yet). When you later want to A/B-test different tier caps, you'd move this to an environment variable or a feature flag. For now, literal `10` is honest — no magic-number false flexibility.
@@ -166,8 +166,8 @@ The constant is defined at module top-level, not inside the action. That makes i
 #### Authentication guard
 
 ```typescript
-const user = await locals.getUser()
-if (!user) redirect(303, '/login?redirectTo=/contacts/new')
+const user = await locals.getUser();
+if (!user) redirect(303, '/login?redirectTo=/contacts/new');
 ```
 
 Same as every server action: authenticate before doing anything else. If no user, bounce to login with a `redirectTo` so they come back to `/contacts/new` after authenticating. Progressive enhancement: the browser's native redirect works even if JS is disabled.
@@ -175,7 +175,7 @@ Same as every server action: authenticate before doing anything else. If no user
 #### Subscription check — **after** validation, **before** the count
 
 ```typescript
-const isSubscribed = await hasActiveSubscription(user.id)
+const isSubscribed = await hasActiveSubscription(user.id);
 ```
 
 Why after validation? Because we want to fail fast on bad input without making any DB calls — a user spamming the endpoint with garbage shouldn't trigger a subscription lookup.
@@ -186,14 +186,15 @@ Why before the count? Because counting is the expensive operation (scans the con
 
 ```typescript
 const { count, error: countError } = await locals.supabase
-  .from('contacts')
-  .select('*', { count: 'exact', head: true })
-  .eq('user_id', user.id)
+	.from('contacts')
+	.select('*', { count: 'exact', head: true })
+	.eq('user_id', user.id);
 ```
 
 Three decisions packed in here.
 
 **`count: 'exact'`.** Supabase offers three count modes:
+
 - `exact` — Postgres does a `COUNT(*)` with a real scan. Accurate but cost grows with row count.
 - `planned` — returns the planner's estimate. Fast but can be wildly off for small tables.
 - `estimated` — a hybrid.
@@ -208,10 +209,10 @@ We use `exact` because we need the count to be right at the boundary (9 vs 10). 
 
 ```typescript
 if (countError) {
-  return fail(500, {
-    error: 'Could not verify your plan limits. Try again.',
-    data: raw
-  })
+	return fail(500, {
+		error: 'Could not verify your plan limits. Try again.',
+		data: raw
+	});
 }
 ```
 
@@ -223,12 +224,12 @@ If the count query fails for any reason (network, DB pool exhausted, RLS misconf
 
 ```typescript
 if ((count ?? 0) >= FREE_TIER_LIMIT) {
-  return fail(403, {
-    error: `Free plan is capped at ${FREE_TIER_LIMIT} contacts. Upgrade to add more.`,
-    upgradeRequired: true,
-    upgradeUrl: '/pricing?upgrade=true',
-    data: raw
-  })
+	return fail(403, {
+		error: `Free plan is capped at ${FREE_TIER_LIMIT} contacts. Upgrade to add more.`,
+		upgradeRequired: true,
+		upgradeUrl: '/pricing?upgrade=true',
+		data: raw
+	});
 }
 ```
 
@@ -247,15 +248,15 @@ The payload includes three specific fields:
 #### The insert (unchanged from Module 4)
 
 ```typescript
-const { email, phone, company, ...rest } = parsed.data
+const { email, phone, company, ...rest } = parsed.data;
 
 const { error: insertError } = await locals.supabase.from('contacts').insert({
-  user_id: user.id,
-  ...rest,
-  email: email && email !== '' ? email : null,
-  phone: phone && phone !== '' ? phone : null,
-  company: company && company !== '' ? company : null
-})
+	user_id: user.id,
+	...rest,
+	email: email && email !== '' ? email : null,
+	phone: phone && phone !== '' ? phone : null,
+	company: company && company !== '' ? company : null
+});
 ```
 
 The empty-string → null conversion for optional fields is still the right pattern — `email = ''` in the database is a lie ("the user has an email, and it's the empty string"). `null` is the truth ("the user has no email").
@@ -265,7 +266,7 @@ The empty-string → null conversion for optional fields is still the right patt
 #### The redirect
 
 ```typescript
-redirect(303, '/contacts')
+redirect(303, '/contacts');
 ```
 
 On success, `303 See Other` sends the user to the contacts list, using a GET request. POST/Redirect/GET: refresh doesn't duplicate the contact, browser history is clean.
@@ -279,34 +280,34 @@ The action returns rich error payloads; the page needs to render them. Update `s
 ```svelte
 <!-- src/routes/(app)/contacts/new/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import type { ActionData } from './$types'
+	import { enhance } from '$app/forms';
+	import type { ActionData } from './$types';
 
-  let { form }: { form: ActionData } = $props()
+	let { form }: { form: ActionData } = $props();
 </script>
 
-<div class="max-w-xl mx-auto py-8">
-  <h1 class="text-2xl font-bold mb-6">New contact</h1>
+<div class="mx-auto max-w-xl py-8">
+	<h1 class="mb-6 text-2xl font-bold">New contact</h1>
 
-  {#if form?.upgradeRequired}
-    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-      <p class="font-semibold text-amber-900">{form.error}</p>
-      <a
-        href={form.upgradeUrl}
-        class="inline-block mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-      >
-        Upgrade to Pro →
-      </a>
-    </div>
-  {:else if form?.error}
-    <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">
-      {form.error}
-    </div>
-  {/if}
+	{#if form?.upgradeRequired}
+		<div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+			<p class="font-semibold text-amber-900">{form.error}</p>
+			<a
+				href={form.upgradeUrl}
+				class="mt-3 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+			>
+				Upgrade to Pro →
+			</a>
+		</div>
+	{:else if form?.error}
+		<div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+			{form.error}
+		</div>
+	{/if}
 
-  <form method="POST" use:enhance>
-    <!-- your existing fields here -->
-  </form>
+	<form method="POST" use:enhance>
+		<!-- your existing fields here -->
+	</form>
 </div>
 ```
 
@@ -323,15 +324,15 @@ The server sends the user to `/pricing?upgrade=true`. That page already exists (
 ```svelte
 <!-- src/routes/(app)/pricing/+page.svelte (snippet) -->
 <script lang="ts">
-  import { page } from '$app/state'
+	import { page } from '$app/state';
 
-  let showUpgradeBanner = $derived(page.url.searchParams.get('upgrade') === 'true')
+	let showUpgradeBanner = $derived(page.url.searchParams.get('upgrade') === 'true');
 </script>
 
 {#if showUpgradeBanner}
-  <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-blue-900">
-    You've hit your free plan's contact limit. Pick a plan below to keep adding.
-  </div>
+	<div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-900">
+		You've hit your free plan's contact limit. Pick a plan below to keep adding.
+	</div>
 {/if}
 ```
 
@@ -382,7 +383,7 @@ There is exactly one place in the flow that truly enforces this limit: the serve
 
 Every time you think "I'll just hide the button in the client," ask: can a curl command still create the row? If yes, you don't have a gate; you have a suggestion. The server action is the gate.
 
-This is why Lesson 10.3 builds client-side UI *on top of* the server gate, not instead of it. UI makes the paid tier's value visible and the free tier's walls polite. The server makes the walls real.
+This is why Lesson 10.3 builds client-side UI _on top of_ the server gate, not instead of it. UI makes the paid tier's value visible and the free tier's walls polite. The server makes the walls real.
 
 ### Fail-closed posture
 
@@ -395,7 +396,7 @@ The alternative — "if we can't verify, assume paid" — is the move that break
 Every time the 403 branch fires, log it:
 
 ```typescript
-console.log({ event: 'free_tier_limit_hit', userId: user.id, count })
+console.log({ event: 'free_tier_limit_hit', userId: user.id, count });
 ```
 
 That event has two uses:

@@ -1,10 +1,10 @@
 ---
-title: "1.2 - Supabase Local Development"
+title: '1.2 - Supabase Local Development'
 module: 1
 lesson: 2
-moduleSlug: "module-01-project-setup"
-lessonSlug: "02-supabase-local-development"
-description: "Set up a complete local Supabase development environment using Docker and the Supabase CLI."
+moduleSlug: 'module-01-project-setup'
+lessonSlug: '02-supabase-local-development'
+description: 'Set up a complete local Supabase development environment using Docker and the Supabase CLI.'
 duration: 15
 preview: false
 ---
@@ -24,6 +24,7 @@ If you're new to coding, "running a database on your computer" may sound intimid
 ## What You'll Build
 
 After this lesson:
+
 - A full Supabase stack runs locally at `http://localhost:54321` (the API).
 - Supabase Studio — a visual database admin panel — runs at `http://localhost:54323`.
 - Your `.env` file contains real local credentials.
@@ -45,12 +46,12 @@ A **database** is a program whose only job is to store structured data — rows 
 
 Building a SaaS app requires more than just a database. You also need:
 
-| Problem | Without Supabase | With Supabase |
-|---|---|---|
-| "Let users sign up and log in" | Write your own auth server, hash passwords, handle password reset flows, manage OAuth. | Call `supabase.auth.signUp()`. |
-| "Let users upload avatars" | Set up S3, write upload endpoints, manage permissions. | Call `supabase.storage.from('avatars').upload()`. |
-| "Push live updates to all connected clients" | Run a WebSocket server, broadcast changes. | Subscribe to a Postgres table. |
-| "Secure each user's data" | Custom middleware in every route. | Row Level Security policies. |
+| Problem                                      | Without Supabase                                                                       | With Supabase                                     |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| "Let users sign up and log in"               | Write your own auth server, hash passwords, handle password reset flows, manage OAuth. | Call `supabase.auth.signUp()`.                    |
+| "Let users upload avatars"                   | Set up S3, write upload endpoints, manage permissions.                                 | Call `supabase.storage.from('avatars').upload()`. |
+| "Push live updates to all connected clients" | Run a WebSocket server, broadcast changes.                                             | Subscribe to a Postgres table.                    |
+| "Secure each user's data"                    | Custom middleware in every route.                                                      | Row Level Security policies.                      |
 
 Supabase packages all of this into one product, built around PostgreSQL, and makes it runnable locally via Docker — which is what we're setting up now.
 
@@ -65,6 +66,7 @@ A **container** is a sealed, self-contained mini-computer that runs a specific p
 **Docker** is the most common tool for running containers. **Docker Desktop** is Docker packaged with a friendly app for macOS and Windows.
 
 When you run `supabase start`, Docker:
+
 1. Downloads pre-built container images for Postgres, the auth server, storage, etc. (About 1.5 GB the first time — faster afterwards because they're cached.)
 2. Starts each as an isolated container.
 3. Connects them together with an internal virtual network.
@@ -101,6 +103,7 @@ pnpm add -D supabase
 ```
 
 **Reading that command:**
+
 - `pnpm` — our package manager.
 - `add` — add a new dependency.
 - `-D` (short for `--save-dev`) — add it as a **dev** dependency. Dev dependencies are tools only needed during development and building, not when the live app runs in production. The CLI is a build tool; it's a dev dependency.
@@ -177,23 +180,23 @@ service_role key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ...
 
 A **port** is a numbered channel on your computer for network traffic. Your browser talks to `localhost:5173` for your SvelteKit app; Supabase listens on different ports to avoid conflicts.
 
-| URL | Purpose |
-|---|---|
-| **`localhost:54321`** | The unified API endpoint. Your app sends queries, auth requests, and storage calls here. Like a front door for all Supabase services. |
-| `localhost:54321/graphql/v1` | A GraphQL alternative to the REST API. We don't use GraphQL in this course, but it's there if you want it. |
-| `localhost:54321/storage/v1/s3` | An S3-compatible interface to the storage service — lets you use existing AWS S3 tools. |
-| **`localhost:54322`** | Direct PostgreSQL access. Use this with database tools like `psql`, TablePlus, or DataGrip to connect directly. You rarely need this; queries usually go through the API. |
-| **`localhost:54323`** | **Supabase Studio** — the visual admin panel. Open this in your browser to see tables, run SQL, manage users. |
-| **`localhost:54324`** | **Inbucket** — a fake email inbox. Supabase sends all auth emails (signup confirmation, password reset) here locally so you can read them without setting up real email. A game-changer for development. |
+| URL                             | Purpose                                                                                                                                                                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`localhost:54321`**           | The unified API endpoint. Your app sends queries, auth requests, and storage calls here. Like a front door for all Supabase services.                                                                    |
+| `localhost:54321/graphql/v1`    | A GraphQL alternative to the REST API. We don't use GraphQL in this course, but it's there if you want it.                                                                                               |
+| `localhost:54321/storage/v1/s3` | An S3-compatible interface to the storage service — lets you use existing AWS S3 tools.                                                                                                                  |
+| **`localhost:54322`**           | Direct PostgreSQL access. Use this with database tools like `psql`, TablePlus, or DataGrip to connect directly. You rarely need this; queries usually go through the API.                                |
+| **`localhost:54323`**           | **Supabase Studio** — the visual admin panel. Open this in your browser to see tables, run SQL, manage users.                                                                                            |
+| **`localhost:54324`**           | **Inbucket** — a fake email inbox. Supabase sends all auth emails (signup confirmation, password reset) here locally so you can read them without setting up real email. A game-changer for development. |
 
 ### What Each Key Is
 
 Both keys are **JWTs** — JSON Web Tokens, a format for signed payloads. They're long because they contain a header, a claim set, and a cryptographic signature, all base64-encoded.
 
-| Key | What it can do |
-|---|---|
-| **`anon key`** | The public key. Safe to include in your browser JavaScript. When a logged-in user makes a request, the anon key tells the database "this request is authenticated" — but **Row Level Security (RLS) policies still apply**. Without RLS, the anon key would let anyone read everything; with RLS, it's safe. |
-| **`service_role key`** | The admin key. Bypasses **all** RLS policies. Must live only on the server. **Never include it in browser code.** Anyone with this key has full control of your database. |
+| Key                    | What it can do                                                                                                                                                                                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`anon key`**         | The public key. Safe to include in your browser JavaScript. When a logged-in user makes a request, the anon key tells the database "this request is authenticated" — but **Row Level Security (RLS) policies still apply**. Without RLS, the anon key would let anyone read everything; with RLS, it's safe. |
+| **`service_role key`** | The admin key. Bypasses **all** RLS policies. Must live only on the server. **Never include it in browser code.** Anyone with this key has full control of your database.                                                                                                                                    |
 
 For local development, the anon and service_role keys are fixed values — every Supabase local install produces the same two keys. They're not secret. But production keys are absolutely secret; treat them accordingly.
 
@@ -286,21 +289,21 @@ Open `package.json` and find the `scripts` block. Replace it (or merge) with:
 
 ```json
 {
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint": "prettier --check . && eslint .",
-    "format": "prettier --write .",
-    "test:e2e": "playwright test",
-    "db:start": "supabase start",
-    "db:stop": "supabase stop",
-    "db:reset": "supabase db reset",
-    "db:status": "supabase status",
-    "db:types": "supabase gen types typescript --local > src/lib/types/database.types.ts"
-  }
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"test:e2e": "playwright test",
+		"db:start": "supabase start",
+		"db:stop": "supabase stop",
+		"db:reset": "supabase db reset",
+		"db:status": "supabase status",
+		"db:types": "supabase gen types typescript --local > src/lib/types/database.types.ts"
+	}
 }
 ```
 
@@ -321,13 +324,13 @@ pnpm db:stop     # Stop at end of day
 
 1. **Local-first development is a productivity multiplier.** The cost of setting it up (one afternoon) is paid back every hour you develop afterwards. Teams that do all development against staging environments pay compounding overhead every day.
 
-2. **Environment parity matters but is not binary.** Your local Supabase stack is *nearly* identical to production — same Postgres version, same API layer, same auth flows. There are still small differences (e.g., production has real email delivery, rate limits, backups). Never assume "local works" means "production works." You still test in staging before shipping.
+2. **Environment parity matters but is not binary.** Your local Supabase stack is _nearly_ identical to production — same Postgres version, same API layer, same auth flows. There are still small differences (e.g., production has real email delivery, rate limits, backups). Never assume "local works" means "production works." You still test in staging before shipping.
 
 3. **Docker is the abstraction boundary.** Your host machine can be macOS, Linux, or Windows — Docker hides that difference. The containers are the same on every developer's laptop and on the CI server. If something works in CI but not locally (or vice versa), suspect `.env` or network differences first, Docker differences last.
 
 4. **Never make schema changes through Studio in a real project.** Studio is for reading data and testing queries. Schema changes go through migration files — commits in git, reviewed in PRs, applied uniformly in every environment. Click-driven schema changes are invisible to your team, unreplayable, and a common cause of "works on my machine" bugs.
 
-5. **The `anon key` / `service_role key` distinction is the center of Supabase's security model.** Learn the rule now: *the anon key goes to the browser; the service_role key stays on the server.* Forgetting this rule even once — in a console.log, a committed config file, or an error message — can compromise your entire database.
+5. **The `anon key` / `service_role key` distinction is the center of Supabase's security model.** Learn the rule now: _the anon key goes to the browser; the service_role key stays on the server._ Forgetting this rule even once — in a console.log, a committed config file, or an error message — can compromise your entire database.
 
 ---
 

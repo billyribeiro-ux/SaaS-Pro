@@ -1,9 +1,9 @@
 ---
-title: "Introduction"
+title: 'Introduction'
 module: 0
 lesson: 0
-moduleSlug: "module-00-introduction"
-lessonSlug: "00-introduction"
+moduleSlug: 'module-00-introduction'
+lessonSlug: '00-introduction'
 description: "Welcome to SaaS-Pro. What this course is, what you'll build, and the stack you'll ship on."
 duration: 3
 preview: true

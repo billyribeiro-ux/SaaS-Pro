@@ -13,14 +13,7 @@
 		footer?: Snippet;
 	};
 
-	let {
-		open = $bindable(),
-		onClose,
-		title,
-		class: className,
-		children,
-		footer
-	}: Props = $props();
+	let { open = $bindable(), onClose, title, class: className, children, footer }: Props = $props();
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' && open) onClose();
@@ -59,7 +52,9 @@
 			transition:scale={{ duration: 220, start: 0.96, opacity: 0 }}
 		>
 			{#if title}
-				<div class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+				<div
+					class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+				>
 					<h2 id="modal-title" class="text-base font-semibold tracking-tight">{title}</h2>
 					<button
 						type="button"
@@ -75,7 +70,9 @@
 				{@render children()}
 			</div>
 			{#if footer}
-				<div class="flex justify-end gap-2 border-t border-slate-200 px-6 py-4 dark:border-slate-800">
+				<div
+					class="flex justify-end gap-2 border-t border-slate-200 px-6 py-4 dark:border-slate-800"
+				>
 					{@render footer()}
 				</div>
 			{/if}

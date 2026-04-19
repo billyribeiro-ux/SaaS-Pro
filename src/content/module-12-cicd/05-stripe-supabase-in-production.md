@@ -1,10 +1,10 @@
 ---
-title: "12.5 - Stripe & Supabase in Production"
+title: '12.5 - Stripe & Supabase in Production'
 module: 12
 lesson: 5
-moduleSlug: "module-12-cicd"
-lessonSlug: "05-stripe-supabase-in-production"
-description: "Register your production webhook endpoint in Stripe and configure production API keys."
+moduleSlug: 'module-12-cicd'
+lessonSlug: '05-stripe-supabase-in-production'
+description: 'Register your production webhook endpoint in Stripe and configure production API keys.'
 duration: 15
 preview: false
 ---
@@ -16,6 +16,7 @@ Contactly currently accepts subscriptions — using Stripe's **test** keys. In t
 This lesson flips the switch. By the end, a real customer on your production URL can enter a real credit card, Stripe charges them for real, your Supabase database records the subscription, and your webhook handler stays in sync with reality. Contactly becomes a revenue-generating product.
 
 Three concrete tasks:
+
 1. Register a **production** webhook endpoint with Stripe, pointing at your production Vercel URL.
 2. Copy the new **live-mode** API keys and webhook signing secret into Vercel's environment variables.
 3. Verify end-to-end that a card payment on production updates Supabase correctly.
@@ -103,6 +104,7 @@ This is where you pick exactly which events Stripe sends you. Click **Select eve
 Select exactly these six. Don't over-subscribe; every extra event type means more webhook deliveries, more code paths to maintain, and more surface area for bugs.
 
 Why not subscribe to "all events"? Because:
+
 1. Stripe retries failed webhooks; more events = more retries = more noise.
 2. New event types get added over time; the list bloats.
 3. Your handler becomes a giant switch on every possible event.
@@ -164,16 +166,19 @@ Go to your Vercel project → **Settings** → **Environment Variables**.
 Three variables to update — edit (don't add new) each one and change the **Production** value only:
 
 ### `STRIPE_SECRET_KEY`
+
 - Production: `sk_live_...` (just grabbed)
 - Preview: leave as `sk_test_...` (so PR previews don't charge real cards)
 - Development: leave as `sk_test_...`
 
 ### `PUBLIC_STRIPE_PUBLISHABLE_KEY`
+
 - Production: `pk_live_...` (just grabbed)
 - Preview: `pk_test_...`
 - Development: `pk_test_...`
 
 ### `STRIPE_WEBHOOK_SECRET`
+
 - Production: `whsec_...` (from step 4 — the production webhook secret)
 - Preview: leave as the test-mode webhook secret
 - Development: leave as the test-mode webhook secret (or your local Stripe CLI webhook secret)
@@ -214,6 +219,7 @@ Use a real card (your own). Go to your production URL, register a test account, 
 3. Your Stripe Dashboard's **Payments** tab showing a real charge.
 
 If any of those three are missing, **stop and diagnose before taking down the endpoint**. Common causes:
+
 - Webhook signature verification failed — usually because `STRIPE_WEBHOOK_SECRET` was set to the test webhook's secret, not the live one. Fix and redeploy.
 - Wrong API version pinned — fields in the event don't match code expectations. Align the dashboard webhook version to `'2026-03-25.dahlia'`.
 - Supabase write fails (RLS, constraint error) — check the function logs for the specific error. Fix the code or migration, redeploy.
@@ -241,6 +247,7 @@ Congratulations. Contactly is a real paid product.
 The Stripe API version pinned on your webhook endpoint is a piece of infrastructure. Think of it like the schema version of a contract between two services. Upgrading it is a coordinated release, not a click.
 
 The correct upgrade flow:
+
 1. Add support for the **new** version in your handler code (defensively handle both old and new payload shapes).
 2. Deploy the updated code to production.
 3. In the Stripe dashboard, upgrade the webhook endpoint's API version.
@@ -265,6 +272,7 @@ For Contactly today, Stripe's 30-day view is sufficient. When you have 100 payin
 We mentioned restricted keys briefly. The principle: your main `sk_live_...` key can do everything, including things Contactly never does (issue refunds from API, create products, delete customers). Creating a restricted key that can only do what the app actually needs is a compensating control against token theft.
 
 Set up three restricted keys:
+
 - **App runtime key** — read/write on `customers, subscriptions, checkout.sessions, invoices`. Everything else: none.
 - **Webhook verification key** — read-only on `events`. Nothing else.
 - **Admin scripts key** — read-write on `customers, subscriptions, refunds`. Kept in a password manager, not environment variables. Used only when manually fixing something.

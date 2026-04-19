@@ -1,10 +1,10 @@
 ---
-title: "12.6 - Production URL Updates"
+title: '12.6 - Production URL Updates'
 module: 12
 lesson: 6
-moduleSlug: "module-12-cicd"
-lessonSlug: "06-production-url-updates"
-description: "Update all URLs that reference localhost to point to your production domain."
+moduleSlug: 'module-12-cicd'
+lessonSlug: '06-production-url-updates'
+description: 'Update all URLs that reference localhost to point to your production domain.'
 duration: 8
 preview: false
 ---
@@ -42,6 +42,7 @@ Before touching anything, understand the pattern you're enforcing.
 Contactly's code has exactly one absolute URL: `PUBLIC_APP_URL`. Everything else is a path built on top of it. Your Stripe success URL is `${PUBLIC_APP_URL}/billing/success`. Your password-reset email link is `${PUBLIC_APP_URL}/auth/reset-password?token=...`. Your Supabase OAuth redirect is `${PUBLIC_APP_URL}/auth/callback`.
 
 This indirection matters because absolute URLs appear in **many** places:
+
 - SvelteKit's `+page.server.ts` constructing Stripe Checkout URLs
 - Email templates (password reset, verify account, billing receipts)
 - Supabase Auth's redirect validation (prevents open-redirect attacks)
@@ -110,19 +111,19 @@ Vercel provides `VERCEL_URL` automatically for preview deploys — the current d
 
 ```typescript
 // src/lib/server/app-url.ts
-import { PUBLIC_APP_URL } from '$env/static/public'
-import { env } from '$env/dynamic/private'
+import { PUBLIC_APP_URL } from '$env/static/public';
+import { env } from '$env/dynamic/private';
 
 export function getAppUrl(): string {
-  // Vercel sets VERCEL_URL on preview deploys (and production, but we prefer
-  // the explicit PUBLIC_APP_URL in production for stability).
-  if (env.VERCEL_ENV === 'production') {
-    return PUBLIC_APP_URL
-  }
-  if (env.VERCEL_URL) {
-    return `https://${env.VERCEL_URL}`
-  }
-  return PUBLIC_APP_URL || 'http://localhost:5173'
+	// Vercel sets VERCEL_URL on preview deploys (and production, but we prefer
+	// the explicit PUBLIC_APP_URL in production for stability).
+	if (env.VERCEL_ENV === 'production') {
+		return PUBLIC_APP_URL;
+	}
+	if (env.VERCEL_URL) {
+		return `https://${env.VERCEL_URL}`;
+	}
+	return PUBLIC_APP_URL || 'http://localhost:5173';
 }
 ```
 
@@ -164,8 +165,8 @@ http://localhost:5173/**
 Walk through each:
 
 - **`https://contactly.app`** — exact match for the production domain origin.
-- **`https://contactly.app/**`** — any path under your production domain.
-- **`https://*.vercel.app/**`** — any Vercel preview URL. Without this, preview deploys can't complete auth flows because Supabase refuses to redirect to them. The `*` wildcard covers any preview subdomain.
+- **`https://contactly.app/**`\*\* — any path under your production domain.
+- **`https://\*.vercel.app/**`** — any Vercel preview URL. Without this, preview deploys can't complete auth flows because Supabase refuses to redirect to them. The `\*` wildcard covers any preview subdomain.
 - **`http://localhost:5173`** and **`http://localhost:5173/**`** — allows local dev. Critical; otherwise `pnpm dev` breaks because Supabase refuses to redirect back to localhost.
 
 You can also add specific staging domains if you have them. Aim to be **specific enough to be safe, inclusive enough to cover all real environments**.
@@ -184,22 +185,22 @@ Your Stripe Checkout session creation code should be constructing success and ca
 
 ```typescript
 // src/routes/api/checkout/+server.ts
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '$env/static/private'
-import { getAppUrl } from '$lib/server/app-url'
+import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
+import { getAppUrl } from '$lib/server/app-url';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 
 export async function POST({ request }) {
-  const appUrl = getAppUrl()
-  const session = await stripe.checkout.sessions.create({
-    // ... other params
-    success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/billing`,
-  })
-  // ...
+	const appUrl = getAppUrl();
+	const session = await stripe.checkout.sessions.create({
+		// ... other params
+		success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+		cancel_url: `${appUrl}/billing`
+	});
+	// ...
 }
 ```
 
@@ -275,11 +276,13 @@ The 12-Factor App manifesto (Heroku, ~2011) codified this. It's still the gold s
 The surface-level rule ("never hardcode URLs, use env vars") is taught early. The senior-level insight is **why** — and when to break it.
 
 You use `PUBLIC_APP_URL` because:
+
 1. The same code runs in three environments. Each needs a different URL.
 2. Domains change. You might rebrand from Contactly to ContactPro in a year. Custom domains get added and removed. One env var change is cheaper than a codebase-wide find-and-replace.
 3. The URL is a contract with external systems (Stripe, Supabase). Changing it requires updating them too; centralizing makes the dependency graph visible.
 
 You **don't** use `PUBLIC_APP_URL` for:
+
 1. Relative same-origin fetches. `fetch('/api/contacts')` is simpler and faster than `fetch(PUBLIC_APP_URL + '/api/contacts')`. Browsers resolve same-origin relative URLs correctly.
 2. Static assets handled by the framework. SvelteKit's `$app/paths` provides `base` and `assets` for the asset path, which handles CDN prefixes correctly.
 3. URLs that don't need to be external-facing (admin tools, internal webhooks).

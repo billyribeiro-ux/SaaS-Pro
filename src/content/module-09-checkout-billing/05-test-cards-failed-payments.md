@@ -1,10 +1,10 @@
 ---
-title: "9.5 - Test Cards & Failed Payments"
+title: '9.5 - Test Cards & Failed Payments'
 module: 9
 lesson: 5
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "05-test-cards-failed-payments"
-description: "Test all payment scenarios using Stripe test cards and handle failed payments gracefully."
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '05-test-cards-failed-payments'
+description: 'Test all payment scenarios using Stripe test cards and handle failed payments gracefully.'
 duration: 10
 preview: false
 ---
@@ -40,41 +40,41 @@ Every test card below works only in test-mode (keys starting with `sk_test_`, `p
 
 ### Success
 
-| Card number | Behavior |
-|---|---|
-| `4242 4242 4242 4242` | Basic success. The universal test card. |
-| `4000 0566 5566 5556` | Success (Visa debit). |
-| `5555 5555 5555 4444` | Success (Mastercard). |
-| `3782 822463 10005` | Success (American Express). 4-digit CVV. |
-| `6011 1111 1111 1117` | Success (Discover). |
+| Card number           | Behavior                                 |
+| --------------------- | ---------------------------------------- |
+| `4242 4242 4242 4242` | Basic success. The universal test card.  |
+| `4000 0566 5566 5556` | Success (Visa debit).                    |
+| `5555 5555 5555 4444` | Success (Mastercard).                    |
+| `3782 822463 10005`   | Success (American Express). 4-digit CVV. |
+| `6011 1111 1111 1117` | Success (Discover).                      |
 
 ### Declines — generic
 
-| Card number | Behavior |
-|---|---|
-| `4000 0000 0000 0002` | Card declined. Generic decline, no further info. |
-| `4000 0000 0000 9995` | Insufficient funds. Dunning often recovers these. |
+| Card number           | Behavior                                                     |
+| --------------------- | ------------------------------------------------------------ |
+| `4000 0000 0000 0002` | Card declined. Generic decline, no further info.             |
+| `4000 0000 0000 9995` | Insufficient funds. Dunning often recovers these.            |
 | `4000 0000 0000 9987` | Lost card. Usually doesn't recover without user updating PM. |
-| `4000 0000 0000 9979` | Stolen card. Don't recover. Fraud flag. |
-| `4000 0000 0000 0069` | Expired card. Recovers when user updates PM. |
-| `4000 0000 0000 0127` | Incorrect CVC. Legit card, wrong CVV — user re-enters. |
-| `4000 0000 0000 0119` | Processing error. Retry usually works. |
+| `4000 0000 0000 9979` | Stolen card. Don't recover. Fraud flag.                      |
+| `4000 0000 0000 0069` | Expired card. Recovers when user updates PM.                 |
+| `4000 0000 0000 0127` | Incorrect CVC. Legit card, wrong CVV — user re-enters.       |
+| `4000 0000 0000 0119` | Processing error. Retry usually works.                       |
 
 ### 3-D Secure / authentication required
 
-| Card number | Behavior |
-|---|---|
+| Card number           | Behavior                                                       |
+| --------------------- | -------------------------------------------------------------- |
 | `4000 0025 0000 3155` | Requires 3DS authentication. Checkout pops the auth challenge. |
-| `4000 0027 6000 3184` | Requires 3DS, authentication fails. |
-| `4000 0082 6000 3178` | Requires 3DS, insufficient funds after authentication. |
+| `4000 0027 6000 3184` | Requires 3DS, authentication fails.                            |
+| `4000 0082 6000 3178` | Requires 3DS, insufficient funds after authentication.         |
 
 ### Risk scoring / Radar
 
-| Card number | Behavior |
-|---|---|
+| Card number           | Behavior                              |
+| --------------------- | ------------------------------------- |
 | `4100 0000 0000 0019` | Always blocked by Radar (fraudulent). |
-| `4000 0000 0000 0101` | CVC check fails. |
-| `4000 0000 0000 0010` | AVS check fails. |
+| `4000 0000 0000 0101` | CVC check fails.                      |
+| `4000 0000 0000 0010` | AVS check fails.                      |
 
 Full reference: [stripe.com/docs/testing](https://stripe.com/docs/testing).
 
@@ -87,10 +87,10 @@ Example in a script:
 
 ```typescript
 await stripe.subscriptions.create({
-  customer: customer.id,
-  items: [{ price: priceId }],
-  default_payment_method: 'pm_card_chargeDeclined'
-})
+	customer: customer.id,
+	items: [{ price: priceId }],
+	default_payment_method: 'pm_card_chargeDeclined'
+});
 // Advancing past billing date will trigger `invoice.payment_failed`.
 ```
 
@@ -130,7 +130,7 @@ Key fields you'll use:
 - **`subscription`** — to locate the related subscription in your DB.
 - **`attempt_count`** — which retry this is (1, 2, 3, 4). Stripe does up to 4 retries by default.
 - **`next_payment_attempt`** — when the next retry will happen (null on final failure).
-- **`payment_intent`** — the payment intent object has more detail on *why* it failed (`last_payment_error.decline_code`, `last_payment_error.message`).
+- **`payment_intent`** — the payment intent object has more detail on _why_ it failed (`last_payment_error.decline_code`, `last_payment_error.message`).
 - **`hosted_invoice_url`** — a Stripe-hosted page where the user can view and pay the invoice. Send this in emails.
 
 ---
@@ -180,7 +180,7 @@ case 'invoice.payment_failed': {
 }
 ```
 
-Why we re-fetch the subscription instead of trusting the invoice: `invoice.payment_failed` fires *before* `customer.subscription.updated`. The invoice object's embedded subscription state can be slightly stale. Retrieving fresh ensures we persist the authoritative status.
+Why we re-fetch the subscription instead of trusting the invoice: `invoice.payment_failed` fires _before_ `customer.subscription.updated`. The invoice object's embedded subscription state can be slightly stale. Retrieving fresh ensures we persist the authoritative status.
 
 ---
 
@@ -196,23 +196,23 @@ Wire this in `src/routes/(app)/+layout.server.ts` (or wherever your authenticate
 
 ```typescript
 // src/routes/(app)/+layout.server.ts
-import type { LayoutServerLoad } from './$types'
-import { supabaseAdmin } from '$server/supabase'
+import type { LayoutServerLoad } from './$types';
+import { supabaseAdmin } from '$server/supabase';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) return { user: null, subscription: null }
+	const user = await locals.getUser();
+	if (!user) return { user: null, subscription: null };
 
-  const { data: subscription } = await supabaseAdmin
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+	const { data: subscription } = await supabaseAdmin
+		.from('subscriptions')
+		.select('*')
+		.eq('user_id', user.id)
+		.order('created_at', { ascending: false })
+		.limit(1)
+		.maybeSingle();
 
-  return { user, subscription }
-}
+	return { user, subscription };
+};
 ```
 
 Then in `+layout.svelte`:
@@ -220,29 +220,29 @@ Then in `+layout.svelte`:
 ```svelte
 <!-- src/routes/(app)/+layout.svelte -->
 <script lang="ts">
-  let { data, children } = $props()
+	let { data, children } = $props();
 
-  async function openBillingPortal() {
-    const response = await fetch('/api/billing/portal', { method: 'POST' })
-    const { url } = await response.json()
-    window.location.href = url
-  }
+	async function openBillingPortal() {
+		const response = await fetch('/api/billing/portal', { method: 'POST' });
+		const { url } = await response.json();
+		window.location.href = url;
+	}
 </script>
 
 {#if data.subscription?.status === 'past_due'}
-  <div class="bg-red-50 border-b border-red-200 text-red-800 px-4 py-3">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
-      <div>
-        <strong>Your payment failed.</strong> Update your payment method to keep your account active.
-      </div>
-      <button
-        onclick={openBillingPortal}
-        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded text-sm"
-      >
-        Update payment method
-      </button>
-    </div>
-  </div>
+	<div class="border-b border-red-200 bg-red-50 px-4 py-3 text-red-800">
+		<div class="mx-auto flex max-w-6xl items-center justify-between">
+			<div>
+				<strong>Your payment failed.</strong> Update your payment method to keep your account active.
+			</div>
+			<button
+				onclick={openBillingPortal}
+				class="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+			>
+				Update payment method
+			</button>
+		</div>
+	</div>
 {/if}
 
 {@render children()}

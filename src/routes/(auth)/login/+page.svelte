@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import Button from '$components/ui/Button.svelte';
 	import Google from '$components/icons/Google.svelte';
 	import type { ActionData, PageData } from './$types';
@@ -23,12 +24,12 @@
 	<title>Sign in — SaaS-Pro</title>
 </svelte:head>
 
-<div class="rounded-2xl border border-slate-200/80 bg-white/80 p-8 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+<div
+	class="rounded-2xl border border-slate-200/80 bg-white/80 p-8 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
+>
 	<header class="text-center">
 		<h1 class="font-display text-2xl font-semibold tracking-tight">Welcome back</h1>
-		<p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-			Sign in to continue building.
-		</p>
+		<p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Sign in to continue building.</p>
 	</header>
 
 	<!-- Google OAuth button first, matching conventional OAuth flow ordering. -->
@@ -41,9 +42,7 @@
 
 	<div class="my-6 flex items-center gap-3">
 		<span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-		<span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-			or
-		</span>
+		<span class="text-xs tracking-wider text-slate-500 uppercase dark:text-slate-400"> or </span>
 		<span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
 	</div>
 
@@ -80,7 +79,7 @@
 					Password
 				</label>
 				<a
-					href="/forgot-password"
+					href={resolve('/forgot-password')}
 					class="text-xs text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
 				>
 					Forgot?
@@ -109,24 +108,38 @@
 		</div>
 
 		{#if form?.error}
-			<p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+			<p
+				class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+			>
 				{form.error}
 			</p>
 		{/if}
 		{#if data.errorHint === 'callback_failed'}
-			<p class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+			<p
+				class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
+			>
 				Email confirmation link was invalid or expired. Try signing in or request a new one.
 			</p>
 		{/if}
 
-		<Button type="submit" variant="primary" size="md" loading={submitting} disabled={submitting} class="w-full">
+		<Button
+			type="submit"
+			variant="primary"
+			size="md"
+			loading={submitting}
+			disabled={submitting}
+			class="w-full"
+		>
 			{submitting ? 'Signing in…' : 'Sign in'}
 		</Button>
 	</form>
 
 	<p class="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
 		New here?
-		<a href="/register" class="font-medium text-brand-700 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300">
+		<a
+			href={resolve('/register')}
+			class="font-medium text-brand-700 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
+		>
 			Create an account
 		</a>
 	</p>

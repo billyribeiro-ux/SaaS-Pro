@@ -26,14 +26,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const userIds = Array.from(new Set((data ?? []).map((s) => s.user_id)));
 	const profilesRes = userIds.length
-		? await supabaseAdmin
-				.from('profiles')
-				.select('id, email, full_name')
-				.in('id', userIds)
+		? await supabaseAdmin.from('profiles').select('id, email, full_name').in('id', userIds)
 		: { data: [] as Array<{ id: string; email: string; full_name: string | null }> };
-	const profileById = new Map(
-		(profilesRes.data ?? []).map((p) => [p.id, p] as const)
-	);
+	const profileById = new Map((profilesRes.data ?? []).map((p) => [p.id, p] as const));
 
 	return {
 		subscriptions: (data ?? []).map((s) => ({

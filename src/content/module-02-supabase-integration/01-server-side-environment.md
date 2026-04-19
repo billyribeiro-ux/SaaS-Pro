@@ -1,17 +1,17 @@
 ---
-title: "2.1 - Server-Side Environment"
+title: '2.1 - Server-Side Environment'
 module: 2
 lesson: 1
-moduleSlug: "module-02-supabase-integration"
-lessonSlug: "01-server-side-environment"
-description: "Configure environment variables correctly in SvelteKit — understanding the difference between public and private env vars."
+moduleSlug: 'module-02-supabase-integration'
+lessonSlug: '01-server-side-environment'
+description: 'Configure environment variables correctly in SvelteKit — understanding the difference between public and private env vars.'
 duration: 8
 preview: false
 ---
 
 ## Overview
 
-This lesson teaches one of the most security-relevant skills in full-stack SvelteKit: how to manage environment variables correctly. The wrong approach — and it's the default in most Node tutorials — leaks secrets to the browser. The correct SvelteKit approach is safer *and* easier. You just need to understand why.
+This lesson teaches one of the most security-relevant skills in full-stack SvelteKit: how to manage environment variables correctly. The wrong approach — and it's the default in most Node tutorials — leaks secrets to the browser. The correct SvelteKit approach is safer _and_ easier. You just need to understand why.
 
 By the end of this lesson you'll know exactly which variables belong on the server only, which are safe in the browser, and how SvelteKit's build system enforces the difference for you.
 
@@ -32,6 +32,7 @@ By the end of this lesson you'll know exactly which variables belong on the serv
 Every running program has an **environment** — a dictionary of string key/value pairs inherited from the process that started it. When you open a terminal and type `echo $PATH`, you're reading an environment variable. When Node.js reads `process.env.PORT`, same thing.
 
 The environment is a sensible place to hold configuration because:
+
 - It's not in source code (so it's not committed to git).
 - It can differ per machine and per deploy (your laptop's DB URL differs from production's).
 - The operating system already has mechanisms to set it.
@@ -57,12 +58,12 @@ The traditional Node ecosystem doesn't protect you from this. It's your job as t
 
 SvelteKit exposes environment variables through four virtual import paths. Each one behaves differently. Understanding the differences is the core skill of this lesson.
 
-| Module | Values available | Accessible from |
-|---|---|---|
-| `$env/static/public` | All `PUBLIC_*` vars | Anywhere — server and client |
-| `$env/static/private` | All non-prefixed vars | Server code only (build fails if used in client) |
-| `$env/dynamic/public` | All `PUBLIC_*` vars | Anywhere |
-| `$env/dynamic/private` | All non-prefixed vars | Server code only |
+| Module                 | Values available      | Accessible from                                  |
+| ---------------------- | --------------------- | ------------------------------------------------ |
+| `$env/static/public`   | All `PUBLIC_*` vars   | Anywhere — server and client                     |
+| `$env/static/private`  | All non-prefixed vars | Server code only (build fails if used in client) |
+| `$env/dynamic/public`  | All `PUBLIC_*` vars   | Anywhere                                         |
+| `$env/dynamic/private` | All non-prefixed vars | Server code only                                 |
 
 Two axes: **static vs dynamic** and **public vs private**.
 
@@ -164,16 +165,16 @@ You won't write the imports until the next lessons, but here's the reference you
 
 ```typescript
 // ✅ Server-side secret — only in hooks.server.ts, +page.server.ts, src/lib/server/*, API routes
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private'
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // ✅ Public value — anywhere (server OR browser)
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
 // ❌ Don't do this — works but bypasses the safety net
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // ❌ Don't do this either — wrong abstraction layer
-const url = import.meta.env.VITE_SUPABASE_URL
+const url = import.meta.env.VITE_SUPABASE_URL;
 ```
 
 ### Where is "server code" in SvelteKit?
@@ -232,7 +233,7 @@ Keep `.env.example` as pure shape; every real value lives in `.env` locally or i
 
 3. **`.env` is local-dev convenience. Production secrets go in a secret manager.** In Module 13 we deploy to Vercel, and you'll set these same variables via the Vercel dashboard (which encrypts them and scopes them per environment). Do not `scp` a `.env` to a server. Do not commit a `.env.production`. Secret managers exist for a reason.
 
-4. **Naming is part of security.** SvelteKit's `PUBLIC_` prefix is a perfect example: the rule is in the *name*, so you can see it at the call site. Apply the same thinking to your own code — a boolean flag called `isTrusted` is better than a comment saying "remember this means trusted."
+4. **Naming is part of security.** SvelteKit's `PUBLIC_` prefix is a perfect example: the rule is in the _name_, so you can see it at the call site. Apply the same thinking to your own code — a boolean flag called `isTrusted` is better than a comment saying "remember this means trusted."
 
 5. **Secret rotation is mandatory, eventually.** Every secret in production should be rotatable without downtime. Our architecture supports this because the app reads env values at startup; a deploy with new values and a graceful restart cycles the secret. When you build Contactly for real customers, add `docs/SECRETS.md` listing each secret, its rotation procedure, and its last-rotated date. This is not optional at scale.
 

@@ -1,10 +1,10 @@
 ---
-title: "11.1 - Setup Playwright"
+title: '11.1 - Setup Playwright'
 module: 11
 lesson: 1
-moduleSlug: "module-11-testing"
-lessonSlug: "01-setup-playwright"
-description: "Configure Playwright for end-to-end testing with your SvelteKit dev server."
+moduleSlug: 'module-11-testing'
+lessonSlug: '01-setup-playwright'
+description: 'Configure Playwright for end-to-end testing with your SvelteKit dev server.'
 duration: 12
 preview: false
 ---
@@ -66,9 +66,9 @@ Let's verify each piece. Open `package.json` and look for Playwright:
 
 ```json
 {
-  "devDependencies": {
-    "@playwright/test": "^1.47.0"
-  }
+	"devDependencies": {
+		"@playwright/test": "^1.47.0"
+	}
 }
 ```
 
@@ -92,28 +92,26 @@ Replace the contents of `playwright.config.ts` at the **project root** with exac
 
 ```typescript
 // playwright.config.ts
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry'
-  },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } }
-  ],
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI
-  }
-})
+	testDir: './tests',
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	retries: process.env.CI ? 2 : 0,
+	workers: process.env.CI ? 1 : undefined,
+	reporter: 'html',
+	use: {
+		baseURL: 'http://localhost:5173',
+		trace: 'on-first-retry'
+	},
+	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+	webServer: {
+		command: 'pnpm dev',
+		url: 'http://localhost:5173',
+		reuseExistingServer: !process.env.CI
+	}
+});
 ```
 
 That's the entire file. Fewer than thirty lines, but every one earns its keep. Let's walk through them.
@@ -165,9 +163,7 @@ use: {
 #### `projects`
 
 ```typescript
-projects: [
-  { name: 'chromium', use: { ...devices['Desktop Chrome'] } }
-]
+projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }];
 ```
 
 A **project** is a named configuration. You can have one project per browser, or one per device, or one per logged-in user. Tests run once per project — so adding `{ name: 'firefox', ... }` would double your run time.
@@ -226,14 +222,14 @@ That's enough for one lesson.
 
 **Flag cheat-sheet you'll use in the next two lessons:**
 
-| Command | What it does |
-|---|---|
-| `pnpm exec playwright test` | Headless run of every test. |
-| `pnpm exec playwright test --ui` | Interactive time-travel UI — step through tests, re-run individually. |
-| `pnpm exec playwright test --headed` | Headless-off: you watch a real browser window click through. |
-| `pnpm exec playwright test auth.test.ts` | Run only matching files. |
-| `pnpm exec playwright test -g "user can log in"` | Run only tests whose title matches the pattern. |
-| `pnpm exec playwright show-report` | Open the HTML report from the last run. |
+| Command                                          | What it does                                                          |
+| ------------------------------------------------ | --------------------------------------------------------------------- |
+| `pnpm exec playwright test`                      | Headless run of every test.                                           |
+| `pnpm exec playwright test --ui`                 | Interactive time-travel UI — step through tests, re-run individually. |
+| `pnpm exec playwright test --headed`             | Headless-off: you watch a real browser window click through.          |
+| `pnpm exec playwright test auth.test.ts`         | Run only matching files.                                              |
+| `pnpm exec playwright test -g "user can log in"` | Run only tests whose title matches the pattern.                       |
+| `pnpm exec playwright show-report`               | Open the HTML report from the last run.                               |
 
 The `--ui` mode is worth singling out. It launches a little Playwright-branded app that shows your test tree, lets you pick any test and re-run it in isolation, and — critically — shows you a **timeline of every action** the test took, with a DOM snapshot at each step. First time you use it, everything clicks. Spend five minutes exploring it once you've written a real test in 11.2.
 

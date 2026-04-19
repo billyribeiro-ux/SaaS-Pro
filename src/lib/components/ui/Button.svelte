@@ -85,6 +85,12 @@
 </script>
 
 {#if href}
+	<!--
+	  `href` is opaque to this component — callers are responsible for wrapping
+	  internal paths in `resolve()` from `$app/paths`, and external URLs pass
+	  through verbatim. The lint rule is suppressed at this call site only.
+	-->
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 	<a {href} class={classes} aria-busy={loading || undefined} {...rest as HTMLAnchorAttributes}>
 		{#if loading}
 			<Loader size={size === 'lg' ? 16 : 14} aria-label="Loading" />

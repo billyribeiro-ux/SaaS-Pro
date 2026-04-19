@@ -1,10 +1,10 @@
 ---
-title: "1.1 - SvelteKit Project Setup"
+title: '1.1 - SvelteKit Project Setup'
 module: 1
 lesson: 1
-moduleSlug: "module-01-project-setup"
-lessonSlug: "01-sveltekit-project-setup"
-description: "Scaffold a new SvelteKit project with TypeScript strict mode, ESLint, Prettier, and Playwright using the sv CLI and pnpm."
+moduleSlug: 'module-01-project-setup'
+lessonSlug: '01-sveltekit-project-setup'
+description: 'Scaffold a new SvelteKit project with TypeScript strict mode, ESLint, Prettier, and Playwright using the sv CLI and pnpm.'
 duration: 12
 preview: true
 ---
@@ -20,16 +20,21 @@ If you have never coded before, that's fine. The goal of this lesson is not to w
 Before starting, you need three things installed on your computer. If you're on macOS or Linux the commands below assume a Unix-style terminal; on Windows, use PowerShell or WSL.
 
 - **Node.js 20 or higher.** Node.js is the JavaScript runtime that lets us execute JavaScript code outside a browser — on a server, or in build tools. SvelteKit runs on Node. Check your version:
+
   ```bash
   node -v
   ```
+
   If you see `v20.x.x` or higher, you're good. If you don't have Node at all, install it from [nodejs.org](https://nodejs.org) or (better) through a version manager like [fnm](https://github.com/Schniz/fnm) or [nvm](https://github.com/nvm-sh/nvm).
 
 - **pnpm** — pronounced "performant npm". This is our package manager, the tool that downloads and installs the open-source libraries our project depends on. pnpm is a faster, more disk-efficient alternative to `npm` (the default Node package manager) and `yarn`. Install it globally:
+
   ```bash
   npm install -g pnpm
   ```
+
   Verify:
+
   ```bash
   pnpm -v
   ```
@@ -91,14 +96,14 @@ Which package manager do you want to install dependencies with? › pnpm
 
 Use the arrow keys to move, the spacebar to toggle a multi-select option, and Enter to confirm. Each choice matters:
 
-| Choice | Why we pick this |
-|---|---|
-| `minimal` template | Comes with just a home page — no demo todo app to delete, no opinions we don't want. |
+| Choice              | Why we pick this                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `minimal` template  | Comes with just a home page — no demo todo app to delete, no opinions we don't want.                                                                                      |
 | `TypeScript syntax` | TypeScript catches whole categories of bugs (typos, wrong data shapes, missing function arguments) **before** your code runs. It is non-negotiable for a production SaaS. |
-| `prettier` | An opinionated auto-formatter. It ends every argument about tabs-vs-spaces and line length by running on save. |
-| `eslint` | Static analysis — catches patterns that are legal but likely buggy (unused variables, forgotten `await`, etc.). |
-| `playwright` | End-to-end testing. Drives a real browser to verify the full app works. You'll write Playwright tests in Module 11. |
-| `pnpm` | The wizard runs `pnpm install` at the end to download all the dependencies. |
+| `prettier`          | An opinionated auto-formatter. It ends every argument about tabs-vs-spaces and line length by running on save.                                                            |
+| `eslint`            | Static analysis — catches patterns that are legal but likely buggy (unused variables, forgotten `await`, etc.).                                                           |
+| `playwright`        | End-to-end testing. Drives a real browser to verify the full app works. You'll write Playwright tests in Module 11.                                                       |
+| `pnpm`              | The wizard runs `pnpm install` at the end to download all the dependencies.                                                                                               |
 
 **What you should see if it worked:** after a minute or two, the wizard prints a summary, finishes installing dependencies, and exits with next-step instructions. If you see red error text, the most likely cause is a stale Node version — run `node -v` and upgrade if you're below 20.
 
@@ -162,18 +167,18 @@ Open `tsconfig.json`. You should see something like:
 
 ```json
 {
-  "extends": "./.svelte-kit/tsconfig.json",
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": true,
-    "moduleResolution": "bundler"
-  }
+	"extends": "./.svelte-kit/tsconfig.json",
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"moduleResolution": "bundler"
+	}
 }
 ```
 
@@ -204,7 +209,7 @@ An **environment variable** is a named value that lives outside your code. Thing
 
 Create two files in the project root:
 
-**`.env.example`** — Commit this to git. It's a template showing *which* variables the app needs, with fake values. Teammates clone the repo, copy this file to `.env`, and fill in real values.
+**`.env.example`** — Commit this to git. It's a template showing _which_ variables the app needs, with fake values. Teammates clone the repo, copy this file to `.env`, and fill in real values.
 
 ```bash
 # Supabase (fill in from `pnpm supabase start` output in the next lesson)
@@ -255,9 +260,10 @@ node_modules
 ```
 
 The last three lines are the important ones:
+
 - `.env` — ignores the file you just created.
 - `.env.*` — ignores `.env.local`, `.env.production`, etc.
-- `!.env.example` — the exclamation mark *unignores* the example file so it can be committed.
+- `!.env.example` — the exclamation mark _unignores_ the example file so it can be committed.
 
 If any of these are missing, add them. Test it by running:
 
@@ -326,7 +332,7 @@ pnpm test:e2e     # Run Playwright end-to-end tests.
 
 ### Why `pnpm build` matters
 
-`pnpm build` produces the *production* bundle — the optimized, minified, tree-shaken version of your app that will eventually run on the real internet. It will catch problems `pnpm dev` overlooks: missing environment variables, unused exports, illegal imports from server code into client code.
+`pnpm build` produces the _production_ bundle — the optimized, minified, tree-shaken version of your app that will eventually run on the real internet. It will catch problems `pnpm dev` overlooks: missing environment variables, unused exports, illegal imports from server code into client code.
 
 You do not need to run it yet — but know that "it works in dev" is not "it works in production". Part of this course's Principal Engineer discipline is: run `pnpm build` regularly, and fix any warnings it shouts about, before they calcify into real bugs.
 

@@ -1,10 +1,10 @@
 ---
-title: "8.4 - Pricing Page"
+title: '8.4 - Pricing Page'
 module: 8
 lesson: 4
-moduleSlug: "module-08-pricing-page"
-lessonSlug: "04-pricing-page"
-description: "Build the pricing page that fetches live prices from Stripe using lookup keys."
+moduleSlug: 'module-08-pricing-page'
+lessonSlug: '04-pricing-page'
+description: 'Build the pricing page that fetches live prices from Stripe using lookup keys.'
 duration: 18
 preview: false
 ---
@@ -38,12 +38,12 @@ If you don't already have one, create it now:
 
 ```typescript
 // src/lib/server/stripe.ts
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '$env/static/private'
+import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
 
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 ```
 
 Note that `$server` in this project aliases to `$lib/server` per the project's TS paths, so in some code you'll see `import { stripe } from '$server/stripe'`. Use whichever the project is configured for. Both resolve to the same file.
@@ -72,26 +72,26 @@ If you haven't created `(marketing)` yet, here's a minimal layout. Create `src/r
 ```svelte
 <!-- src/routes/(marketing)/+layout.svelte -->
 <script lang="ts">
-  let { children } = $props()
+	let { children } = $props();
 </script>
 
 <div class="min-h-screen bg-white">
-  <nav class="border-b border-gray-200">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <a href="/" class="font-bold text-gray-900">Contactly</a>
-      <div class="flex items-center gap-4 text-sm">
-        <a href="/pricing" class="text-gray-600 hover:text-gray-900">Pricing</a>
-        <a href="/login" class="text-gray-600 hover:text-gray-900">Log in</a>
-        <a
-          href="/register"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md font-medium"
-          >Sign up</a
-        >
-      </div>
-    </div>
-  </nav>
+	<nav class="border-b border-gray-200">
+		<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+			<a href="/" class="font-bold text-gray-900">Contactly</a>
+			<div class="flex items-center gap-4 text-sm">
+				<a href="/pricing" class="text-gray-600 hover:text-gray-900">Pricing</a>
+				<a href="/login" class="text-gray-600 hover:text-gray-900">Log in</a>
+				<a
+					href="/register"
+					class="rounded-md bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-700"
+					>Sign up</a
+				>
+			</div>
+		</div>
+	</nav>
 
-  {@render children()}
+	{@render children()}
 </div>
 ```
 
@@ -113,43 +113,43 @@ Create `src/routes/(marketing)/pricing/+page.server.ts`:
 
 ```typescript
 // src/routes/(marketing)/pricing/+page.server.ts
-import { error } from '@sveltejs/kit'
-import Stripe from 'stripe'
-import { PRICING_TIERS } from '$lib/config/pricing.config'
-import { stripe } from '$lib/server/stripe'
-import type { PageServerLoad } from './$types'
+import { error } from '@sveltejs/kit';
+import Stripe from 'stripe';
+import { PRICING_TIERS } from '$lib/config/pricing.config';
+import { stripe } from '$lib/server/stripe';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-  try {
-    const prices = await stripe.prices.list({
-      lookup_keys: PRICING_TIERS.map((t) => t.lookup_key),
-      active: true,
-      expand: ['data.product']
-    })
+	try {
+		const prices = await stripe.prices.list({
+			lookup_keys: PRICING_TIERS.map((t) => t.lookup_key),
+			active: true,
+			expand: ['data.product']
+		});
 
-    // Map lookup_key → Stripe.Price for O(1) joining with our tier config.
-    const byLookupKey = new Map<string, Stripe.Price>()
-    for (const price of prices.data) {
-      if (price.lookup_key) byLookupKey.set(price.lookup_key, price)
-    }
+		// Map lookup_key → Stripe.Price for O(1) joining with our tier config.
+		const byLookupKey = new Map<string, Stripe.Price>();
+		for (const price of prices.data) {
+			if (price.lookup_key) byLookupKey.set(price.lookup_key, price);
+		}
 
-    const tiers = PRICING_TIERS.map((tier) => {
-      const price = byLookupKey.get(tier.lookup_key)
-      return {
-        ...tier,
-        price_id: price?.id ?? null,
-        unit_amount: price?.unit_amount ?? null,
-        currency: price?.currency ?? 'usd',
-        interval: price?.recurring?.interval ?? null
-      }
-    })
+		const tiers = PRICING_TIERS.map((tier) => {
+			const price = byLookupKey.get(tier.lookup_key);
+			return {
+				...tier,
+				price_id: price?.id ?? null,
+				unit_amount: price?.unit_amount ?? null,
+				currency: price?.currency ?? 'usd',
+				interval: price?.recurring?.interval ?? null
+			};
+		});
 
-    return { tiers }
-  } catch (e) {
-    console.error('Failed to load Stripe prices', e)
-    throw error(500, 'Unable to load pricing at the moment. Please try again.')
-  }
-}
+		return { tiers };
+	} catch (e) {
+		console.error('Failed to load Stripe prices', e);
+		throw error(500, 'Unable to load pricing at the moment. Please try again.');
+	}
+};
 ```
 
 Let's walk through it.
@@ -162,39 +162,39 @@ SvelteKit auto-generates a type for this file's `load` function. Using `PageServ
 
 Three options worth unpacking.
 
-- **`lookup_keys: PRICING_TIERS.map((t) => t.lookup_key)`** — we ask Stripe for exactly the three prices our config knows about, by stable name. The response contains *at most* three prices (fewer if one is archived or deleted in Stripe). Because we go in with named requests, we never accidentally pick up unrelated prices the marketing team created in the dashboard for an experiment.
+- **`lookup_keys: PRICING_TIERS.map((t) => t.lookup_key)`** — we ask Stripe for exactly the three prices our config knows about, by stable name. The response contains _at most_ three prices (fewer if one is archived or deleted in Stripe). Because we go in with named requests, we never accidentally pick up unrelated prices the marketing team created in the dashboard for an experiment.
 - **`active: true`** — exclude archived prices. Stripe never deletes prices (they're referenced by subscriptions forever); instead it marks them `active: false`. If you archive a price and replace it with a new one using `transfer_lookup_key`, `active: true` filters the old one out automatically.
 - **`expand: ['data.product']`** — Stripe responses use references: a `Price` has a `product` field that's just a product ID string by default. `expand: ['data.product']` tells Stripe "inline the full product object on each price in the response". You pay one extra round-trip on the Stripe side; you save a separate `stripe.products.retrieve` call per price. For three prices, one expand call is much cheaper. For 100+ prices, it starts mattering the other way (Stripe caps `expand` fan-out). We have three.
 
 ### Building the `Map`
 
 ```typescript
-const byLookupKey = new Map<string, Stripe.Price>()
+const byLookupKey = new Map<string, Stripe.Price>();
 for (const price of prices.data) {
-  if (price.lookup_key) byLookupKey.set(price.lookup_key, price)
+	if (price.lookup_key) byLookupKey.set(price.lookup_key, price);
 }
 ```
 
 Two reasons for a `Map` rather than a plain object:
 
 1. `Map` has O(1) `get` and `set` with typed keys; plain objects rely on prototype-walking and string coercion.
-2. We want to iterate over `PRICING_TIERS` (not over the Stripe response). The config is the source of truth for *what should be rendered*; Stripe is the source of truth for *the numbers*. Wrapping Stripe's data in a `Map` keyed by lookup_key gives us a fast, typed "look up the price for this tier" primitive.
+2. We want to iterate over `PRICING_TIERS` (not over the Stripe response). The config is the source of truth for _what should be rendered_; Stripe is the source of truth for _the numbers_. Wrapping Stripe's data in a `Map` keyed by lookup_key gives us a fast, typed "look up the price for this tier" primitive.
 
-The `if (price.lookup_key)` guard exists because Stripe's `lookup_key` field is technically nullable in the type definition — a price *can* have no lookup key. We skip those; our zip depends on the key being present.
+The `if (price.lookup_key)` guard exists because Stripe's `lookup_key` field is technically nullable in the type definition — a price _can_ have no lookup key. We skip those; our zip depends on the key being present.
 
 ### The zip
 
 ```typescript
 const tiers = PRICING_TIERS.map((tier) => {
-  const price = byLookupKey.get(tier.lookup_key)
-  return {
-    ...tier,
-    price_id: price?.id ?? null,
-    unit_amount: price?.unit_amount ?? null,
-    currency: price?.currency ?? 'usd',
-    interval: price?.recurring?.interval ?? null
-  }
-})
+	const price = byLookupKey.get(tier.lookup_key);
+	return {
+		...tier,
+		price_id: price?.id ?? null,
+		unit_amount: price?.unit_amount ?? null,
+		currency: price?.currency ?? 'usd',
+		interval: price?.recurring?.interval ?? null
+	};
+});
 ```
 
 For each tier in the config, we look up its matching Stripe price and attach the pricing fields:
@@ -217,7 +217,7 @@ Notice we keep the full tier data (`...tier`) and add fields. The returned `tier
 
 If Stripe is down, auth fails, or the API key is invalid, we log the raw error on the server (where operators can see it) and throw a user-friendly error via SvelteKit's `error()` helper. The default error page renders with a 500 status. Users don't see "Stripe API error: invalid_request_error" — they see a sensible fallback.
 
-**Why not return a fallback?** You *could* return `{ tiers: PRICING_TIERS.map(t => ({ ...t, price_id: null })) }` and render the page with all CTAs disabled. That's a legitimate choice. The reason we `throw error()` instead: if Stripe is down, the page is **misinforming** users about what's for sale. Better to flag the problem than paint a broken UI. Your call depends on uptime expectations and how much you trust Stripe's SLA (very much, in practice).
+**Why not return a fallback?** You _could_ return `{ tiers: PRICING_TIERS.map(t => ({ ...t, price_id: null })) }` and render the page with all CTAs disabled. That's a legitimate choice. The reason we `throw error()` instead: if Stripe is down, the page is **misinforming** users about what's for sale. Better to flag the problem than paint a broken UI. Your call depends on uptime expectations and how much you trust Stripe's SLA (very much, in practice).
 
 ---
 
@@ -228,84 +228,84 @@ Now the UI. Create `src/routes/(marketing)/pricing/+page.svelte`:
 ```svelte
 <!-- src/routes/(marketing)/pricing/+page.svelte -->
 <script lang="ts">
-  import type { PageServerData } from './$types'
+	import type { PageServerData } from './$types';
 
-  let { data }: { data: PageServerData } = $props()
+	let { data }: { data: PageServerData } = $props();
 
-  const currency = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  })
+	const currency = new Intl.NumberFormat('en-US', {
+		style: 'currency',
+		currency: 'USD',
+		maximumFractionDigits: 0
+	});
 
-  function formatAmount(cents: number | null | undefined) {
-    if (cents == null) return '—'
-    return currency.format(cents / 100)
-  }
+	function formatAmount(cents: number | null | undefined) {
+		if (cents == null) return '—';
+		return currency.format(cents / 100);
+	}
 </script>
 
 <svelte:head>
-  <title>Pricing — Contactly</title>
-  <meta name="description" content="Simple pricing. Pick the plan that fits." />
+	<title>Pricing — Contactly</title>
+	<meta name="description" content="Simple pricing. Pick the plan that fits." />
 </svelte:head>
 
-<section class="max-w-6xl mx-auto px-4 py-16">
-  <header class="text-center mb-12">
-    <h1 class="text-4xl font-bold text-gray-900 mb-3">Simple, honest pricing</h1>
-    <p class="text-gray-500">Pick the plan that fits. Cancel anytime.</p>
-  </header>
+<section class="mx-auto max-w-6xl px-4 py-16">
+	<header class="mb-12 text-center">
+		<h1 class="mb-3 text-4xl font-bold text-gray-900">Simple, honest pricing</h1>
+		<p class="text-gray-500">Pick the plan that fits. Cancel anytime.</p>
+	</header>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    {#each data.tiers as tier (tier.id)}
-      <article
-        class="relative rounded-2xl border p-8 flex flex-col {tier.highlighted
-          ? 'border-blue-500 ring-2 ring-blue-500 bg-white'
-          : 'border-gray-200 bg-white'}"
-      >
-        {#if tier.badge}
-          <span
-            class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full"
-          >
-            {tier.badge}
-          </span>
-        {/if}
+	<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+		{#each data.tiers as tier (tier.id)}
+			<article
+				class="relative flex flex-col rounded-2xl border p-8 {tier.highlighted
+					? 'border-blue-500 bg-white ring-2 ring-blue-500'
+					: 'border-gray-200 bg-white'}"
+			>
+				{#if tier.badge}
+					<span
+						class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+					>
+						{tier.badge}
+					</span>
+				{/if}
 
-        <h2 class="text-lg font-semibold text-gray-900">{tier.name}</h2>
-        <p class="text-sm text-gray-500 mt-1 mb-6">{tier.description}</p>
+				<h2 class="text-lg font-semibold text-gray-900">{tier.name}</h2>
+				<p class="mt-1 mb-6 text-sm text-gray-500">{tier.description}</p>
 
-        <div class="mb-6">
-          <span class="text-4xl font-bold text-gray-900">
-            {formatAmount(tier.unit_amount)}
-          </span>
-          {#if tier.interval}
-            <span class="text-gray-500 text-sm ml-1">/ {tier.interval}</span>
-          {/if}
-        </div>
+				<div class="mb-6">
+					<span class="text-4xl font-bold text-gray-900">
+						{formatAmount(tier.unit_amount)}
+					</span>
+					{#if tier.interval}
+						<span class="ml-1 text-sm text-gray-500">/ {tier.interval}</span>
+					{/if}
+				</div>
 
-        <ul class="space-y-2 mb-8 flex-1">
-          {#each tier.features as feature (feature)}
-            <li class="text-sm text-gray-700 flex items-start">
-              <span class="text-blue-600 mr-2">✓</span>
-              <span>{feature}</span>
-            </li>
-          {/each}
-        </ul>
+				<ul class="mb-8 flex-1 space-y-2">
+					{#each tier.features as feature (feature)}
+						<li class="flex items-start text-sm text-gray-700">
+							<span class="mr-2 text-blue-600">✓</span>
+							<span>{feature}</span>
+						</li>
+					{/each}
+				</ul>
 
-        <form method="POST" action="/api/billing/checkout">
-          <input type="hidden" name="lookup_key" value={tier.lookup_key} />
-          <button
-            type="submit"
-            disabled={!tier.price_id}
-            class="w-full rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed {tier.highlighted
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-900 hover:bg-gray-800 text-white'}"
-          >
-            {tier.price_id ? 'Get started' : 'Coming soon'}
-          </button>
-        </form>
-      </article>
-    {/each}
-  </div>
+				<form method="POST" action="/api/billing/checkout">
+					<input type="hidden" name="lookup_key" value={tier.lookup_key} />
+					<button
+						type="submit"
+						disabled={!tier.price_id}
+						class="w-full rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 {tier.highlighted
+							? 'bg-blue-600 text-white hover:bg-blue-700'
+							: 'bg-gray-900 text-white hover:bg-gray-800'}"
+					>
+						{tier.price_id ? 'Get started' : 'Coming soon'}
+					</button>
+				</form>
+			</article>
+		{/each}
+	</div>
 </section>
 ```
 
@@ -313,7 +313,7 @@ Let's walk through the interesting parts.
 
 ### `import type { PageServerData } from './$types'`
 
-Just like the load function imported `PageServerLoad`, the page component imports `PageServerData` — the *return type* of the load function. This gives `data` full autocomplete: `data.tiers[number].name`, `data.tiers[number].unit_amount`, etc.
+Just like the load function imported `PageServerLoad`, the page component imports `PageServerData` — the _return type_ of the load function. This gives `data` full autocomplete: `data.tiers[number].name`, `data.tiers[number].unit_amount`, etc.
 
 ### `let { data }: { data: PageServerData } = $props()`
 
@@ -323,10 +323,10 @@ The Svelte 5 runes way to read page props. No `export let data`. No `$app/stores
 
 ```typescript
 const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0
-})
+	style: 'currency',
+	currency: 'USD',
+	maximumFractionDigits: 0
+});
 ```
 
 `Intl.NumberFormat` is the standard way to format currencies. Better than `'$' + (cents / 100).toFixed(2)` because:
@@ -341,8 +341,8 @@ For a multi-currency pricing page you'd build `currency` dynamically per tier (`
 
 ```typescript
 function formatAmount(cents: number | null | undefined) {
-  if (cents == null) return '—'
-  return currency.format(cents / 100)
+	if (cents == null) return '—';
+	return currency.format(cents / 100);
 }
 ```
 
@@ -364,8 +364,8 @@ Mobile-first: one column on small screens, three columns at the `md` breakpoint 
 
 ```svelte
 class="... {tier.highlighted
-  ? 'border-blue-500 ring-2 ring-blue-500 bg-white'
-  : 'border-gray-200 bg-white'}"
+	? 'border-blue-500 ring-2 ring-blue-500 bg-white'
+	: 'border-gray-200 bg-white'}"
 ```
 
 A conditional class expression embedded directly in the template. Svelte 5 supports the ternary-in-class-string pattern without `clsx`/`classnames` libraries. For a single boolean toggle, this is fine. For three or more conditional classes, pull it into a `$derived` expression or use `class:` directives.
@@ -376,11 +376,9 @@ The highlighted card gets a blue 2-pixel ring that visually "lifts" it above the
 
 ```svelte
 {#if tier.badge}
-  <span
-    class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white ..."
-  >
-    {tier.badge}
-  </span>
+	<span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white ...">
+		{tier.badge}
+	</span>
 {/if}
 ```
 
@@ -391,13 +389,13 @@ The `{#if tier.badge}` guard means cards without a badge have no empty `<span>` 
 ### The features list
 
 ```svelte
-<ul class="space-y-2 mb-8 flex-1">
-  {#each tier.features as feature (feature)}
-    <li class="text-sm text-gray-700 flex items-start">
-      <span class="text-blue-600 mr-2">✓</span>
-      <span>{feature}</span>
-    </li>
-  {/each}
+<ul class="mb-8 flex-1 space-y-2">
+	{#each tier.features as feature (feature)}
+		<li class="flex items-start text-sm text-gray-700">
+			<span class="mr-2 text-blue-600">✓</span>
+			<span>{feature}</span>
+		</li>
+	{/each}
 </ul>
 ```
 
@@ -409,10 +407,10 @@ The `{#each tier.features as feature (feature)}` uses the feature string itself 
 
 ```svelte
 <form method="POST" action="/api/billing/checkout">
-  <input type="hidden" name="lookup_key" value={tier.lookup_key} />
-  <button type="submit" disabled={!tier.price_id} ...>
-    {tier.price_id ? 'Get started' : 'Coming soon'}
-  </button>
+	<input type="hidden" name="lookup_key" value={tier.lookup_key} />
+	<button type="submit" disabled={!tier.price_id} ...>
+		{tier.price_id ? 'Get started' : 'Coming soon'}
+	</button>
 </form>
 ```
 
@@ -523,7 +521,7 @@ A pricing page is one of the highest-leverage A/B testing surfaces in a SaaS. Sm
 The way to make this easy: every variable is in config (lesson 8.3), every variable has a name (the `PricingTier` interface), and the component reads config by name. To A/B test "Best value" vs "Most popular", you read the badge from a feature flag instead of a static string:
 
 ```typescript
-badge: featureFlag('pricing_badge_copy', { a: 'Best value', b: 'Most popular' })
+badge: featureFlag('pricing_badge_copy', { a: 'Best value', b: 'Most popular' });
 ```
 
 Because the config-to-component wiring is already declarative, plugging in a flag is a one-line change, not a component rewrite. This is the compounding value of the config-driven design from lesson 8.3: every iteration on pricing copy is cheap, and cheap iteration is how you actually A/B test to wins.

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { CURRICULUM } from '$config/curriculum.config';
 	import { cn } from '$utils/cn';
 	import Badge from '$components/ui/Badge.svelte';
@@ -51,11 +52,11 @@
 				<button
 					type="button"
 					onclick={() => toggle(module.slug)}
-					class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/70"
+					class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold tracking-wider text-slate-600 uppercase transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/70"
 					aria-expanded={isOpen}
 				>
 					<span class="flex items-center gap-2 truncate">
-						<span class="truncate normal-case tracking-normal text-[0.78rem]">{module.title}</span>
+						<span class="truncate text-[0.78rem] tracking-normal normal-case">{module.title}</span>
 					</span>
 					<span class="flex items-center gap-2">
 						<span class="font-mono text-[0.65rem] font-medium text-slate-400 dark:text-slate-500">
@@ -71,9 +72,9 @@
 					</span>
 				</button>
 				{#if isOpen}
-					<ul class="mb-2 mt-0.5 space-y-0.5">
+					<ul class="mt-0.5 mb-2 space-y-0.5">
 						{#each module.lessons as lesson (lesson.slug)}
-							{@const href = `/learn/${module.slug}/${lesson.slug}`}
+							{@const href = resolve(`/learn/${module.slug}/${lesson.slug}`)}
 							{@const isActive = activePath === href}
 							{@const isDone = progress[module.slug]?.[lesson.slug] === true}
 							{@const isLocked = !lesson.preview && !hasSubscription}
@@ -91,7 +92,7 @@
 									<span class="flex min-w-0 items-center gap-2">
 										<span
 											class={cn(
-												'grid size-4 shrink-0 place-items-center rounded-full ring-1 ring-inset transition-colors',
+												'grid size-4 shrink-0 place-items-center rounded-full ring-1 transition-colors ring-inset',
 												isDone
 													? 'bg-emerald-500 text-white ring-emerald-500'
 													: isLocked

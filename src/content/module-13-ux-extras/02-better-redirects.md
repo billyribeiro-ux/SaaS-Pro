@@ -1,10 +1,10 @@
 ---
-title: "13.2 - Better Redirects"
+title: '13.2 - Better Redirects'
 module: 13
 lesson: 2
-moduleSlug: "module-13-ux-extras"
-lessonSlug: "02-better-redirects"
-description: "Improve the post-login redirect so users land on the page they were trying to reach."
+moduleSlug: 'module-13-ux-extras'
+lessonSlug: '02-better-redirects'
+description: 'Improve the post-login redirect so users land on the page they were trying to reach.'
 duration: 8
 preview: false
 ---
@@ -51,15 +51,15 @@ Open `src/routes/(app)/+layout.server.ts`. You probably have something like this
 
 ```typescript
 // src/routes/(app)/+layout.server.ts
-import { redirect } from '@sveltejs/kit'
+import { redirect } from '@sveltejs/kit';
 
 export const load = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) {
-    redirect(303, '/login')
-  }
-  return { user }
-}
+	const user = await locals.getUser();
+	if (!user) {
+		redirect(303, '/login');
+	}
+	return { user };
+};
 ```
 
 That works — but it throws away context. When the guard fires on `/contacts/abc-123`, we send the user to `/login` without telling `/login` where they came from.
@@ -68,16 +68,16 @@ Update it:
 
 ```typescript
 // src/routes/(app)/+layout.server.ts
-import { redirect } from '@sveltejs/kit'
+import { redirect } from '@sveltejs/kit';
 
 export const load = async ({ locals, url }) => {
-  const user = await locals.getUser()
-  if (!user) {
-    const redirectTo = url.pathname + url.search
-    redirect(303, `/login?redirectTo=${encodeURIComponent(redirectTo)}`)
-  }
-  return { user }
-}
+	const user = await locals.getUser();
+	if (!user) {
+		const redirectTo = url.pathname + url.search;
+		redirect(303, `/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+	}
+	return { user };
+};
 ```
 
 ### Walkthrough
@@ -111,31 +111,31 @@ Create `src/lib/utils/redirect.ts`:
  * - Must NOT be the same as the default
  */
 export function safeRedirect(
-  redirectTo: string | null | undefined,
-  defaultPath = '/dashboard'
+	redirectTo: string | null | undefined,
+	defaultPath = '/dashboard'
 ): string {
-  if (!redirectTo || typeof redirectTo !== 'string') {
-    return defaultPath
-  }
+	if (!redirectTo || typeof redirectTo !== 'string') {
+		return defaultPath;
+	}
 
-  // Must be an absolute path on our own origin
-  if (!redirectTo.startsWith('/')) {
-    return defaultPath
-  }
+	// Must be an absolute path on our own origin
+	if (!redirectTo.startsWith('/')) {
+		return defaultPath;
+	}
 
-  // `//evil.com` is a protocol-relative URL — the browser would follow it
-  // to an external host. Reject.
-  if (redirectTo.startsWith('//')) {
-    return defaultPath
-  }
+	// `//evil.com` is a protocol-relative URL — the browser would follow it
+	// to an external host. Reject.
+	if (redirectTo.startsWith('//')) {
+		return defaultPath;
+	}
 
-  // Don't loop the user back into an auth page
-  const blocked = ['/login', '/register', '/forgot-password', '/reset-password']
-  if (blocked.some((path) => redirectTo.startsWith(path))) {
-    return defaultPath
-  }
+	// Don't loop the user back into an auth page
+	const blocked = ['/login', '/register', '/forgot-password', '/reset-password'];
+	if (blocked.some((path) => redirectTo.startsWith(path))) {
+		return defaultPath;
+	}
 
-  return redirectTo
+	return redirectTo;
 }
 ```
 
@@ -145,7 +145,7 @@ export function safeRedirect(
 
 ```typescript
 if (!redirectTo || typeof redirectTo !== 'string') {
-  return defaultPath
+	return defaultPath;
 }
 ```
 
@@ -155,7 +155,7 @@ The input comes from a form field or a URL param — both ultimately `FormData.g
 
 ```typescript
 if (!redirectTo.startsWith('/')) {
-  return defaultPath
+	return defaultPath;
 }
 ```
 
@@ -169,7 +169,7 @@ What about an empty string? `''.startsWith('/')` is `false`. Safe. (We already h
 
 ```typescript
 if (redirectTo.startsWith('//')) {
-  return defaultPath
+	return defaultPath;
 }
 ```
 
@@ -187,9 +187,9 @@ This is called an **open-redirect vulnerability**. It's a CVE-class bug — Micr
 #### The auth-page block
 
 ```typescript
-const blocked = ['/login', '/register', '/forgot-password', '/reset-password']
+const blocked = ['/login', '/register', '/forgot-password', '/reset-password'];
 if (blocked.some((path) => redirectTo.startsWith(path))) {
-  return defaultPath
+	return defaultPath;
 }
 ```
 
@@ -207,45 +207,45 @@ Open `src/routes/(auth)/login/+page.server.ts` and wire the helper in:
 
 ```typescript
 // src/routes/(auth)/login/+page.server.ts
-import { fail, redirect } from '@sveltejs/kit'
-import * as z from 'zod'
-import { safeRedirect } from '$lib/utils/redirect'
-import type { Actions } from './$types'
+import { fail, redirect } from '@sveltejs/kit';
+import * as z from 'zod';
+import { safeRedirect } from '$lib/utils/redirect';
+import type { Actions } from './$types';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required')
-})
+	email: z.string().email('Please enter a valid email address'),
+	password: z.string().min(1, 'Password is required')
+});
 
 export const actions: Actions = {
-  default: async ({ request, locals, url }) => {
-    const formData = await request.formData()
-    const redirectTo = formData.get('redirectTo') as string | null
+	default: async ({ request, locals, url }) => {
+		const formData = await request.formData();
+		const redirectTo = formData.get('redirectTo') as string | null;
 
-    const raw = {
-      email: formData.get('email'),
-      password: formData.get('password')
-    }
+		const raw = {
+			email: formData.get('email'),
+			password: formData.get('password')
+		};
 
-    const result = loginSchema.safeParse(raw)
-    if (!result.success) {
-      return fail(400, {
-        error: 'Invalid email or password',
-        data: { email: raw.email }
-      })
-    }
+		const result = loginSchema.safeParse(raw);
+		if (!result.success) {
+			return fail(400, {
+				error: 'Invalid email or password',
+				data: { email: raw.email }
+			});
+		}
 
-    const { error } = await locals.supabase.auth.signInWithPassword(result.data)
-    if (error) {
-      return fail(400, {
-        error: 'Invalid email or password',
-        data: { email: raw.email }
-      })
-    }
+		const { error } = await locals.supabase.auth.signInWithPassword(result.data);
+		if (error) {
+			return fail(400, {
+				error: 'Invalid email or password',
+				data: { email: raw.email }
+			});
+		}
 
-    redirect(303, safeRedirect(redirectTo))
-  }
-}
+		redirect(303, safeRedirect(redirectTo));
+	}
+};
 ```
 
 Two things changed:
@@ -270,19 +270,19 @@ Open `src/routes/(auth)/login/+page.svelte` and add a hidden input:
 ```svelte
 <!-- src/routes/(auth)/login/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import { page } from '$app/state'
-  import type { ActionData } from './$types'
+	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import type { ActionData } from './$types';
 
-  let { form }: { form: ActionData } = $props()
+	let { form }: { form: ActionData } = $props();
 
-  let redirectTo = $derived(page.url.searchParams.get('redirectTo') ?? '')
+	let redirectTo = $derived(page.url.searchParams.get('redirectTo') ?? '');
 </script>
 
 <form method="POST" use:enhance>
-  <input type="hidden" name="redirectTo" value={redirectTo} />
+	<input type="hidden" name="redirectTo" value={redirectTo} />
 
-  <!-- ... email, password, submit ... -->
+	<!-- ... email, password, submit ... -->
 </form>
 ```
 

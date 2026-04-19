@@ -1,9 +1,9 @@
 ---
-title: "10.3 - Limiting UI Interactions"
+title: '10.3 - Limiting UI Interactions'
 module: 10
 lesson: 3
-moduleSlug: "module-10-access-control"
-lessonSlug: "03-limiting-ui-interactions"
+moduleSlug: 'module-10-access-control'
+lessonSlug: '03-limiting-ui-interactions'
 description: "Show upgrade prompts for locked features rather than hiding them — users should see what they're missing."
 duration: 12
 preview: false
@@ -46,21 +46,21 @@ Create (or edit) `src/routes/(app)/+layout.server.ts`:
 
 ```typescript
 // src/routes/(app)/+layout.server.ts
-import { redirect } from '@sveltejs/kit'
-import { hasActiveSubscription } from '$lib/utils/access'
-import type { LayoutServerLoad } from './$types'
+import { redirect } from '@sveltejs/kit';
+import { hasActiveSubscription } from '$lib/utils/access';
+import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) redirect(303, '/login')
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
 
-  const isSubscribed = await hasActiveSubscription(user.id)
+	const isSubscribed = await hasActiveSubscription(user.id);
 
-  return {
-    user: { id: user.id, email: user.email },
-    isSubscribed
-  }
-}
+	return {
+		user: { id: user.id, email: user.email },
+		isSubscribed
+	};
+};
 ```
 
 ### What the layout load does for us
@@ -94,28 +94,28 @@ Let's build the simplest version. Create `src/routes/(app)/contacts/+page.svelte
 ```svelte
 <!-- src/routes/(app)/contacts/+page.svelte -->
 <script lang="ts">
-  import type { PageData } from './$types'
+	import type { PageData } from './$types';
 
-  let { data }: { data: PageData } = $props()
+	let { data }: { data: PageData } = $props();
 
-  let isSubscribed = $derived(data.isSubscribed)
+	let isSubscribed = $derived(data.isSubscribed);
 
-  function createContact() {
-    // open create-contact modal or navigate
-  }
+	function createContact() {
+		// open create-contact modal or navigate
+	}
 </script>
 
 {#if isSubscribed}
-  <button onclick={createContact}>Add Contact</button>
+	<button onclick={createContact}>Add Contact</button>
 {:else}
-  <div class="relative">
-    <button disabled class="opacity-50 cursor-not-allowed">Add Contact</button>
-    <div class="absolute inset-0 flex items-center justify-center bg-white/80">
-      <a href="/pricing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
-        Upgrade to add unlimited contacts →
-      </a>
-    </div>
-  </div>
+	<div class="relative">
+		<button disabled class="cursor-not-allowed opacity-50">Add Contact</button>
+		<div class="absolute inset-0 flex items-center justify-center bg-white/80">
+			<a href="/pricing" class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+				Upgrade to add unlimited contacts →
+			</a>
+		</div>
+	</div>
 {/if}
 ```
 
@@ -124,11 +124,11 @@ Let's build the simplest version. Create `src/routes/(app)/contacts/+page.svelte
 #### The script block
 
 ```typescript
-import type { PageData } from './$types'
+import type { PageData } from './$types';
 
-let { data }: { data: PageData } = $props()
+let { data }: { data: PageData } = $props();
 
-let isSubscribed = $derived(data.isSubscribed)
+let isSubscribed = $derived(data.isSubscribed);
 ```
 
 - **`PageData`** — SvelteKit merges all upstream load returns (root layout, `(app)` layout, the page's own load) into this type. Because our layout load returned `{ user, isSubscribed }`, `PageData` now includes `isSubscribed: boolean` automatically.
@@ -139,16 +139,16 @@ let isSubscribed = $derived(data.isSubscribed)
 
 ```svelte
 {#if isSubscribed}
-  <button onclick={createContact}>Add Contact</button>
+	<button onclick={createContact}>Add Contact</button>
 {:else}
-  <div class="relative">
-    <button disabled class="opacity-50 cursor-not-allowed">Add Contact</button>
-    <div class="absolute inset-0 flex items-center justify-center bg-white/80">
-      <a href="/pricing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
-        Upgrade to add unlimited contacts →
-      </a>
-    </div>
-  </div>
+	<div class="relative">
+		<button disabled class="cursor-not-allowed opacity-50">Add Contact</button>
+		<div class="absolute inset-0 flex items-center justify-center bg-white/80">
+			<a href="/pricing" class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">
+				Upgrade to add unlimited contacts →
+			</a>
+		</div>
+	</div>
 {/if}
 ```
 
@@ -175,36 +175,33 @@ Create `src/lib/components/UpgradePrompt.svelte`:
 ```svelte
 <!-- src/lib/components/UpgradePrompt.svelte -->
 <script lang="ts">
-  type Props = {
-    message?: string
-    ctaLabel?: string
-    href?: string
-    children: import('svelte').Snippet
-  }
+	type Props = {
+		message?: string;
+		ctaLabel?: string;
+		href?: string;
+		children: import('svelte').Snippet;
+	};
 
-  let {
-    message = 'Upgrade to unlock',
-    ctaLabel = 'Upgrade to Pro →',
-    href = '/pricing',
-    children
-  }: Props = $props()
+	let {
+		message = 'Upgrade to unlock',
+		ctaLabel = 'Upgrade to Pro →',
+		href = '/pricing',
+		children
+	}: Props = $props();
 </script>
 
 <div class="relative inline-block">
-  <div class="opacity-50 pointer-events-none">
-    {@render children()}
-  </div>
-  <div
-    class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 rounded-lg gap-2"
-  >
-    <p class="text-sm text-gray-700 font-medium">{message}</p>
-    <a
-      {href}
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-    >
-      {ctaLabel}
-    </a>
-  </div>
+	<div class="pointer-events-none opacity-50">
+		{@render children()}
+	</div>
+	<div
+		class="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-white/80"
+	>
+		<p class="text-sm font-medium text-gray-700">{message}</p>
+		<a {href} class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
+			{ctaLabel}
+		</a>
+	</div>
 </div>
 ```
 
@@ -219,24 +216,20 @@ Create `src/lib/components/UpgradePrompt.svelte`:
 
 ```svelte
 <script lang="ts">
-  import UpgradePrompt from '$lib/components/UpgradePrompt.svelte'
-  import type { PageData } from './$types'
+	import UpgradePrompt from '$lib/components/UpgradePrompt.svelte';
+	import type { PageData } from './$types';
 
-  let { data }: { data: PageData } = $props()
+	let { data }: { data: PageData } = $props();
 
-  let isSubscribed = $derived(data.isSubscribed)
+	let isSubscribed = $derived(data.isSubscribed);
 </script>
 
 {#if isSubscribed}
-  <a href="/contacts/new" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
-    Add Contact
-  </a>
+	<a href="/contacts/new" class="rounded-lg bg-blue-600 px-4 py-2 text-white"> Add Contact </a>
 {:else}
-  <UpgradePrompt message="You've hit your free plan cap" ctaLabel="Upgrade →">
-    <span class="bg-blue-600 text-white px-4 py-2 rounded-lg inline-block">
-      Add Contact
-    </span>
-  </UpgradePrompt>
+	<UpgradePrompt message="You've hit your free plan cap" ctaLabel="Upgrade →">
+		<span class="inline-block rounded-lg bg-blue-600 px-4 py-2 text-white"> Add Contact </span>
+	</UpgradePrompt>
 {/if}
 ```
 
@@ -252,57 +245,57 @@ In the contacts list page's load:
 
 ```typescript
 // src/routes/(app)/contacts/+page.server.ts
-import type { PageServerLoad } from './$types'
+import type { PageServerLoad } from './$types';
 
-const FREE_TIER_LIMIT = 10
+const FREE_TIER_LIMIT = 10;
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
-  const { isSubscribed } = await parent()
-  const user = await locals.getUser()
+	const { isSubscribed } = await parent();
+	const user = await locals.getUser();
 
-  const { data: contacts, count } = await locals.supabase
-    .from('contacts')
-    .select('*', { count: 'exact' })
-    .eq('user_id', user!.id)
-    .order('created_at', { ascending: false })
+	const { data: contacts, count } = await locals.supabase
+		.from('contacts')
+		.select('*', { count: 'exact' })
+		.eq('user_id', user!.id)
+		.order('created_at', { ascending: false });
 
-  return {
-    contacts: contacts ?? [],
-    contactCount: count ?? 0,
-    freeTierLimit: FREE_TIER_LIMIT,
-    showUsage: !isSubscribed
-  }
-}
+	return {
+		contacts: contacts ?? [],
+		contactCount: count ?? 0,
+		freeTierLimit: FREE_TIER_LIMIT,
+		showUsage: !isSubscribed
+	};
+};
 ```
 
 In the page:
 
 ```svelte
 <script lang="ts">
-  import type { PageData } from './$types'
+	import type { PageData } from './$types';
 
-  let { data }: { data: PageData } = $props()
+	let { data }: { data: PageData } = $props();
 
-  let remaining = $derived(data.freeTierLimit - data.contactCount)
-  let atCap = $derived(data.contactCount >= data.freeTierLimit)
+	let remaining = $derived(data.freeTierLimit - data.contactCount);
+	let atCap = $derived(data.contactCount >= data.freeTierLimit);
 </script>
 
 {#if data.showUsage}
-  <div
-    class="mb-4 rounded-lg p-3 text-sm"
-    class:bg-amber-50={atCap}
-    class:text-amber-900={atCap}
-    class:bg-gray-50={!atCap}
-    class:text-gray-600={!atCap}
-  >
-    {#if atCap}
-      You've used all {data.freeTierLimit} contacts on your free plan.
-      <a href="/pricing" class="underline font-medium">Upgrade</a> for unlimited.
-    {:else}
-      {data.contactCount} of {data.freeTierLimit} contacts used.
-      {remaining} remaining on the free plan.
-    {/if}
-  </div>
+	<div
+		class="mb-4 rounded-lg p-3 text-sm"
+		class:bg-amber-50={atCap}
+		class:text-amber-900={atCap}
+		class:bg-gray-50={!atCap}
+		class:text-gray-600={!atCap}
+	>
+		{#if atCap}
+			You've used all {data.freeTierLimit} contacts on your free plan.
+			<a href="/pricing" class="font-medium underline">Upgrade</a> for unlimited.
+		{:else}
+			{data.contactCount} of {data.freeTierLimit} contacts used.
+			{remaining} remaining on the free plan.
+		{/if}
+	</div>
 {/if}
 ```
 
@@ -368,7 +361,7 @@ Caveat: you can overdo this. If half the UI is grayed out with overlays, it feel
 
 ### Defense-in-depth, in one line
 
-The lesson is: *UI locks are marketing; server locks are security.* If you can only afford one, always build the server lock first. Then layer UI on top.
+The lesson is: _UI locks are marketing; server locks are security._ If you can only afford one, always build the server lock first. Then layer UI on top.
 
 A year into Contactly's life, when a contractor adds a new locked feature, the rule to give them is: "If you put a `<UpgradePrompt>` in the UI, there must be a matching `hasActiveSubscription` check in the server action. No exceptions." Codify it in code review. Test for it. Every leak in a SaaS app starts with someone adding the UI side and forgetting the server side.
 
@@ -404,10 +397,10 @@ A polished final version of `UpgradePrompt`:
 
 ```svelte
 <div class="relative inline-block">
-  <div class="opacity-50 pointer-events-none" aria-hidden="true" inert>
-    {@render children()}
-  </div>
-  <!-- overlay -->
+	<div class="pointer-events-none opacity-50" aria-hidden="true" inert>
+		{@render children()}
+	</div>
+	<!-- overlay -->
 </div>
 ```
 
@@ -426,4 +419,4 @@ We'll tighten a11y more rigorously in Module 13.
 
 ## What's Next
 
-Lesson 10.4 closes the last gap in our access control: preventing users who already have an active subscription from starting a *second* checkout. We'll gate the checkout endpoint, route existing subscribers to the Stripe customer portal instead, and swap the pricing page CTA from "Subscribe" to "Manage subscription."
+Lesson 10.4 closes the last gap in our access control: preventing users who already have an active subscription from starting a _second_ checkout. We'll gate the checkout endpoint, route existing subscribers to the Stripe customer portal instead, and swap the pricing page CTA from "Subscribe" to "Manage subscription."

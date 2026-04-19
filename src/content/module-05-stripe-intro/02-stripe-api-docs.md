@@ -1,10 +1,10 @@
 ---
-title: "5.2 - Stripe API & Docs"
+title: '5.2 - Stripe API & Docs'
 module: 5
 lesson: 2
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "02-stripe-api-docs"
-description: "Navigate the Stripe documentation and API reference to find what you need fast."
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '02-stripe-api-docs'
+description: 'Navigate the Stripe documentation and API reference to find what you need fast.'
 duration: 8
 preview: true
 ---
@@ -43,8 +43,8 @@ Open [docs.stripe.com](https://docs.stripe.com). The top-level navigation is cle
 
 Mentally, the docs are **two sites welded together**:
 
-1. **Guides** (everything except API Reference) — prose explanations, code samples in multiple languages, step-by-step tutorials. This is where you go to understand *why* and *how*.
-2. **API Reference** — machine-generated, exhaustively detailed, documents every field on every object and every parameter on every endpoint. This is where you go to understand *what*.
+1. **Guides** (everything except API Reference) — prose explanations, code samples in multiple languages, step-by-step tutorials. This is where you go to understand _why_ and _how_.
+2. **API Reference** — machine-generated, exhaustively detailed, documents every field on every object and every parameter on every endpoint. This is where you go to understand _what_.
 
 Think of Guides as "the book chapter" and API Reference as "the dictionary." Both matter. You rarely use one without the other.
 
@@ -104,18 +104,18 @@ Each object has:
 
 Click **Subscriptions** in the sidebar. Scroll to the **The subscription object** section. You'll see fields like:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique identifier, starts with `sub_`. |
-| `object` | string | Always `"subscription"`. |
-| `customer` | string or Customer | The customer this subscription belongs to. Either a `cus_xxx` ID or an expanded Customer object. |
-| `status` | enum | One of `incomplete`, `incomplete_expired`, `trialing`, `active`, `past_due`, `canceled`, `unpaid`, `paused`. |
-| `current_period_start` | integer | Unix timestamp in seconds. |
-| `current_period_end` | integer | Unix timestamp in seconds. |
-| `cancel_at_period_end` | boolean | If `true`, the subscription will cancel when the period ends. |
-| `items` | object | Contains the price/quantity pairs for this subscription. |
-| `metadata` | object | Your app's free-form key-value data. |
-| ... | ... | ... |
+| Field                  | Type               | Description                                                                                                  |
+| ---------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `id`                   | string             | Unique identifier, starts with `sub_`.                                                                       |
+| `object`               | string             | Always `"subscription"`.                                                                                     |
+| `customer`             | string or Customer | The customer this subscription belongs to. Either a `cus_xxx` ID or an expanded Customer object.             |
+| `status`               | enum               | One of `incomplete`, `incomplete_expired`, `trialing`, `active`, `past_due`, `canceled`, `unpaid`, `paused`. |
+| `current_period_start` | integer            | Unix timestamp in seconds.                                                                                   |
+| `current_period_end`   | integer            | Unix timestamp in seconds.                                                                                   |
+| `cancel_at_period_end` | boolean            | If `true`, the subscription will cancel when the period ends.                                                |
+| `items`                | object             | Contains the price/quantity pairs for this subscription.                                                     |
+| `metadata`             | object             | Your app's free-form key-value data.                                                                         |
+| ...                    | ...                | ...                                                                                                          |
 
 Let's unpack three things that trip up newcomers:
 
@@ -130,7 +130,7 @@ In TypeScript, that means `customer: string | Stripe.Customer`. Your code needs 
 Stripe returns time as a number of **seconds** since epoch. JavaScript's `Date` constructor takes **milliseconds**. So:
 
 ```typescript
-const date = new Date(subscription.current_period_end * 1000)
+const date = new Date(subscription.current_period_end * 1000);
 ```
 
 Forget the `* 1000` and you get a date in 1970. This is the single most common timestamp bug in Stripe integrations. Set the bit in your brain now.
@@ -173,15 +173,15 @@ pnpm add -D @types/stripe
 Basic shape of how you use it:
 
 ```typescript
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '$env/static/private'
+import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 
-const subscription = await stripe.subscriptions.retrieve('sub_xxx')
-console.log(subscription.status)
+const subscription = await stripe.subscriptions.retrieve('sub_xxx');
+console.log(subscription.status);
 ```
 
 The `stripe` client is a typed client. `stripe.subscriptions.retrieve(...)` corresponds to `GET /v1/subscriptions/:id` in the API reference. Every resource has the expected operations (`create`, `retrieve`, `update`, `del`, `list`), and the return types match the API reference object shapes exactly.
@@ -212,8 +212,8 @@ But — and this is crucial — the SDK **also** has an API version, baked into 
 
 ```typescript
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 ```
 
 You're **overriding your account's pin for this client**. Every request from this client uses `2026-03-25.dahlia` regardless of what the dashboard says. The SDK's types are generated for `2026-03-25.dahlia`. Everything lines up.
@@ -323,7 +323,7 @@ Logs should be the **first** place you look, not the last. Muscle memory: someth
 
 ### Mistake 5: Confusing the account's pin with the SDK's pin
 
-You upgrade the Node SDK. Your tests break. You run to the dashboard to "upgrade the API version." That's not what you want — the dashboard pin is for *defaults*. The SDK always overrides with its own `apiVersion` string. Fix the string in your code, not the dashboard.
+You upgrade the Node SDK. Your tests break. You run to the dashboard to "upgrade the API version." That's not what you want — the dashboard pin is for _defaults_. The SDK always overrides with its own `apiVersion` string. Fix the string in your code, not the dashboard.
 
 This confuses people at least once. Don't be surprised when it's your turn.
 

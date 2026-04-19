@@ -18,7 +18,7 @@
 
 <div class="mb-4 flex items-center gap-2">
 	<form method="GET" class="flex items-center gap-2">
-		<label for="sub-status-filter" class="text-xs uppercase tracking-wider text-slate-500">
+		<label for="sub-status-filter" class="text-xs tracking-wider text-slate-500 uppercase">
 			Status
 		</label>
 		<select
@@ -40,7 +40,9 @@
 	<div class="overflow-x-auto">
 		<table class="w-full text-sm">
 			<thead>
-				<tr class="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
+				<tr
+					class="border-b border-slate-200 text-left text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800"
+				>
 					<th class="py-2 pr-4">User</th>
 					<th class="py-2 pr-4">Status</th>
 					<th class="py-2 pr-4">Plan</th>
@@ -51,7 +53,11 @@
 			</thead>
 			<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
 				{#each data.subscriptions as sub (sub.id)}
-					{@const price = sub.prices as { lookup_key: string | null; unit_amount: number | null; currency: string } | null}
+					{@const price = sub.prices as {
+						lookup_key: string | null;
+						unit_amount: number | null;
+						currency: string;
+					} | null}
 					<tr>
 						<td class="py-3 pr-4">
 							<div class="font-medium">{sub.profile?.full_name ?? '—'}</div>

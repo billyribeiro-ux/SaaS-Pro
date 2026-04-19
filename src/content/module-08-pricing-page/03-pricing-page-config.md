@@ -1,17 +1,17 @@
 ---
-title: "8.3 - Pricing Page Config"
+title: '8.3 - Pricing Page Config'
 module: 8
 lesson: 3
-moduleSlug: "module-08-pricing-page"
-lessonSlug: "03-pricing-page-config"
-description: "Build a config-driven pricing page structure that separates content from presentation."
+moduleSlug: 'module-08-pricing-page'
+lessonSlug: '03-pricing-page-config'
+description: 'Build a config-driven pricing page structure that separates content from presentation.'
 duration: 12
 preview: false
 ---
 
 ## Overview
 
-Before we build the pricing page UI in lesson 8.4, we need a place for the content to live. *What* tiers exist, *what* they're called, *what* features each one lists, *which* one is the "Best value" — this is all **content**, not markup. If we hardcode it into the Svelte page, every copy change ("add another feature row" or "rename Monthly to Starter") becomes a code change, a git commit, a deploy, and a round of "did I break the other tiers?" second-guessing.
+Before we build the pricing page UI in lesson 8.4, we need a place for the content to live. _What_ tiers exist, _what_ they're called, _what_ features each one lists, _which_ one is the "Best value" — this is all **content**, not markup. If we hardcode it into the Svelte page, every copy change ("add another feature row" or "rename Monthly to Starter") becomes a code change, a git commit, a deploy, and a round of "did I break the other tiers?" second-guessing.
 
 Instead, we'll centralize the content in a single config file, `src/lib/config/pricing.config.ts`. It will export two pieces:
 
@@ -53,7 +53,7 @@ src/lib/config/
 Per the project's path aliases, this directory resolves as `$config`. So `src/lib/server/stripe.ts` can write:
 
 ```typescript
-import { PRICING_LOOKUP_KEYS } from '$config/pricing.config'
+import { PRICING_LOOKUP_KEYS } from '$config/pricing.config';
 ```
 
 The alias keeps import paths stable as files move. If we refactored the folder structure, we'd change one line in `svelte.config.js` / `tsconfig.json` instead of every importer. **Aliases are content addresses**; they hide physical layout from consumers.
@@ -71,10 +71,10 @@ touch src/lib/config/pricing.config.ts
 ```typescript
 // src/lib/config/pricing.config.ts
 export const PRICING_LOOKUP_KEYS = {
-  monthly: 'contactly_monthly',
-  yearly: 'contactly_yearly',
-  lifetime: 'contactly_lifetime'
-} as const
+	monthly: 'contactly_monthly',
+	yearly: 'contactly_yearly',
+	lifetime: 'contactly_lifetime'
+} as const;
 ```
 
 Two things to notice.
@@ -83,7 +83,7 @@ Two things to notice.
 
 We chose `{ monthly: '...', yearly: '...', lifetime: '...' }` over `['contactly_monthly', 'contactly_yearly', 'contactly_lifetime']`. The object lets us refer to `PRICING_LOOKUP_KEYS.monthly` from code — semantic, readable, type-checked. With an array we'd write `PRICING_LOOKUP_KEYS[0]` and hope we remembered which index was which.
 
-The object also makes the *public API* of this file self-documenting. A teammate reading `$config/pricing.config.ts` for the first time immediately sees the three billing modes we support.
+The object also makes the _public API_ of this file self-documenting. A teammate reading `$config/pricing.config.ts` for the first time immediately sees the three billing modes we support.
 
 ### Why `as const`?
 
@@ -91,9 +91,9 @@ Without `as const`, TypeScript infers the type of `PRICING_LOOKUP_KEYS` as:
 
 ```typescript
 {
-  monthly: string
-  yearly: string
-  lifetime: string
+	monthly: string;
+	yearly: string;
+	lifetime: string;
 }
 ```
 
@@ -124,13 +124,13 @@ Now the tier definition. Add this below `PRICING_LOOKUP_KEYS`:
 
 ```typescript
 export interface PricingTier {
-  id: 'monthly' | 'yearly' | 'lifetime'
-  name: string
-  description: string
-  lookup_key: string
-  features: string[]
-  highlighted: boolean
-  badge?: string
+	id: 'monthly' | 'yearly' | 'lifetime';
+	name: string;
+	description: string;
+	lookup_key: string;
+	features: string[];
+	highlighted: boolean;
+	badge?: string;
 }
 ```
 
@@ -144,7 +144,7 @@ Union literals instead of `string` give us exhaustiveness. If we later write a `
 
 ### `name: string`
 
-The tier name shown in the card header. `"Monthly"`, `"Yearly"`, `"Lifetime"`. This is *customer-facing copy* — no dashes, no underscores, marketing language. Separating `name` (UI) from `id` (internal) is intentional: product can rename "Monthly" to "Flex" without cascading changes through the codebase.
+The tier name shown in the card header. `"Monthly"`, `"Yearly"`, `"Lifetime"`. This is _customer-facing copy_ — no dashes, no underscores, marketing language. Separating `name` (UI) from `id` (internal) is intentional: product can rename "Monthly" to "Flex" without cascading changes through the codebase.
 
 ### `description: string`
 
@@ -154,7 +154,7 @@ One-line tagline under the name. "Flexible, pay as you go." / "Save 14% vs month
 
 The Stripe lookup key. We'll set it to `PRICING_LOOKUP_KEYS.monthly` / `.yearly` / `.lifetime` in the array below. Why a `string` type and not `'contactly_monthly' | 'contactly_yearly' | 'contactly_lifetime'`?
 
-Because *the interface shouldn't constrain its users to Contactly's specific keys*. If you reuse this file for another product, you'd want `lookup_key` to accept any string. The runtime data is still narrow (thanks to `as const` on `PRICING_LOOKUP_KEYS`), but the *interface contract* is about structure, not identity.
+Because _the interface shouldn't constrain its users to Contactly's specific keys_. If you reuse this file for another product, you'd want `lookup_key` to accept any string. The runtime data is still narrow (thanks to `as const` on `PRICING_LOOKUP_KEYS`), but the _interface contract_ is about structure, not identity.
 
 This is a subtle style call. If you wanted stricter typing, you could write `lookup_key: (typeof PRICING_LOOKUP_KEYS)[keyof typeof PRICING_LOOKUP_KEYS]` and thread the literal types through. For Contactly's scale, `string` is fine and keeps the interface reusable.
 
@@ -165,7 +165,7 @@ An array of bullet-point feature strings. The Svelte card will iterate over thes
 Strings-as-features is a deliberate simplification. A richer model would be:
 
 ```typescript
-features: Array<{ label: string; included: boolean; icon?: string }>
+features: Array<{ label: string; included: boolean; icon?: string }>;
 ```
 
 …which supports "included" vs "not included" and a leading icon. For Contactly's pricing page every feature is included (no cross-out rows), so `string[]` is the honest representation. The day we add a "basic vs premium" split we'll upgrade the type. Don't pre-model something you don't need.
@@ -174,7 +174,7 @@ features: Array<{ label: string; included: boolean; icon?: string }>
 
 True for the tier visually emphasized as the recommended option (the "best value" card). The Svelte component reads this and adds a ring/border/glow. Exactly one tier should be highlighted — usually the yearly.
 
-We *could* enforce "exactly one" at the type level (e.g. a separate `const HIGHLIGHTED_TIER = 'yearly' as const`), but a boolean per-tier is more flexible: during an experiment you might highlight two tiers, or zero. Types should express the invariants you care about; the "exactly one highlighted" rule isn't strict enough to encode.
+We _could_ enforce "exactly one" at the type level (e.g. a separate `const HIGHLIGHTED_TIER = 'yearly' as const`), but a boolean per-tier is more flexible: during an experiment you might highlight two tiers, or zero. Types should express the invariants you care about; the "exactly one highlighted" rule isn't strict enough to encode.
 
 ### `badge?: string`
 
@@ -188,52 +188,47 @@ Below the interface:
 
 ```typescript
 export const PRICING_TIERS: PricingTier[] = [
-  {
-    id: 'monthly',
-    name: 'Monthly',
-    description: 'Flexible, pay as you go.',
-    lookup_key: PRICING_LOOKUP_KEYS.monthly,
-    features: [
-      'Unlimited contacts',
-      'All features included',
-      'Email support',
-      'Cancel anytime'
-    ],
-    highlighted: false
-  },
-  {
-    id: 'yearly',
-    name: 'Yearly',
-    description: 'Save 14% vs monthly.',
-    lookup_key: PRICING_LOOKUP_KEYS.yearly,
-    features: [
-      'Unlimited contacts',
-      'All features included',
-      'Priority email support',
-      '2 months free vs monthly'
-    ],
-    highlighted: true,
-    badge: 'Best value'
-  },
-  {
-    id: 'lifetime',
-    name: 'Lifetime',
-    description: 'Pay once, use forever.',
-    lookup_key: PRICING_LOOKUP_KEYS.lifetime,
-    features: [
-      'Unlimited contacts',
-      'All features included',
-      'Lifetime updates',
-      'Never pay again'
-    ],
-    highlighted: false
-  }
-]
+	{
+		id: 'monthly',
+		name: 'Monthly',
+		description: 'Flexible, pay as you go.',
+		lookup_key: PRICING_LOOKUP_KEYS.monthly,
+		features: ['Unlimited contacts', 'All features included', 'Email support', 'Cancel anytime'],
+		highlighted: false
+	},
+	{
+		id: 'yearly',
+		name: 'Yearly',
+		description: 'Save 14% vs monthly.',
+		lookup_key: PRICING_LOOKUP_KEYS.yearly,
+		features: [
+			'Unlimited contacts',
+			'All features included',
+			'Priority email support',
+			'2 months free vs monthly'
+		],
+		highlighted: true,
+		badge: 'Best value'
+	},
+	{
+		id: 'lifetime',
+		name: 'Lifetime',
+		description: 'Pay once, use forever.',
+		lookup_key: PRICING_LOOKUP_KEYS.lifetime,
+		features: [
+			'Unlimited contacts',
+			'All features included',
+			'Lifetime updates',
+			'Never pay again'
+		],
+		highlighted: false
+	}
+];
 ```
 
 ### Why the array ordering matters
 
-The Svelte component will render `PRICING_TIERS` in declaration order. That means Monthly will be the leftmost card, Yearly the middle, Lifetime the rightmost. Whether that's the right visual order is a marketing decision — generally the *recommended* tier goes in the middle on 3-card layouts, because the eye lands there first. Hence: Monthly, **Yearly (highlighted)**, Lifetime.
+The Svelte component will render `PRICING_TIERS` in declaration order. That means Monthly will be the leftmost card, Yearly the middle, Lifetime the rightmost. Whether that's the right visual order is a marketing decision — generally the _recommended_ tier goes in the middle on 3-card layouts, because the eye lands there first. Hence: Monthly, **Yearly (highlighted)**, Lifetime.
 
 If product wanted a different order ("lifetime should be leftmost to emphasise the one-time option"), they reorder the array. No Svelte change needed.
 
@@ -245,7 +240,7 @@ This is the contract between the config and the component: **the component can s
 
 ### Sharing the lookup keys
 
-Each tier's `lookup_key` field uses `PRICING_LOOKUP_KEYS.*`. The tier object isn't just *describing* the Stripe price, it's *linking* to it by stable name. In lesson 8.4 the server code zips these tier definitions with live Stripe price data fetched by these same keys. One end of the zip is the content (features, copy, badge); the other end is the live price data (amount, interval); the lookup key is the join column.
+Each tier's `lookup_key` field uses `PRICING_LOOKUP_KEYS.*`. The tier object isn't just _describing_ the Stripe price, it's _linking_ to it by stable name. In lesson 8.4 the server code zips these tier definitions with live Stripe price data fetched by these same keys. One end of the zip is the content (features, copy, badge); the other end is the live price data (amount, interval); the lookup key is the join column.
 
 ---
 
@@ -272,32 +267,30 @@ No errors means the contract is sound. The config is ready.
 You won't write this yet (it's lesson 8.4's job), but a preview helps you see why the config was worth the effort. Here's roughly what the pricing page's server load function will do:
 
 ```typescript
-import { PRICING_TIERS } from '$config/pricing.config'
-import { stripe } from '$lib/server/stripe'
+import { PRICING_TIERS } from '$config/pricing.config';
+import { stripe } from '$lib/server/stripe';
 
 export const load = async () => {
-  const prices = await stripe.prices.list({
-    lookup_keys: PRICING_TIERS.map((t) => t.lookup_key),
-    active: true,
-    expand: ['data.product']
-  })
+	const prices = await stripe.prices.list({
+		lookup_keys: PRICING_TIERS.map((t) => t.lookup_key),
+		active: true,
+		expand: ['data.product']
+	});
 
-  const byLookupKey = new Map(
-    prices.data.map((p) => [p.lookup_key, p])
-  )
+	const byLookupKey = new Map(prices.data.map((p) => [p.lookup_key, p]));
 
-  return {
-    tiers: PRICING_TIERS.map((tier) => {
-      const price = byLookupKey.get(tier.lookup_key)
-      return {
-        ...tier,
-        price_id: price?.id,
-        unit_amount: price?.unit_amount ?? null,
-        interval: price?.recurring?.interval ?? null
-      }
-    })
-  }
-}
+	return {
+		tiers: PRICING_TIERS.map((tier) => {
+			const price = byLookupKey.get(tier.lookup_key);
+			return {
+				...tier,
+				price_id: price?.id,
+				unit_amount: price?.unit_amount ?? null,
+				interval: price?.recurring?.interval ?? null
+			};
+		})
+	};
+};
 ```
 
 Notice: the server code knows nothing about "Monthly vs Yearly" — it just iterates over `PRICING_TIERS` and asks Stripe about each one. If marketing adds a "Quarterly" tier by pushing a fourth entry into the array, this server code requires zero change.
@@ -330,7 +323,7 @@ A first-draft interface might include things like `onClickOverride?: (tier) => v
 
 ### Mistake 4: Mixing marketing copy across files
 
-The tier names here are `Monthly` / `Yearly` / `Lifetime`. If lesson 8.4's Svelte component writes `<h1>Choose your plan</h1>` and lesson 8.1's Stripe dashboard has the product description `Full access to Contactly`, those are *three* places with customer copy.
+The tier names here are `Monthly` / `Yearly` / `Lifetime`. If lesson 8.4's Svelte component writes `<h1>Choose your plan</h1>` and lesson 8.1's Stripe dashboard has the product description `Full access to Contactly`, those are _three_ places with customer copy.
 
 For a small site, fine. For a larger site, consider consolidating copy in one file (`i18n/en.ts`, `copy.ts`, or a CMS). Start small, extract when you feel the pain.
 
@@ -348,11 +341,11 @@ For a small site, fine. For a larger site, consider consolidating copy in one fi
 
 The rule of thumb: **anything a non-developer might want to change should be data; anything about how data is rendered is code.** Tier names, descriptions, feature lists — a marketer could own these. Which Tailwind class adds a "highlighted" ring — an engineer owns that.
 
-Config files are the handshake between those roles. The config describes *what*; the code describes *how*. If you notice a single file containing both ("the Svelte component has hard-coded feature strings"), you've collapsed the layers — and the result is always the same: either the engineer becomes the pricing-copy approver, or the marketer has to open a PR to change a typo.
+Config files are the handshake between those roles. The config describes _what_; the code describes _how_. If you notice a single file containing both ("the Svelte component has hard-coded feature strings"), you've collapsed the layers — and the result is always the same: either the engineer becomes the pricing-copy approver, or the marketer has to open a PR to change a typo.
 
 ### 2. `as const` is a load-bearing idiom
 
-`as const` is seen as a small TS nicety. It's actually one of the most important tools in the language for encoding business invariants. Every string that *should* have a fixed set of values wants `as const`:
+`as const` is seen as a small TS nicety. It's actually one of the most important tools in the language for encoding business invariants. Every string that _should_ have a fixed set of values wants `as const`:
 
 - Route names (`['/login', '/dashboard'] as const`)
 - Status codes in your own app (`{ paid: 'paid', trialing: 'trialing' } as const`)

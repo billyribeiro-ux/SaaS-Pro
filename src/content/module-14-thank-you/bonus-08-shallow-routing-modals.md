@@ -74,7 +74,7 @@ Side effects:
 
 - Adds one entry to the browser's history stack.
 - Browser back button unwinds it.
-- Cmd-click / middle-click on links is *not* intercepted (we will handle this ourselves).
+- Cmd-click / middle-click on links is _not_ intercepted (we will handle this ourselves).
 - No load functions run. No layout re-renders. Your component stays mounted.
 
 ### `replaceState(url, state)`
@@ -85,7 +85,7 @@ replaceState('/contacts/abc-123?tab=notes', { ...page.state, tab: 'notes' });
 
 Same signature, but instead of adding a history entry, it replaces the current one. Use this when:
 
-- The user is interacting *inside* a modal (switching tabs, toggling a field) and each micro-change should not create a back-button stop.
+- The user is interacting _inside_ a modal (switching tabs, toggling a field) and each micro-change should not create a back-button stop.
 - You want to update URL state without polluting history.
 
 Rule of thumb: `pushState` for "entering a new state" (opened the modal, navigated to a sub-view), `replaceState` for "modifying current state" (tab switches, filter changes).
@@ -94,11 +94,11 @@ Rule of thumb: `pushState` for "entering a new state" (opened the modal, navigat
 
 ```svelte
 <script>
-  import { page } from '$app/state';
+	import { page } from '$app/state';
 </script>
 
 {#if page.state.selected}
-  <Modal contact={page.state.selected} />
+	<Modal contact={page.state.selected} />
 {/if}
 ```
 
@@ -107,7 +107,7 @@ Rule of thumb: `pushState` for "entering a new state" (opened the modal, navigat
 Two important facts:
 
 - **On SSR and the first page load, `page.state` is always an empty object.** Shallow state does not survive a full page reload — it only exists within the SPA session. This is fine for modals (a refreshed page lands on the full `/contacts/{id}` route, rendering the detail page properly).
-- **`page.state` is *not* serializable in the general case.** Don't put `Map`, `Set`, `Date`, `Promise`, or class instances in it. Stick to plain JSON-compatible shapes.
+- **`page.state` is _not_ serializable in the general case.** Don't put `Map`, `Set`, `Date`, `Promise`, or class instances in it. Stick to plain JSON-compatible shapes.
 
 ## 4. Refactoring Contactly's contact list
 
@@ -117,71 +117,70 @@ Here is the setup. Currently, the contacts list has plain `<a>` links:
 
 ```svelte
 <script lang="ts">
-  let { data } = $props();
+	let { data } = $props();
 </script>
 
 <ul>
-  {#each data.contacts as contact (contact.id)}
-    <li>
-      <a href="/contacts/{contact.id}">
-        {contact.first_name} {contact.last_name}
-      </a>
-    </li>
-  {/each}
+	{#each data.contacts as contact (contact.id)}
+		<li>
+			<a href="/contacts/{contact.id}">
+				{contact.first_name}
+				{contact.last_name}
+			</a>
+		</li>
+	{/each}
 </ul>
 ```
 
-Clicking any link triggers a full navigation to `/contacts/[id]/+page.svelte`. We want the *same* URL to open the contact as a modal while keeping the list mounted.
+Clicking any link triggers a full navigation to `/contacts/[id]/+page.svelte`. We want the _same_ URL to open the contact as a modal while keeping the list mounted.
 
 ### After: `src/routes/(app)/contacts/+page.svelte`
 
 ```svelte
 <script lang="ts">
-  import { pushState, preloadData, goto } from '$app/navigation';
-  import { page } from '$app/state';
-  import ContactDetailModal from './ContactDetailModal.svelte';
-  import ContactDetailPage from './[id]/+page.svelte';
-  import type { Contact } from '$lib/types/database.types';
+	import { pushState, preloadData, goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import ContactDetailModal from './ContactDetailModal.svelte';
+	import ContactDetailPage from './[id]/+page.svelte';
+	import type { Contact } from '$lib/types/database.types';
 
-  let { data } = $props();
+	let { data } = $props();
 
-  async function openContact(e: MouseEvent, contact: Contact) {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
-      return;
-    }
+	async function openContact(e: MouseEvent, contact: Contact) {
+		if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+			return;
+		}
 
-    e.preventDefault();
+		e.preventDefault();
 
-    const href = `/contacts/${contact.id}`;
-    const result = await preloadData(href);
+		const href = `/contacts/${contact.id}`;
+		const result = await preloadData(href);
 
-    if (result.type === 'loaded' && result.status === 200) {
-      pushState(href, { selected: result.data });
-    } else {
-      goto(href);
-    }
-  }
+		if (result.type === 'loaded' && result.status === 200) {
+			pushState(href, { selected: result.data });
+		} else {
+			goto(href);
+		}
+	}
 </script>
 
 <h1>Contacts</h1>
 
 <ul>
-  {#each data.contacts as contact (contact.id)}
-    <li>
-      <a
-        href="/contacts/{contact.id}"
-        onclick={(e) => openContact(e, contact)}
-      >
-        {contact.first_name} {contact.last_name}
-      </a>
-    </li>
-  {/each}
+	{#each data.contacts as contact (contact.id)}
+		<li>
+			<a href="/contacts/{contact.id}" onclick={(e) => openContact(e, contact)}>
+				{contact.first_name}
+				{contact.last_name}
+			</a>
+		</li>
+	{/each}
 </ul>
 
 {#if page.state.selected}
-  <ContactDetailModal onclose={() => history.back()}>
-    <ContactDetailPage data={page.state.selected} />
-  </ContactDetailModal>
+	<ContactDetailModal onclose={() => history.back()}>
+		<ContactDetailPage data={page.state.selected} />
+	</ContactDetailModal>
 {/if}
 ```
 
@@ -216,7 +215,7 @@ Line-by-line:
 
 - `{#if page.state.selected}` — the modal renders only when shallow state says "a contact is selected."
 - `<ContactDetailModal onclose={() => history.back()}>` — closing the modal is just `history.back()`. The browser pops the history entry, `page.state.selected` becomes `undefined`, the `{#if}` block unmounts the modal. No imperative state management needed.
-- `<ContactDetailPage data={page.state.selected} />` — we re-render the real contact page component with the preloaded data. This is the key insight: the *same* component that renders at `/contacts/{id}` is now rendering inside a modal. No code duplication.
+- `<ContactDetailPage data={page.state.selected} />` — we re-render the real contact page component with the preloaded data. This is the key insight: the _same_ component that renders at `/contacts/{id}` is now rendering inside a modal. No code duplication.
 
 ## 5. The full route still exists
 
@@ -229,20 +228,20 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-  const user = await locals.getUser();
-  if (!user) error(401, 'Unauthorized');
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { data, error: dbError } = await locals.supabase
-    .from('contacts')
-    .select('*, notes(*), activities(*)')
-    .eq('id', params.id)
-    .eq('user_id', user.id)
-    .single();
+	const { data, error: dbError } = await locals.supabase
+		.from('contacts')
+		.select('*, notes(*), activities(*)')
+		.eq('id', params.id)
+		.eq('user_id', user.id)
+		.single();
 
-  if (dbError?.code === 'PGRST116') error(404, 'Contact not found');
-  if (dbError) error(500, dbError.message);
+	if (dbError?.code === 'PGRST116') error(404, 'Contact not found');
+	if (dbError) error(500, dbError.message);
 
-  return { contact: data };
+	return { contact: data };
 };
 ```
 
@@ -250,29 +249,29 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 ```svelte
 <script lang="ts">
-  import type { PageData } from './$types';
-  let { data }: { data: PageData } = $props();
+	import type { PageData } from './$types';
+	let { data }: { data: PageData } = $props();
 </script>
 
 <article class="contact-detail">
-  <header>
-    <h1>{data.contact.first_name} {data.contact.last_name}</h1>
-    <p>{data.contact.email}</p>
-  </header>
+	<header>
+		<h1>{data.contact.first_name} {data.contact.last_name}</h1>
+		<p>{data.contact.email}</p>
+	</header>
 
-  <section>
-    <h2>Notes</h2>
-    {#each data.contact.notes as note (note.id)}
-      <p>{note.body}</p>
-    {/each}
-  </section>
+	<section>
+		<h2>Notes</h2>
+		{#each data.contact.notes as note (note.id)}
+			<p>{note.body}</p>
+		{/each}
+	</section>
 
-  <section>
-    <h2>Activity</h2>
-    {#each data.contact.activities as activity (activity.id)}
-      <p>{activity.type} — {activity.created_at}</p>
-    {/each}
-  </section>
+	<section>
+		<h2>Activity</h2>
+		{#each data.contact.activities as activity (activity.id)}
+			<p>{activity.type} — {activity.created_at}</p>
+		{/each}
+	</section>
 </article>
 ```
 
@@ -297,29 +296,29 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Database } from '$lib/types/database.types';
 
 declare global {
-  namespace App {
-    interface Locals {
-      supabase: SupabaseClient<Database>;
-      getUser: () => Promise<User | null>;
-    }
+	namespace App {
+		interface Locals {
+			supabase: SupabaseClient<Database>;
+			getUser: () => Promise<User | null>;
+		}
 
-    interface PageData {
-      user: User | null;
-    }
+		interface PageData {
+			user: User | null;
+		}
 
-    interface PageState {
-      selected?: {
-        contact: Database['public']['Tables']['contacts']['Row'] & {
-          notes: Database['public']['Tables']['notes']['Row'][];
-          activities: Database['public']['Tables']['activities']['Row'][];
-        };
-      };
-    }
+		interface PageState {
+			selected?: {
+				contact: Database['public']['Tables']['contacts']['Row'] & {
+					notes: Database['public']['Tables']['notes']['Row'][];
+					activities: Database['public']['Tables']['activities']['Row'][];
+				};
+			};
+		}
 
-    interface Error {
-      message: string;
-    }
-  }
+		interface Error {
+			message: string;
+		}
+	}
 }
 
 export {};
@@ -346,96 +345,94 @@ The modal needs to be:
 
 ```svelte
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 
-  let {
-    onclose,
-    children
-  }: {
-    onclose: () => void;
-    children: Snippet;
-  } = $props();
+	let {
+		onclose,
+		children
+	}: {
+		onclose: () => void;
+		children: Snippet;
+	} = $props();
 
-  let dialog = $state<HTMLDialogElement | null>(null);
+	let dialog = $state<HTMLDialogElement | null>(null);
 
-  $effect(() => {
-    dialog?.showModal();
-  });
+	$effect(() => {
+		dialog?.showModal();
+	});
 
-  function handleClose() {
-    dialog?.close();
-    onclose();
-  }
+	function handleClose() {
+		dialog?.close();
+		onclose();
+	}
 
-  function onBackdropClick(e: MouseEvent) {
-    if (e.target === dialog) handleClose();
-  }
+	function onBackdropClick(e: MouseEvent) {
+		if (e.target === dialog) handleClose();
+	}
 
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      handleClose();
-    }
-  }
+	function onKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			handleClose();
+		}
+	}
 </script>
 
 <dialog
-  bind:this={dialog}
-  onclick={onBackdropClick}
-  onkeydown={onKeydown}
-  aria-labelledby="modal-title"
-  class="modal"
+	bind:this={dialog}
+	onclick={onBackdropClick}
+	onkeydown={onKeydown}
+	aria-labelledby="modal-title"
+	class="modal"
 >
-  <div class="modal-content">
-    <button class="close" onclick={handleClose} aria-label="Close">
-      &times;
-    </button>
+	<div class="modal-content">
+		<button class="close" onclick={handleClose} aria-label="Close"> &times; </button>
 
-    {@render children()}
-  </div>
+		{@render children()}
+	</div>
 </dialog>
 
 <style>
-  .modal {
-    margin: auto;
-    padding: 0;
-    border: none;
-    border-radius: 0.75rem;
-    max-width: 48rem;
-    width: 90vw;
-    max-height: 90vh;
-    background: var(--color-surface-raised);
-    color: var(--color-text);
-  }
+	.modal {
+		margin: auto;
+		padding: 0;
+		border: none;
+		border-radius: 0.75rem;
+		max-width: 48rem;
+		width: 90vw;
+		max-height: 90vh;
+		background: var(--color-surface-raised);
+		color: var(--color-text);
+	}
 
-  .modal::backdrop {
-    background: rgb(0 0 0 / 0.5);
-    backdrop-filter: blur(4px);
-  }
+	.modal::backdrop {
+		background: rgb(0 0 0 / 0.5);
+		backdrop-filter: blur(4px);
+	}
 
-  .modal-content {
-    padding: 2rem;
-    position: relative;
-    overflow-y: auto;
-    max-height: 90vh;
-  }
+	.modal-content {
+		padding: 2rem;
+		position: relative;
+		overflow-y: auto;
+		max-height: 90vh;
+	}
 
-  .close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--color-text-muted);
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-  }
+	.close {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		background: none;
+		border: none;
+		font-size: 1.5rem;
+		cursor: pointer;
+		color: var(--color-text-muted);
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.25rem;
+	}
 
-  .close:hover {
-    background: var(--color-surface);
-  }
+	.close:hover {
+		background: var(--color-surface);
+	}
 </style>
 ```
 
@@ -497,7 +494,7 @@ The `data-sveltekit-preload-data` attribute is the declarative version: add it t
 
 ## 10. Principal Engineer Notes
 
-**Deep-linking is the acid test.** If I email you `https://contactly.app/contacts/abc`, you open the link in a fresh tab, and you see... the modal? No — you see the full page. The modal only exists as an overlay when you navigate *from within* the list. This is correct behavior. The URL encodes the destination; how that destination is presented (full page vs. modal-overlay) is a progressive enhancement on top of the real route.
+**Deep-linking is the acid test.** If I email you `https://contactly.app/contacts/abc`, you open the link in a fresh tab, and you see... the modal? No — you see the full page. The modal only exists as an overlay when you navigate _from within_ the list. This is correct behavior. The URL encodes the destination; how that destination is presented (full page vs. modal-overlay) is a progressive enhancement on top of the real route.
 
 **Keep your list mounted.** The whole point of this pattern is keeping the list's state (scroll position, filter inputs, selected items) alive across modal interactions. If you find yourself using `pushState` and then unmounting the list, you have not saved anything compared to full navigation.
 

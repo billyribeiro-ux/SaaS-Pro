@@ -17,9 +17,7 @@
 
 	let { tier, price, isAuthenticated, currentTierKey }: Props = $props();
 
-	let priceLabel = $derived(
-		price ? formatPrice(price.unit_amount, price.currency) : '—'
-	);
+	let priceLabel = $derived(price ? formatPrice(price.unit_amount, price.currency) : '—');
 	let isCurrent = $derived(currentTierKey === tier.key);
 </script>
 
@@ -44,7 +42,7 @@
 	{/if}
 
 	<div class="flex items-center justify-between gap-2">
-		<h3 class="text-sm font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+		<h3 class="text-sm font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400">
 			{tier.name}
 		</h3>
 		{#if tier.highlighted}
@@ -60,7 +58,9 @@
 
 	<div class="mt-4">
 		<div class="flex items-baseline gap-2">
-			<span class="font-display text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">
+			<span
+				class="font-display text-5xl font-semibold tracking-tight text-slate-900 dark:text-white"
+			>
 				{priceLabel}
 			</span>
 			<span class="text-sm text-slate-500 dark:text-slate-400">
@@ -70,7 +70,9 @@
 		<p class="mt-3 text-sm text-slate-600 dark:text-slate-400">{tier.description}</p>
 	</div>
 
-	<ul class="mt-6 flex flex-1 flex-col gap-3 border-t border-slate-200/80 pt-6 text-sm dark:border-slate-800">
+	<ul
+		class="mt-6 flex flex-1 flex-col gap-3 border-t border-slate-200/80 pt-6 text-sm dark:border-slate-800"
+	>
 		{#each tier.features as feature (feature)}
 			<li class="flex items-start gap-2.5">
 				<span

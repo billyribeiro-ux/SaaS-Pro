@@ -1,7 +1,6 @@
 ---
 name: upgrade-stripe
 description: Guide for upgrading Stripe API versions and SDKs
-
 ---
 
 The latest Stripe API version is 2026-03-25.dahlia - use this version when upgrading unless the user specifies a different target version.
@@ -53,7 +52,7 @@ Stripe.api_version = '2026-03-25.dahlia'
 
 ```javascript
 const stripe = require('stripe')('sk_test_xxx', {
-  apiVersion: '2026-03-25.dahlia'
+	apiVersion: '2026-03-25.dahlia'
 });
 ```
 
@@ -77,7 +76,7 @@ Always specify the API version you’re integrating against in your code instead
 ```javascript
 // Good: Explicit version
 const stripe = require('stripe')('sk_test_xxx', {
-  apiVersion: '2026-03-25.dahlia'
+	apiVersion: '2026-03-25.dahlia'
 });
 
 // Avoid: Relying on account default
@@ -173,7 +172,7 @@ Or in code:
 
 ```javascript
 const stripe = require('stripe')('sk_test_xxx', {
-  apiVersion: '2026-03-25.dahlia'  // Test with new version
+	apiVersion: '2026-03-25.dahlia' // Test with new version
 });
 ```
 

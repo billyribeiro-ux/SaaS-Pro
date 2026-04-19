@@ -1,10 +1,10 @@
 ---
-title: "5.1 - Stripe Dashboard Overview"
+title: '5.1 - Stripe Dashboard Overview'
 module: 5
 lesson: 1
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "01-stripe-dashboard-overview"
-description: "Navigate the Stripe dashboard and understand test mode vs live mode before writing any code."
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '01-stripe-dashboard-overview'
+description: 'Navigate the Stripe dashboard and understand test mode vs live mode before writing any code.'
 duration: 10
 preview: true
 ---
@@ -193,10 +193,10 @@ In SvelteKit, we'll expose it as `STRIPE_SECRET_KEY` (no `PUBLIC_` prefix — it
 
 Each environment has its own pair:
 
-| Environment | Publishable | Secret |
-|-------------|-------------|--------|
-| Test mode | `pk_test_...` | `sk_test_...` |
-| Live mode | `pk_live_...` | `sk_live_...` |
+| Environment | Publishable   | Secret        |
+| ----------- | ------------- | ------------- |
+| Test mode   | `pk_test_...` | `sk_test_...` |
+| Live mode   | `pk_live_...` | `sk_live_...` |
 
 Test keys only work against test mode. Live keys only work against live mode. You cannot mix them — Stripe will reject a request that uses a test key and asks for a live resource, and vice versa.
 

@@ -17,7 +17,9 @@
 	on long curricula without dragging the main column with it.
 -->
 <div class="relative flex min-h-[calc(100vh-4rem)]">
-	<div class="sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 md:block sm:top-16 sm:h-[calc(100vh-4rem)]">
+	<div
+		class="sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 sm:top-16 sm:h-[calc(100vh-4rem)] md:block"
+	>
 		<Sidebar progress={data.progress} hasSubscription={data.hasSubscription} />
 	</div>
 	<div class="flex-1 overflow-x-hidden">

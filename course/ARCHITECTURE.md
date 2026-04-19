@@ -47,7 +47,7 @@ organization grants that organization the features the user is entitled to.
 
 - The `subscriptions` table has `user_id`, not `organization_id`.
 - Stripe customer records (`customers` table) map one-to-one to users.
-- Feature gates check the *acting user's* tier, not the org's plan.
+- Feature gates check the _acting user's_ tier, not the org's plan.
 - A free-tier owner with a Pro-tier member sees Pro features when that
   member is acting; the owner reverts to Free when acting alone.
 
@@ -138,8 +138,8 @@ every Checkout Session and `automatic_tax: { enabled: true }` on every
 Subscription. Customer billing address is collected at checkout
 (`billing_address_collection: 'required'`) and saved to the Stripe
 Customer. US sales-tax registration thresholds and obligations are the
-operator's responsibility — Contactly's code handles the *integration*; the
-operator handles the *registration*.
+operator's responsibility — Contactly's code handles the _integration_; the
+operator handles the _registration_.
 
 **Why.** Anything else means writing tax math, which is a regulated and
 ever-changing surface area no application code should own. Stripe Tax is
@@ -157,11 +157,11 @@ both domestic and international expansion.
 
 **Decision.** Three tiers, two billing intervals on the paid tiers:
 
-| Tier         | Monthly | Yearly | Lookup keys                                                         |
-| ------------ | ------- | ------ | ------------------------------------------------------------------- |
-| **Starter**  | Free    | Free   | _no Stripe price; entitlement is the absence of a subscription_     |
-| **Pro**      | $19     | $190   | `contactly_pro_monthly`, `contactly_pro_yearly`                     |
-| **Business** | $49     | $490   | `contactly_business_monthly`, `contactly_business_yearly`           |
+| Tier         | Monthly | Yearly | Lookup keys                                                     |
+| ------------ | ------- | ------ | --------------------------------------------------------------- |
+| **Starter**  | Free    | Free   | _no Stripe price; entitlement is the absence of a subscription_ |
+| **Pro**      | $19     | $190   | `contactly_pro_monthly`, `contactly_pro_yearly`                 |
+| **Business** | $49     | $490   | `contactly_business_monthly`, `contactly_business_yearly`       |
 
 Yearly = 10× monthly (~17% discount). Both paid tiers include a 14-day
 free trial; trial state is enforced via the `subscription_trials` audit
@@ -171,7 +171,7 @@ cancelling and re-subscribing.
 **Stripe modeling.**
 
 - Two **Products** (`prod_pro`, `prod_business`) — each with two
-  recurring **Prices** (monthly + yearly). Starter is *not* a Stripe
+  recurring **Prices** (monthly + yearly). Starter is _not_ a Stripe
   resource; it's the implied state when no active subscription exists.
 - Code references prices by their **lookup key**, never the live
   `price_xxx` ID. Lookup keys are stable across test/live mode and

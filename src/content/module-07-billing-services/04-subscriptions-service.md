@@ -1,10 +1,10 @@
 ---
-title: "7.4 - Subscriptions Service"
+title: '7.4 - Subscriptions Service'
 module: 7
 lesson: 4
-moduleSlug: "module-07-billing-services"
-lessonSlug: "04-subscriptions-service"
-description: "Build the subscriptions service that keeps Supabase in sync with Stripe subscription state."
+moduleSlug: 'module-07-billing-services'
+lessonSlug: '04-subscriptions-service'
+description: 'Build the subscriptions service that keeps Supabase in sync with Stripe subscription state.'
 duration: 15
 preview: false
 ---
@@ -77,7 +77,7 @@ Stripe.Subscription {
 }
 ```
 
-Why? Because a subscription *can* have multiple items with staggered billing periods. The old model pretended there was one period per subscription; v22 makes it honest by putting the period on each item.
+Why? Because a subscription _can_ have multiple items with staggered billing periods. The old model pretended there was one period per subscription; v22 makes it honest by putting the period on each item.
 
 For Contactly — single-item subscriptions — we read `subscription.items.data[0].current_period_start` and that's our period start. For multi-item subs we'd need a more complex model, but we're not there and likely never will be.
 
@@ -93,44 +93,40 @@ You can put this in its own file (`prices.service.ts`) or in `products.service.t
 
 ```typescript
 // src/lib/server/billing/products.service.ts
-import type Stripe from 'stripe'
-import { supabaseAdmin } from '$server/supabase'
+import type Stripe from 'stripe';
+import { supabaseAdmin } from '$server/supabase';
 
 export async function upsertProduct(product: Stripe.Product): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('products')
-    .upsert({
-      id: product.id,
-      name: product.name,
-      description: product.description ?? null,
-      active: product.active,
-      metadata: product.metadata,
-      updated_at: new Date().toISOString()
-    })
-  if (error) {
-    throw new Error(`Failed to upsert product ${product.id}: ${error.message}`)
-  }
+	const { error } = await supabaseAdmin.from('products').upsert({
+		id: product.id,
+		name: product.name,
+		description: product.description ?? null,
+		active: product.active,
+		metadata: product.metadata,
+		updated_at: new Date().toISOString()
+	});
+	if (error) {
+		throw new Error(`Failed to upsert product ${product.id}: ${error.message}`);
+	}
 }
 
 export async function upsertPrice(price: Stripe.Price): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('prices')
-    .upsert({
-      id: price.id,
-      product_id: typeof price.product === 'string' ? price.product : price.product.id,
-      active: price.active,
-      currency: price.currency,
-      type: price.type,
-      unit_amount: price.unit_amount,
-      interval: price.recurring?.interval ?? null,
-      interval_count: price.recurring?.interval_count ?? 1,
-      lookup_key: price.lookup_key,
-      metadata: price.metadata,
-      updated_at: new Date().toISOString()
-    })
-  if (error) {
-    throw new Error(`Failed to upsert price ${price.id}: ${error.message}`)
-  }
+	const { error } = await supabaseAdmin.from('prices').upsert({
+		id: price.id,
+		product_id: typeof price.product === 'string' ? price.product : price.product.id,
+		active: price.active,
+		currency: price.currency,
+		type: price.type,
+		unit_amount: price.unit_amount,
+		interval: price.recurring?.interval ?? null,
+		interval_count: price.recurring?.interval_count ?? 1,
+		lookup_key: price.lookup_key,
+		metadata: price.metadata,
+		updated_at: new Date().toISOString()
+	});
+	if (error) {
+		throw new Error(`Failed to upsert price ${price.id}: ${error.message}`);
+	}
 }
 ```
 
@@ -147,70 +143,62 @@ Create `src/lib/server/billing/subscriptions.service.ts`:
 
 ```typescript
 // src/lib/server/billing/subscriptions.service.ts
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
-import type Stripe from 'stripe'
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
+import type Stripe from 'stripe';
 
-export async function upsertSubscription(
-  subscription: Stripe.Subscription
-): Promise<void> {
-  const { data: customer } = await supabaseAdmin
-    .from('customers')
-    .select('id')
-    .eq('stripe_customer_id', subscription.customer as string)
-    .single()
+export async function upsertSubscription(subscription: Stripe.Subscription): Promise<void> {
+	const { data: customer } = await supabaseAdmin
+		.from('customers')
+		.select('id')
+		.eq('stripe_customer_id', subscription.customer as string)
+		.single();
 
-  if (!customer) {
-    throw new Error(`No user found for customer ${subscription.customer}`)
-  }
+	if (!customer) {
+		throw new Error(`No user found for customer ${subscription.customer}`);
+	}
 
-  const item = subscription.items.data[0]
+	const item = subscription.items.data[0];
 
-  const { error } = await supabaseAdmin
-    .from('subscriptions')
-    .upsert({
-      id: subscription.id,
-      user_id: customer.id,
-      status: subscription.status,
-      price_id: item?.price.id ?? null,
-      quantity: item?.quantity ?? 1,
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      cancel_at: subscription.cancel_at
-        ? new Date(subscription.cancel_at * 1000).toISOString()
-        : null,
-      canceled_at: subscription.canceled_at
-        ? new Date(subscription.canceled_at * 1000).toISOString()
-        : null,
-      current_period_start: item?.current_period_start
-        ? new Date(item.current_period_start * 1000).toISOString()
-        : new Date().toISOString(),
-      current_period_end: item?.current_period_end
-        ? new Date(item.current_period_end * 1000).toISOString()
-        : new Date().toISOString(),
-      ended_at: subscription.ended_at
-        ? new Date(subscription.ended_at * 1000).toISOString()
-        : null,
-      trial_start: subscription.trial_start
-        ? new Date(subscription.trial_start * 1000).toISOString()
-        : null,
-      trial_end: subscription.trial_end
-        ? new Date(subscription.trial_end * 1000).toISOString()
-        : null,
-      metadata: subscription.metadata
-    })
+	const { error } = await supabaseAdmin.from('subscriptions').upsert({
+		id: subscription.id,
+		user_id: customer.id,
+		status: subscription.status,
+		price_id: item?.price.id ?? null,
+		quantity: item?.quantity ?? 1,
+		cancel_at_period_end: subscription.cancel_at_period_end,
+		cancel_at: subscription.cancel_at
+			? new Date(subscription.cancel_at * 1000).toISOString()
+			: null,
+		canceled_at: subscription.canceled_at
+			? new Date(subscription.canceled_at * 1000).toISOString()
+			: null,
+		current_period_start: item?.current_period_start
+			? new Date(item.current_period_start * 1000).toISOString()
+			: new Date().toISOString(),
+		current_period_end: item?.current_period_end
+			? new Date(item.current_period_end * 1000).toISOString()
+			: new Date().toISOString(),
+		ended_at: subscription.ended_at ? new Date(subscription.ended_at * 1000).toISOString() : null,
+		trial_start: subscription.trial_start
+			? new Date(subscription.trial_start * 1000).toISOString()
+			: null,
+		trial_end: subscription.trial_end
+			? new Date(subscription.trial_end * 1000).toISOString()
+			: null,
+		metadata: subscription.metadata
+	});
 
-  if (error) {
-    throw new Error(`Failed to upsert subscription ${subscription.id}: ${error.message}`)
-  }
+	if (error) {
+		throw new Error(`Failed to upsert subscription ${subscription.id}: ${error.message}`);
+	}
 }
 
-export async function manageSubscriptionStatusChange(
-  subscriptionId: string
-): Promise<void> {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-    expand: ['items.data.price.product']
-  })
-  await upsertSubscription(subscription)
+export async function manageSubscriptionStatusChange(subscriptionId: string): Promise<void> {
+	const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+		expand: ['items.data.price.product']
+	});
+	await upsertSubscription(subscription);
 }
 ```
 
@@ -220,13 +208,13 @@ Let's break it apart.
 
 ```typescript
 const { data: customer } = await supabaseAdmin
-  .from('customers')
-  .select('id')
-  .eq('stripe_customer_id', subscription.customer as string)
-  .single()
+	.from('customers')
+	.select('id')
+	.eq('stripe_customer_id', subscription.customer as string)
+	.single();
 
 if (!customer) {
-  throw new Error(`No user found for customer ${subscription.customer}`)
+	throw new Error(`No user found for customer ${subscription.customer}`);
 }
 ```
 
@@ -241,7 +229,7 @@ We could alternatively soft-fail and create the customer row on the fly by calli
 ### Step 3b: Extract the subscription item
 
 ```typescript
-const item = subscription.items.data[0]
+const item = subscription.items.data[0];
 ```
 
 For Contactly, every subscription has exactly one item. Even so, we use optional chaining downstream (`item?.price.id ?? null`) because a defensive habit is cheaper than a rare production crash. If Stripe ever sends us a zero-item subscription (which would be pathological, but let's not crash), we get null fields rather than a runtime error.
@@ -312,7 +300,7 @@ Same pattern for the rest: null-guard, then convert. `metadata` is a passthrough
 
 ```typescript
 if (error) {
-  throw new Error(`Failed to upsert subscription ${subscription.id}: ${error.message}`)
+	throw new Error(`Failed to upsert subscription ${subscription.id}: ${error.message}`);
 }
 ```
 
@@ -321,13 +309,11 @@ Same pattern as every other service: throw, let the webhook handler return 500, 
 ### Step 3e: `manageSubscriptionStatusChange`
 
 ```typescript
-export async function manageSubscriptionStatusChange(
-  subscriptionId: string
-): Promise<void> {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-    expand: ['items.data.price.product']
-  })
-  await upsertSubscription(subscription)
+export async function manageSubscriptionStatusChange(subscriptionId: string): Promise<void> {
+	const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+		expand: ['items.data.price.product']
+	});
+	await upsertSubscription(subscription);
 }
 ```
 
@@ -347,7 +333,7 @@ By default, Stripe returns `items[].price` as just an ID string. We want the ful
 
 Expansion is Stripe's way of saying "send me the nested object inline." Each level of `.` is one degree of nesting: `items.data.price.product` means "expand `price`, then within `price` expand `product`." You can do up to four levels in a single request.
 
-We don't *need* the product expanded for `upsertSubscription` itself — we never touch `product.name` in this function — but the cost of expanding is negligible and it positions us for future features. (Alternative: expand only what you immediately need, and trust that later features can ask for more. Valid take. We're going with the fatter expansion here for consistency with most Stripe-sample code.)
+We don't _need_ the product expanded for `upsertSubscription` itself — we never touch `product.name` in this function — but the cost of expanding is negligible and it positions us for future features. (Alternative: expand only what you immediately need, and trust that later features can ask for more. Valid take. We're going with the fatter expansion here for consistency with most Stripe-sample code.)
 
 ---
 
@@ -357,75 +343,75 @@ Now wire every subscription-related event into the service functions. Here's the
 
 ```typescript
 // src/routes/api/webhooks/stripe/+server.ts
-import { json, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { upsertProduct, upsertPrice } from '$server/billing/products.service'
+import { json, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { upsertProduct, upsertPrice } from '$server/billing/products.service';
 import {
-  upsertSubscription,
-  manageSubscriptionStatusChange
-} from '$server/billing/subscriptions.service'
-import { STRIPE_WEBHOOK_SECRET } from '$env/static/private'
-import type { RequestHandler } from './$types'
-import type Stripe from 'stripe'
+	upsertSubscription,
+	manageSubscriptionStatusChange
+} from '$server/billing/subscriptions.service';
+import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import type { RequestHandler } from './$types';
+import type Stripe from 'stripe';
 
 export const POST: RequestHandler = async ({ request }) => {
-  const signature = request.headers.get('stripe-signature')
-  if (!signature) error(400, 'Missing stripe-signature header')
+	const signature = request.headers.get('stripe-signature');
+	if (!signature) error(400, 'Missing stripe-signature header');
 
-  const rawBody = await request.text()
+	const rawBody = await request.text();
 
-  let event: Stripe.Event
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    error(400, `Webhook signature verification failed: ${message}`)
-  }
+	let event: Stripe.Event;
+	try {
+		event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : 'Unknown error';
+		error(400, `Webhook signature verification failed: ${message}`);
+	}
 
-  try {
-    switch (event.type) {
-      case 'product.created':
-      case 'product.updated': {
-        await upsertProduct(event.data.object)
-        break
-      }
+	try {
+		switch (event.type) {
+			case 'product.created':
+			case 'product.updated': {
+				await upsertProduct(event.data.object);
+				break;
+			}
 
-      case 'price.created':
-      case 'price.updated': {
-        await upsertPrice(event.data.object)
-        break
-      }
+			case 'price.created':
+			case 'price.updated': {
+				await upsertPrice(event.data.object);
+				break;
+			}
 
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        await manageSubscriptionStatusChange(event.data.object.id)
-        break
-      }
+			case 'customer.subscription.created':
+			case 'customer.subscription.updated':
+			case 'customer.subscription.deleted': {
+				await manageSubscriptionStatusChange(event.data.object.id);
+				break;
+			}
 
-      case 'checkout.session.completed': {
-        const session = event.data.object
-        if (session.mode === 'subscription' && session.subscription) {
-          const subscriptionId =
-            typeof session.subscription === 'string'
-              ? session.subscription
-              : session.subscription.id
-          await manageSubscriptionStatusChange(subscriptionId)
-        }
-        break
-      }
+			case 'checkout.session.completed': {
+				const session = event.data.object;
+				if (session.mode === 'subscription' && session.subscription) {
+					const subscriptionId =
+						typeof session.subscription === 'string'
+							? session.subscription
+							: session.subscription.id;
+					await manageSubscriptionStatusChange(subscriptionId);
+				}
+				break;
+			}
 
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error(`Webhook handler error for ${event.type}:`, message)
-    error(500, message)
-  }
+			default:
+				console.log(`Unhandled event type: ${event.type}`);
+		}
+	} catch (err) {
+		const message = err instanceof Error ? err.message : 'Unknown error';
+		console.error(`Webhook handler error for ${event.type}:`, message);
+		error(500, message);
+	}
 
-  return json({ received: true })
-}
+	return json({ received: true });
+};
 ```
 
 Six (really, seven) events handled. Let's go through each.
@@ -442,7 +428,7 @@ Why not also `product.deleted` and `price.deleted`? Because Stripe doesn't actua
 
 ### `customer.subscription.created` / `customer.subscription.updated` / `customer.subscription.deleted`
 
-All three fall through to `manageSubscriptionStatusChange(event.data.object.id)`. We explicitly do *not* pass `event.data.object` to `upsertSubscription` directly — we pass the ID and let the fetcher refetch fresh state.
+All three fall through to `manageSubscriptionStatusChange(event.data.object.id)`. We explicitly do _not_ pass `event.data.object` to `upsertSubscription` directly — we pass the ID and let the fetcher refetch fresh state.
 
 Why? Two reasons we already touched on:
 
@@ -453,16 +439,14 @@ Note: even on `customer.subscription.deleted`, we don't delete the row. We re-up
 
 ### `checkout.session.completed`
 
-This one's a bit different. When a user completes checkout, Stripe sends `checkout.session.completed` *before* `customer.subscription.created` in most cases. The session object carries a `subscription` field pointing at the just-created subscription.
+This one's a bit different. When a user completes checkout, Stripe sends `checkout.session.completed` _before_ `customer.subscription.created` in most cases. The session object carries a `subscription` field pointing at the just-created subscription.
 
 ```typescript
-const session = event.data.object
+const session = event.data.object;
 if (session.mode === 'subscription' && session.subscription) {
-  const subscriptionId =
-    typeof session.subscription === 'string'
-      ? session.subscription
-      : session.subscription.id
-  await manageSubscriptionStatusChange(subscriptionId)
+	const subscriptionId =
+		typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+	await manageSubscriptionStatusChange(subscriptionId);
 }
 ```
 
@@ -501,7 +485,7 @@ Note that Stripe's `trigger` command builds synthetic fixture data, which may fa
 
 ```typescript
 // WRONG — pre-v22 code
-current_period_start: new Date(subscription.current_period_start * 1000).toISOString()
+current_period_start: new Date(subscription.current_period_start * 1000).toISOString();
 ```
 
 Doesn't exist on `Stripe.Subscription` in v22 (`2026-03-25.dahlia`). TypeScript flags this. Correct is `subscription.items.data[0].current_period_start`.
@@ -510,9 +494,7 @@ Doesn't exist on `Stripe.Subscription` in v22 (`2026-03-25.dahlia`). TypeScript 
 
 ```typescript
 // WRONG
-cancel_at: subscription.cancel_at
-  ? new Date(subscription.cancel_at).toISOString()
-  : null
+cancel_at: subscription.cancel_at ? new Date(subscription.cancel_at).toISOString() : null;
 ```
 
 Stripe gives seconds; JS Date takes milliseconds. Your `cancel_at` becomes January 20, 1970. Every Stripe timestamp needs `* 1000`.
@@ -521,7 +503,7 @@ Stripe gives seconds; JS Date takes milliseconds. Your `cancel_at` becomes Janua
 
 ```typescript
 // WRONG
-cancel_at: new Date(subscription.cancel_at * 1000).toISOString()
+cancel_at: new Date(subscription.cancel_at * 1000).toISOString();
 ```
 
 If `cancel_at` is null, `null * 1000` is `0`, `new Date(0)` is epoch, and your DB ends up with `1970-01-01` as the cancel time. Always guard: `value ? new Date(value * 1000).toISOString() : null`.
@@ -554,7 +536,7 @@ Now your historical queries ("was user X ever a subscriber?") are broken forever
 
 ```typescript
 // Possibly OK for now, but limiting
-const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 ```
 
 Stripe returns `items.data[].price` as a string ID by default. If a later feature wants the product name, you'd have to make a separate API call to resolve it. Expanding at fetch time costs zero extra round-trips (Stripe does the join server-side) and positions you for future reads.
@@ -571,7 +553,7 @@ If somehow two `customers` rows had different `stripe_customer_id` values but th
 
 Stripe's shift of `current_period_start/end` to `SubscriptionItem` wasn't arbitrary — it was Stripe acknowledging that their data model was wrong, and fixing it. Subscriptions with heterogeneous items (different billing frequencies, different start dates) were being shoehorned into a single-period model that couldn't represent them.
 
-As a principal engineer, your job is to *anticipate* these kinds of schema evolutions in external systems and design for adaptability:
+As a principal engineer, your job is to _anticipate_ these kinds of schema evolutions in external systems and design for adaptability:
 
 - Keep your DB schema flexible for the common case (single-item subs → one period column pair).
 - Write your service layer such that migrating to a new model is localized (one file change, not a codebase-wide grep).
@@ -581,7 +563,7 @@ We did the work here: our `upsertSubscription` reads from `item?.current_period_
 
 ### Time units are a classic source of silent corruption
 
-The `* 1000` mistake is *so* common in Stripe integrations that a large fraction of all "my dates are wrong" bugs you'll see in online forums trace back to it. Defense-in-depth:
+The `* 1000` mistake is _so_ common in Stripe integrations that a large fraction of all "my dates are wrong" bugs you'll see in online forums trace back to it. Defense-in-depth:
 
 1. Name parameters carefully. `subscription.current_period_end` should be typed as "Unix seconds" and JS `Date(x)` as "milliseconds" — these are different units, and our code crosses the boundary explicitly with `* 1000` and a comment clarifies it.
 2. Centralize the conversion. You could write a small helper — `function unixToIso(s: number | null): string | null { return s === null ? null : new Date(s * 1000).toISOString() }` — and use it everywhere. For this lesson we inline the check because the pattern is consistent and hiding it in a helper would obscure the key idea. For a larger codebase, pull it out.

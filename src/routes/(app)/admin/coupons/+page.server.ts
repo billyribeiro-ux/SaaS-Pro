@@ -34,8 +34,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			// Stripe dahlia (2026-03-25) wraps the underlying coupon in a `promotion`
 			// envelope — `p.promotion.coupon` is `string | Coupon | null`.
 			const couponRef = p.promotion?.coupon;
-			const couponId =
-				typeof couponRef === 'string' ? couponRef : (couponRef?.id ?? null);
+			const couponId = typeof couponRef === 'string' ? couponRef : (couponRef?.id ?? null);
 			return {
 				id: p.id,
 				code: p.code,
@@ -100,9 +99,8 @@ export const actions: Actions = {
 			amount_off: d.amountOffCents ?? undefined,
 			currency: d.amountOffCents != null ? d.currency : undefined,
 			duration: d.duration,
-			duration_in_months: d.duration === 'repeating' && d.durationInMonths
-				? d.durationInMonths
-				: undefined,
+			duration_in_months:
+				d.duration === 'repeating' && d.durationInMonths ? d.durationInMonths : undefined,
 			max_redemptions: d.maxRedemptions ?? undefined
 		});
 		await logAdminAction({
@@ -125,8 +123,7 @@ export const actions: Actions = {
 			max_redemptions: parsed.data.maxRedemptions ?? undefined
 		});
 		const couponRef = promo.promotion?.coupon;
-		const promoCouponId =
-			typeof couponRef === 'string' ? couponRef : (couponRef?.id ?? null);
+		const promoCouponId = typeof couponRef === 'string' ? couponRef : (couponRef?.id ?? null);
 		await logAdminAction({
 			actorId: admin.id,
 			action: 'promotion.create',

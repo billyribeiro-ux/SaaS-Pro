@@ -47,16 +47,16 @@ A single blank line MUST follow the closing `---`, then the markdown body.
 
 ### Fields
 
-| Key           | Type    | Description                                                                     |
-| ------------- | ------- | ------------------------------------------------------------------------------- |
-| `title`       | string  | Human-readable lesson title. Quoted with double quotes.                         |
-| `module`      | number  | Integer module index (`0`..`14`). Unquoted.                                     |
-| `lesson`      | number  | Integer lesson index within the module (starts at `0`). Unquoted.               |
-| `moduleSlug`  | string  | Kebab-case module directory name. MUST match the parent directory name.        |
-| `lessonSlug`  | string  | Kebab-case lesson slug. MUST match the filename without the `.md` extension.   |
-| `description` | string  | One-sentence summary shown in the course sidebar and in SEO metadata.           |
-| `duration`    | number  | Estimated minutes to complete. Integer. Unquoted.                               |
-| `preview`     | boolean | `true` means free/public, `false` means gated behind an active subscription.    |
+| Key           | Type    | Description                                                                  |
+| ------------- | ------- | ---------------------------------------------------------------------------- |
+| `title`       | string  | Human-readable lesson title. Quoted with double quotes.                      |
+| `module`      | number  | Integer module index (`0`..`14`). Unquoted.                                  |
+| `lesson`      | number  | Integer lesson index within the module (starts at `0`). Unquoted.            |
+| `moduleSlug`  | string  | Kebab-case module directory name. MUST match the parent directory name.      |
+| `lessonSlug`  | string  | Kebab-case lesson slug. MUST match the filename without the `.md` extension. |
+| `description` | string  | One-sentence summary shown in the course sidebar and in SEO metadata.        |
+| `duration`    | number  | Estimated minutes to complete. Integer. Unquoted.                            |
+| `preview`     | boolean | `true` means free/public, `false` means gated behind an active subscription. |
 
 ### Formatting rules
 

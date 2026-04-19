@@ -23,11 +23,15 @@
 </script>
 
 {#if form?.success}
-	<div class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">
+	<div
+		class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+	>
 		Action <span class="font-mono">{form.action}</span> applied.
 	</div>
 {:else if form && 'error' in form && form.error}
-	<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+	<div
+		class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+	>
 		{form.error}
 	</div>
 {/if}
@@ -38,7 +42,7 @@
 		name="q"
 		value={data.q}
 		placeholder="Search email or name…"
-		class="h-10 w-full max-w-sm rounded-md border border-slate-300 bg-white px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 dark:border-slate-800 dark:bg-slate-950"
+		class="h-10 w-full max-w-sm rounded-md border border-slate-300 bg-white px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:outline-none dark:border-slate-800 dark:bg-slate-950"
 	/>
 	<Button type="submit" variant="outline" size="sm">Search</Button>
 	<span class="ml-auto text-xs text-slate-500">
@@ -50,13 +54,15 @@
 	<div class="overflow-x-auto">
 		<table class="w-full text-sm">
 			<thead>
-				<tr class="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
+				<tr
+					class="border-b border-slate-200 text-left text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800"
+				>
 					<th class="py-2 pr-4 font-medium">User</th>
 					<th class="py-2 pr-4 font-medium">Role</th>
 					<th class="py-2 pr-4 font-medium">Subscription</th>
 					<th class="py-2 pr-4 font-medium">Entitlements</th>
 					<th class="py-2 pr-4 font-medium">Joined</th>
-					<th class="py-2 pr-4 font-medium text-right">Actions</th>
+					<th class="py-2 pr-4 text-right font-medium">Actions</th>
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -93,13 +99,17 @@
 										<li class="flex items-center gap-2 text-xs">
 											<Badge variant="info">{ent.tier}</Badge>
 											<span class="truncate text-slate-500" title={ent.reason}>{ent.reason}</span>
-											<form method="POST" action="?/revoke" use:enhance={() => {
-												busy = true;
-												return async ({ update }) => {
-													await update();
-													busy = false;
-												};
-											}}>
+											<form
+												method="POST"
+												action="?/revoke"
+												use:enhance={() => {
+													busy = true;
+													return async ({ update }) => {
+														await update();
+														busy = false;
+													};
+												}}
+											>
 												<input type="hidden" name="userId" value={user.id} />
 												<input type="hidden" name="entitlementId" value={ent.id} />
 												<button type="submit" disabled={busy} class="text-red-600 hover:underline">
@@ -114,13 +124,17 @@
 						<td class="py-3 pr-4 text-xs text-slate-500">{formatDate(user.created_at)}</td>
 						<td class="py-3 pr-4 text-right">
 							<div class="flex justify-end gap-2">
-								<form method="POST" action="?/setRole" use:enhance={() => {
-									busy = true;
-									return async ({ update }) => {
-										await update();
-										busy = false;
-									};
-								}}>
+								<form
+									method="POST"
+									action="?/setRole"
+									use:enhance={() => {
+										busy = true;
+										return async ({ update }) => {
+											await update();
+											busy = false;
+										};
+									}}
+								>
 									<input type="hidden" name="userId" value={user.id} />
 									<input
 										type="hidden"
@@ -201,6 +215,12 @@
 <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
 	<span>Page {data.page} of {lastPage}</span>
 	<div class="flex gap-2">
+		<!--
+		  Same-page pagination — only the `?page=N` query changes. SvelteKit's
+		  `resolve()` would re-encode the current route, which is unnecessary
+		  for a pure query-string mutation; the rule is disabled across this block.
+		-->
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		{#if data.page > 1}
 			<a
 				href={`?${new URLSearchParams({ ...Object.fromEntries(page.url.searchParams), page: String(data.page - 1) })}`}
@@ -217,5 +237,6 @@
 				Next
 			</a>
 		{/if}
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</div>
 </div>

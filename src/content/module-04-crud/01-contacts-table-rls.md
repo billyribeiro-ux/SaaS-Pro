@@ -1,10 +1,10 @@
 ---
-title: "4.1 - Contacts Table & RLS Policies"
+title: '4.1 - Contacts Table & RLS Policies'
 module: 4
 lesson: 1
-moduleSlug: "module-04-crud"
-lessonSlug: "01-contacts-table-rls"
-description: "Create the contacts table — the core data model of Contactly — with full Row Level Security."
+moduleSlug: 'module-04-crud'
+lessonSlug: '01-contacts-table-rls'
+description: 'Create the contacts table — the core data model of Contactly — with full Row Level Security.'
 duration: 12
 preview: false
 ---
@@ -44,6 +44,7 @@ Before we write any SQL, let's be clear on what we're defending against. Contact
 Shared-schema multi-tenancy is the pattern behind Notion, Linear, Stripe Dashboard, GitHub, and most modern SaaS. It's the right choice. But it has one gotcha: every single query must filter by `user_id`. Miss one query — one `select * from contacts` without a `where` — and every user can see every other user's data.
 
 The naive defense is "we're careful in our application code." That defense fails the first time:
+
 - A developer forgets a `.eq('user_id', ...)` filter.
 - A background job runs a query from the wrong context.
 - A SQL injection vulnerability lets an attacker bypass WHERE clauses.
@@ -319,11 +320,13 @@ create policy "Users can delete own contacts"
 ```
 
 (If you want updated_at to auto-update, you could also add a trigger reusing the `set_updated_at` function from Module 1:
+
 ```sql
 create trigger contacts_set_updated_at
   before update on public.contacts
   for each row execute function public.set_updated_at();
 ```
+
 We'll rely on application code to set `updated_at = new Date().toISOString()` during updates — same effect, less magic.)
 
 ---
@@ -335,6 +338,7 @@ pnpm supabase db reset
 ```
 
 `db reset` does three things:
+
 1. Drops and recreates the local Postgres database.
 2. Replays every migration in `supabase/migrations/` in order.
 3. Runs `supabase/seed.sql` (empty for now — we'll populate it in 4.2).

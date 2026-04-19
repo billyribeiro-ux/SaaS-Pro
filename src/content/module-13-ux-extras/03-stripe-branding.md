@@ -1,9 +1,9 @@
 ---
-title: "13.3 - Stripe Branding"
+title: '13.3 - Stripe Branding'
 module: 13
 lesson: 3
-moduleSlug: "module-13-ux-extras"
-lessonSlug: "03-stripe-branding"
+moduleSlug: 'module-13-ux-extras'
+lessonSlug: '03-stripe-branding'
 description: "Brand your Stripe checkout and customer portal to match Contactly's design."
 duration: 8
 preview: false
@@ -145,6 +145,7 @@ No code changes needed — Stripe reads the branding from your account settings 
 The Customer Portal (the page users land on from the "Manage subscription" button) inherits the same branding. Logo, colors, icons.
 
 The portal additionally lets you customize:
+
 - **Which features are enabled** — can users cancel? Switch plans? Update payment method? (Set in Settings → Billing → Customer Portal.)
 - **The "Back to Contactly" URL** — so users can return to your app from the portal with one click.
 

@@ -19,7 +19,7 @@ You open Chrome DevTools, navigate to the dashboard, and it loads in 800 ms. You
 
 This is the problem observability solves.
 
-Observability is the practice of asking arbitrary questions about your running system without knowing the questions in advance. "Why was this one request slow?" "What did this particular user's session spend time on?" "Which part of the Stripe checkout flow is the p95 latency sitting in?" With good logs alone, you cannot answer these questions — logs tell you *what* happened, not *where time went*. Metrics tell you aggregates — p50 latency is 200ms — but cannot pinpoint individual slow users. **Traces** are what you need, and as of SvelteKit 2.31 (shipped October 2025) you can turn on distributed tracing with a single flag.
+Observability is the practice of asking arbitrary questions about your running system without knowing the questions in advance. "Why was this one request slow?" "What did this particular user's session spend time on?" "Which part of the Stripe checkout flow is the p95 latency sitting in?" With good logs alone, you cannot answer these questions — logs tell you _what_ happened, not _where time went_. Metrics tell you aggregates — p50 latency is 200ms — but cannot pinpoint individual slow users. **Traces** are what you need, and as of SvelteKit 2.31 (shipped October 2025) you can turn on distributed tracing with a single flag.
 
 This lesson walks you through enabling OpenTelemetry tracing in Contactly, wiring it to a free backend (Honeycomb or Grafana Cloud), adding custom spans for Supabase queries, and reading a trace to find a real bottleneck.
 
@@ -37,9 +37,9 @@ By the end of this lesson you will:
 
 A one-paragraph primer so we have shared vocabulary:
 
-**Logs** are discrete events: "user 123 logged in at 14:02". They are great for audit trails, debugging specific outcomes, and post-mortem reconstruction. They are bad for understanding *where time goes* — a 2-second request produces no logs by default, and adding `console.log('step 1', Date.now())` everywhere is not a scalable strategy.
+**Logs** are discrete events: "user 123 logged in at 14:02". They are great for audit trails, debugging specific outcomes, and post-mortem reconstruction. They are bad for understanding _where time goes_ — a 2-second request produces no logs by default, and adding `console.log('step 1', Date.now())` everywhere is not a scalable strategy.
 
-**Metrics** are aggregate numeric values over time: "p95 dashboard latency = 1.2s", "error rate = 0.3%". They are great for dashboards and alerts. They are bad for explaining why *one specific* request was slow — you cannot drill in to see what that one request was doing.
+**Metrics** are aggregate numeric values over time: "p95 dashboard latency = 1.2s", "error rate = 0.3%". They are great for dashboards and alerts. They are bad for explaining why _one specific_ request was slow — you cannot drill in to see what that one request was doing.
 
 **Traces** are time-stamped nested spans that represent one request's full journey: "handle hook took 10ms → load function took 180ms (of which 150ms was the Supabase query and 30ms was the Stripe lookup) → render took 20ms". Each span has a name, a duration, attributes (userId, tenantId), and parent-child relationships. They answer: "where did the 12 seconds go for this one user?"
 
@@ -69,24 +69,24 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
-  kit: {
-    adapter: adapter(),
-    experimental: {
-      remoteFunctions: true,
-      tracing: {
-        server: true
-      },
-      instrumentation: {
-        server: true
-      }
-    }
-  },
-  compilerOptions: {
-    experimental: {
-      async: true
-    }
-  }
+	preprocess: vitePreprocess(),
+	kit: {
+		adapter: adapter(),
+		experimental: {
+			remoteFunctions: true,
+			tracing: {
+				server: true
+			},
+			instrumentation: {
+				server: true
+			}
+		}
+	},
+	compilerOptions: {
+		experimental: {
+			async: true
+		}
+	}
 };
 
 export default config;
@@ -95,7 +95,7 @@ export default config;
 Two flags:
 
 - **`tracing.server: true`** — tells SvelteKit to emit spans at runtime using `@opentelemetry/api`. Without this, no spans are created; your instrumentation code would have nothing to capture.
-- **`instrumentation.server: true`** — tells SvelteKit to look for `src/instrumentation.server.ts` (or `.js`) and execute it before any application code runs. This is the critical bit for tracing to actually work, because OpenTelemetry requires its SDK to be initialized *before* any module that emits spans is imported.
+- **`instrumentation.server: true`** — tells SvelteKit to look for `src/instrumentation.server.ts` (or `.js`) and execute it before any application code runs. This is the critical bit for tracing to actually work, because OpenTelemetry requires its SDK to be initialized _before_ any module that emits spans is imported.
 
 Without the `instrumentation` flag, your SDK would load too late — after SvelteKit's internal modules, after your route files — and those modules would have already captured a reference to the no-op tracer from `@opentelemetry/api`. No spans would make it to your collector.
 
@@ -125,27 +125,27 @@ const { registerOptions } = createAddHookMessageChannel();
 register('import-in-the-middle/hook.mjs', import.meta.url, registerOptions);
 
 const sdk = new NodeSDK({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: 'contactly',
-    [ATTR_SERVICE_VERSION]: process.env.APP_VERSION ?? 'dev'
-  }),
-  traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-    headers: {
-      'x-honeycomb-team': process.env.HONEYCOMB_API_KEY ?? ''
-    }
-  }),
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-fs': { enabled: false }
-    })
-  ]
+	resource: resourceFromAttributes({
+		[ATTR_SERVICE_NAME]: 'contactly',
+		[ATTR_SERVICE_VERSION]: process.env.APP_VERSION ?? 'dev'
+	}),
+	traceExporter: new OTLPTraceExporter({
+		url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+		headers: {
+			'x-honeycomb-team': process.env.HONEYCOMB_API_KEY ?? ''
+		}
+	}),
+	instrumentations: [
+		getNodeAutoInstrumentations({
+			'@opentelemetry/instrumentation-fs': { enabled: false }
+		})
+	]
 });
 
 sdk.start();
 
 process.on('SIGTERM', () => {
-  sdk.shutdown().finally(() => process.exit(0));
+	sdk.shutdown().finally(() => process.exit(0));
 });
 ```
 
@@ -232,7 +232,7 @@ The 250ms in the count query is the bottleneck. Without tracing, you would have 
 
 ## 5. Custom spans for Supabase
 
-The auto-instrumentations cover a lot, but Supabase goes through HTTPS, and by default you get one generic `HTTP POST` span per DB call with no details about *which* query. To fix this, wrap your Supabase calls in custom spans.
+The auto-instrumentations cover a lot, but Supabase goes through HTTPS, and by default you get one generic `HTTP POST` span per DB call with no details about _which_ query. To fix this, wrap your Supabase calls in custom spans.
 
 ### `src/lib/server/tracing.ts`
 
@@ -242,26 +242,26 @@ import { trace, SpanStatusCode, type Span } from '@opentelemetry/api';
 const tracer = trace.getTracer('contactly');
 
 export async function tracedQuery<T>(
-  name: string,
-  attrs: Record<string, string | number | boolean>,
-  fn: (span: Span) => Promise<T>
+	name: string,
+	attrs: Record<string, string | number | boolean>,
+	fn: (span: Span) => Promise<T>
 ): Promise<T> {
-  return tracer.startActiveSpan(name, { attributes: attrs }, async (span) => {
-    try {
-      const result = await fn(span);
-      span.setStatus({ code: SpanStatusCode.OK });
-      return result;
-    } catch (err) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: err instanceof Error ? err.message : 'unknown'
-      });
-      span.recordException(err instanceof Error ? err : new Error(String(err)));
-      throw err;
-    } finally {
-      span.end();
-    }
-  });
+	return tracer.startActiveSpan(name, { attributes: attrs }, async (span) => {
+		try {
+			const result = await fn(span);
+			span.setStatus({ code: SpanStatusCode.OK });
+			return result;
+		} catch (err) {
+			span.setStatus({
+				code: SpanStatusCode.ERROR,
+				message: err instanceof Error ? err.message : 'unknown'
+			});
+			span.recordException(err instanceof Error ? err : new Error(String(err)));
+			throw err;
+		} finally {
+			span.end();
+		}
+	});
 }
 ```
 
@@ -291,26 +291,26 @@ import { query, getRequestEvent } from '$app/server';
 import { tracedQuery } from '$lib/server/tracing';
 
 export const getContacts = query(async () => {
-  const { locals } = getRequestEvent();
-  const user = await locals.getUser();
-  if (!user) error(401, 'Unauthorized');
+	const { locals } = getRequestEvent();
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  return tracedQuery(
-    'supabase.contacts.list',
-    { userId: user.id, table: 'contacts' },
-    async (span) => {
-      const { data, error: dbError } = await locals.supabase
-        .from('contacts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+	return tracedQuery(
+		'supabase.contacts.list',
+		{ userId: user.id, table: 'contacts' },
+		async (span) => {
+			const { data, error: dbError } = await locals.supabase
+				.from('contacts')
+				.select('*')
+				.eq('user_id', user.id)
+				.order('created_at', { ascending: false });
 
-      if (dbError) error(500, dbError.message);
+			if (dbError) error(500, dbError.message);
 
-      span.setAttribute('rowCount', data?.length ?? 0);
-      return data;
-    }
-  );
+			span.setAttribute('rowCount', data?.length ?? 0);
+			return data;
+		}
+	);
 });
 ```
 
@@ -341,14 +341,14 @@ import { getRequestEvent } from '$app/server';
 import { error } from '@sveltejs/kit';
 
 export async function requireAuthenticatedUser() {
-  const event = getRequestEvent();
-  const user = await event.locals.getUser();
-  if (!user) error(401, 'Unauthorized');
+	const event = getRequestEvent();
+	const user = await event.locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  event.tracing.root.setAttribute('userId', user.id);
-  event.tracing.root.setAttribute('userPlan', user.plan ?? 'free');
+	event.tracing.root.setAttribute('userId', user.id);
+	event.tracing.root.setAttribute('userPlan', user.plan ?? 'free');
 
-  return user;
+	return user;
 }
 ```
 
@@ -358,7 +358,7 @@ Line-by-line:
 
 **Lines 4–7:** the auth helper. Standard "get user or 401" pattern.
 
-**Line 9–10:** `event.tracing.root` is SvelteKit's root span for this request (the one named `GET /contacts` or whatever). Setting attributes on it means those attributes appear on *every* child span (in Honeycomb: the trace list shows userId column; in Jaeger: you can search by userId tag).
+**Line 9–10:** `event.tracing.root` is SvelteKit's root span for this request (the one named `GET /contacts` or whatever). Setting attributes on it means those attributes appear on _every_ child span (in Honeycomb: the trace list shows userId column; in Jaeger: you can search by userId tag).
 
 `event.tracing.current` is also available — it returns the current span, which could be the handle span, a load function span, or a remote function span depending on where you are in the request lifecycle.
 
@@ -375,10 +375,10 @@ Tracing every request in production is expensive — both in compute (each span 
 import { TraceIdRatioBasedSampler, ParentBasedSampler } from '@opentelemetry/sdk-trace-base';
 
 const sdk = new NodeSDK({
-  sampler: new ParentBasedSampler({
-    root: new TraceIdRatioBasedSampler(0.01)
-  }),
-  // ... rest
+	sampler: new ParentBasedSampler({
+		root: new TraceIdRatioBasedSampler(0.01)
+	})
+	// ... rest
 });
 ```
 
@@ -416,7 +416,7 @@ This investigation takes two minutes with tracing. It would take two hours with 
 
 ## 10. Principal Engineer Notes
 
-**Turn tracing on before you need it.** Retrofitting tracing to a production app *after* an incident is painful. Turn it on while your app is healthy, let the backend accumulate a baseline, and when something breaks you have historical context.
+**Turn tracing on before you need it.** Retrofitting tracing to a production app _after_ an incident is painful. Turn it on while your app is healthy, let the backend accumulate a baseline, and when something breaks you have historical context.
 
 **Traces answer "where did the time go." Logs answer "what happened."** Use both. Log user actions (signed up, created contact). Trace requests. When investigating, start with the trace, then correlate to logs using the `traceId` attribute that OTel auto-attaches to logs (via context propagation).
 
@@ -449,7 +449,7 @@ That is the last bonus. You now have a 2026-state-of-the-art SvelteKit app: type
 
 Two parting thoughts:
 
-**Principal engineering is taste, and taste is earned.** The features in these four lessons are tools. Good engineers pick up tools and immediately apply them everywhere. Great engineers pick up tools and ask "when would I *not* use this?" Shallow routing is not always right. Remote functions are not always right. A boundary is not always the right unit of error handling. Develop the instinct to ask when *not* to reach for a pattern. That is the gap between "knowing SvelteKit" and "building a great product with SvelteKit."
+**Principal engineering is taste, and taste is earned.** The features in these four lessons are tools. Good engineers pick up tools and immediately apply them everywhere. Great engineers pick up tools and ask "when would I _not_ use this?" Shallow routing is not always right. Remote functions are not always right. A boundary is not always the right unit of error handling. Develop the instinct to ask when _not_ to reach for a pattern. That is the gap between "knowing SvelteKit" and "building a great product with SvelteKit."
 
 **Ship, observe, iterate.** The observability lesson is not last by accident. It is the feedback loop that turns your theoretical knowledge into real-world understanding. You will be wrong about which queries are slow. You will be wrong about which UI flows confuse users. You will be wrong about which code paths produce errors. The only way to find out is to ship it, observe what actually happens, and adjust. Every lesson in this module is a tool for shipping faster and more safely; none of them replace the discipline of measuring what users actually experience.
 

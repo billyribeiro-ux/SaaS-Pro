@@ -84,6 +84,7 @@ This is the screen users see that says "Contactly wants to access your email add
    - `openid`
 
    These three scopes give us the user's email, name, and avatar URL. Nothing else. Click **Update**, then **Save and Continue**.
+
 7. On the **Test users** step: while your app is in "Testing" mode (the default), only test users can sign in. Add your own email here plus any teammate you want to test with. Click **Save and Continue**.
 8. Review the summary. Click **Back to Dashboard**.
 
@@ -103,6 +104,7 @@ This is the screen users see that says "Contactly wants to access your email add
    ```
 
    Replace `<your-project-ref>` with the string in your Supabase URL. You can find it in the Supabase dashboard at **Project Settings → API → Project URL**. For example, if the URL is `https://xyzabcdef.supabase.co`, the redirect URI is `https://xyzabcdef.supabase.co/auth/v1/callback`.
+
 7. Click **Create**.
 8. A modal shows your **Client ID** and **Client Secret**. Copy both into a scratchpad. You will not see the secret again in plaintext — if you lose it, you have to regenerate.
 
@@ -126,67 +128,89 @@ Now the backend is configured. Let us wire up the frontend.
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import { page } from '$app/state'
+	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 
-  let { form } = $props()
+	let { form } = $props();
 
-  let loading = $state(false)
+	let loading = $state(false);
 
-  async function signInWithGoogle() {
-    loading = true
-    const { error } = await page.data.supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/app`
-      }
-    })
-    if (error) {
-      console.error(error)
-      loading = false
-    }
-    // On success the browser is redirected away; no further code runs.
-  }
+	async function signInWithGoogle() {
+		loading = true;
+		const { error } = await page.data.supabase.auth.signInWithOAuth({
+			provider: 'google',
+			options: {
+				redirectTo: `${window.location.origin}/auth/callback?next=/app`
+			}
+		});
+		if (error) {
+			console.error(error);
+			loading = false;
+		}
+		// On success the browser is redirected away; no further code runs.
+	}
 </script>
 
 <div class="mx-auto max-w-sm py-12">
-  <h1 class="text-2xl font-semibold">Sign in to Contactly</h1>
+	<h1 class="text-2xl font-semibold">Sign in to Contactly</h1>
 
-  <form method="POST" use:enhance class="mt-6 space-y-4">
-    <label class="block">
-      <span class="text-sm">Email</span>
-      <input name="email" type="email" required class="mt-1 block w-full rounded border px-3 py-2" />
-    </label>
-    <label class="block">
-      <span class="text-sm">Password</span>
-      <input name="password" type="password" required class="mt-1 block w-full rounded border px-3 py-2" />
-    </label>
-    {#if form?.error}
-      <p class="text-sm text-red-600">{form.error}</p>
-    {/if}
-    <button class="w-full rounded bg-black px-4 py-2 text-white">Sign in</button>
-  </form>
+	<form method="POST" use:enhance class="mt-6 space-y-4">
+		<label class="block">
+			<span class="text-sm">Email</span>
+			<input
+				name="email"
+				type="email"
+				required
+				class="mt-1 block w-full rounded border px-3 py-2"
+			/>
+		</label>
+		<label class="block">
+			<span class="text-sm">Password</span>
+			<input
+				name="password"
+				type="password"
+				required
+				class="mt-1 block w-full rounded border px-3 py-2"
+			/>
+		</label>
+		{#if form?.error}
+			<p class="text-sm text-red-600">{form.error}</p>
+		{/if}
+		<button class="w-full rounded bg-black px-4 py-2 text-white">Sign in</button>
+	</form>
 
-  <div class="my-6 flex items-center gap-3 text-xs text-gray-500">
-    <div class="h-px flex-1 bg-gray-200"></div>
-    OR
-    <div class="h-px flex-1 bg-gray-200"></div>
-  </div>
+	<div class="my-6 flex items-center gap-3 text-xs text-gray-500">
+		<div class="h-px flex-1 bg-gray-200"></div>
+		OR
+		<div class="h-px flex-1 bg-gray-200"></div>
+	</div>
 
-  <button
-    type="button"
-    onclick={signInWithGoogle}
-    disabled={loading}
-    class="flex w-full items-center justify-center gap-3 rounded border px-4 py-2 hover:bg-gray-50 disabled:opacity-50"
-  >
-    <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-      <path fill="#FBBC05" d="M5.84 14.09A6.98 6.98 0 0 1 5.47 12c0-.73.13-1.44.37-2.09V7.07H2.18a11 11 0 0 0 0 9.86l3.66-2.84z"/>
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.46 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
-    </svg>
-    <span>Continue with Google</span>
-  </button>
+	<button
+		type="button"
+		onclick={signInWithGoogle}
+		disabled={loading}
+		class="flex w-full items-center justify-center gap-3 rounded border px-4 py-2 hover:bg-gray-50 disabled:opacity-50"
+	>
+		<svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+			<path
+				fill="#4285F4"
+				d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+			/>
+			<path
+				fill="#34A853"
+				d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+			/>
+			<path
+				fill="#FBBC05"
+				d="M5.84 14.09A6.98 6.98 0 0 1 5.47 12c0-.73.13-1.44.37-2.09V7.07H2.18a11 11 0 0 0 0 9.86l3.66-2.84z"
+			/>
+			<path
+				fill="#EA4335"
+				d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.46 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"
+			/>
+		</svg>
+		<span>Continue with Google</span>
+	</button>
 </div>
 ```
 
@@ -219,28 +243,28 @@ When Supabase finishes the handshake, it will redirect the browser to `http://lo
 ### `src/routes/auth/callback/+server.ts`
 
 ```ts
-import { redirect } from '@sveltejs/kit'
-import type { RequestHandler } from './$types'
+import { redirect } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
-  const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') ?? '/app'
+	const code = url.searchParams.get('code');
+	const next = url.searchParams.get('next') ?? '/app';
 
-  // Open-redirect protection: only allow relative paths that start with a
-  // single slash (so `/app` is fine but `//evil.com/steal` is not).
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/app'
+	// Open-redirect protection: only allow relative paths that start with a
+	// single slash (so `/app` is fine but `//evil.com/steal` is not).
+	const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/app';
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      throw redirect(303, safeNext)
-    }
-    console.error('OAuth exchange failed', error)
-  }
+	if (code) {
+		const { error } = await supabase.auth.exchangeCodeForSession(code);
+		if (!error) {
+			throw redirect(303, safeNext);
+		}
+		console.error('OAuth exchange failed', error);
+	}
 
-  // If we got here, something went wrong. Send the user back to login with a flag.
-  throw redirect(303, `/login?error=oauth_failed`)
-}
+	// If we got here, something went wrong. Send the user back to login with a flag.
+	throw redirect(303, `/login?error=oauth_failed`);
+};
 ```
 
 Breakdown:
@@ -249,7 +273,7 @@ Breakdown:
 - `locals.supabase` — the server Supabase client attached in `hooks.server.ts` from an earlier module. It knows how to read/write cookies for the current request.
 - `url.searchParams.get('code')` — pulls the `code` out of the query string.
 - `url.searchParams.get('next') ?? '/app'` — reads the `next` param we set on the login page (default `/app`).
-- **Open-redirect protection:** we only trust `next` if it is a *relative* path starting with a single `/`. A value like `//evil.com/steal` would be interpreted by the browser as `http://evil.com/steal` — this check stops that attack cold. This is the same pattern we use elsewhere in the app, keep it consistent.
+- **Open-redirect protection:** we only trust `next` if it is a _relative_ path starting with a single `/`. A value like `//evil.com/steal` would be interpreted by the browser as `http://evil.com/steal` — this check stops that attack cold. This is the same pattern we use elsewhere in the app, keep it consistent.
 - `supabase.auth.exchangeCodeForSession(code)` — this is the server call that takes the short-lived code from Supabase and trades it for a long-lived session. The SDK automatically writes the session cookies into the response via the cookie handlers we set up in `hooks.server.ts`.
 - `throw redirect(303, safeNext)` — SvelteKit's way of returning an HTTP 303 redirect. 303 specifically means "see other", and it is the correct status after a successful POST-like action.
 - On failure, we redirect to `/login?error=oauth_failed` so you can optionally show an error message on the login page.
@@ -262,20 +286,22 @@ Let us confirm by reading the hook. Open `src/hooks.server.ts`. You should see a
 
 ```ts
 event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-  cookies: {
-    getAll: () => event.cookies.getAll(),
-    setAll: (cookiesToSet) => {
-      cookiesToSet.forEach(({ name, value, options }) => {
-        event.cookies.set(name, value, { ...options, path: '/' })
-      })
-    }
-  }
-})
+	cookies: {
+		getAll: () => event.cookies.getAll(),
+		setAll: (cookiesToSet) => {
+			cookiesToSet.forEach(({ name, value, options }) => {
+				event.cookies.set(name, value, { ...options, path: '/' });
+			});
+		}
+	}
+});
 
 event.locals.getUser = async () => {
-  const { data: { user } } = await event.locals.supabase.auth.getUser()
-  return user
-}
+	const {
+		data: { user }
+	} = await event.locals.supabase.auth.getUser();
+	return user;
+};
 ```
 
 This is all that is needed. OAuth just produces a session — the session storage (cookies) is identical to email/password.
@@ -299,7 +325,7 @@ Verify in Supabase:
 
 **1. Localhost vs. production redirect URIs.** Google requires an exact match between the `redirect_uri` your app requests and the ones registered in Google Cloud. In dev you need `http://localhost:5173/auth/callback` (among the Supabase allowed redirects — Google only cares about the `https://<project>.supabase.co/auth/v1/callback` one). In production you need your real domain `https://contactly.app/auth/callback` in the Supabase allowed redirects list. Forgetting the production URL is the #1 reason "it works in dev but not prod."
 
-**2. Users who previously registered with email.** If Alice created an account with `alice@gmail.com` via email+password last month, and today clicks "Sign in with Google" with her Google account `alice@gmail.com`, Supabase matches on email and links the two identities automatically. Alice ends up as the same user, keeping all her data. Good. **However**, this is only safe because Google has verified that email belongs to Alice. If you ever enable an OAuth provider that does *not* verify email (rare, but it exists), you must disable automatic linking in Supabase settings to prevent account takeover.
+**2. Users who previously registered with email.** If Alice created an account with `alice@gmail.com` via email+password last month, and today clicks "Sign in with Google" with her Google account `alice@gmail.com`, Supabase matches on email and links the two identities automatically. Alice ends up as the same user, keeping all her data. Good. **However**, this is only safe because Google has verified that email belongs to Alice. If you ever enable an OAuth provider that does _not_ verify email (rare, but it exists), you must disable automatic linking in Supabase settings to prevent account takeover.
 
 **3. Email scope is required for Supabase.** If you edit your Google consent screen and remove the `email` scope, the OAuth flow will error because Supabase cannot create a user without an email. Keep `openid email profile`.
 

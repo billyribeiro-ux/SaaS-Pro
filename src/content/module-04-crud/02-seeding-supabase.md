@@ -1,10 +1,10 @@
 ---
-title: "4.2 - Seeding Supabase"
+title: '4.2 - Seeding Supabase'
 module: 4
 lesson: 2
-moduleSlug: "module-04-crud"
-lessonSlug: "02-seeding-supabase"
-description: "Set up seed data so you have realistic users and profiles to develop against locally."
+moduleSlug: 'module-04-crud'
+lessonSlug: '02-seeding-supabase'
+description: 'Set up seed data so you have realistic users and profiles to develop against locally.'
 duration: 8
 preview: false
 ---
@@ -51,13 +51,13 @@ Think of migrations as your database's **blueprint** and seed as its **furniture
 
 Migrations and seeds answer two completely different questions:
 
-| | Migrations | Seed |
-| --- | --- | --- |
-| **Purpose** | Define/evolve schema | Populate development data |
-| **Where it runs** | Every environment (local, staging, prod) | Local dev only |
-| **Version controlled?** | Yes, in order, immutable once shipped | Yes, but replaceable at will |
-| **Touches production?** | Yes | **Never** |
-| **Contents** | `create table`, `alter table`, RLS policies, triggers | `insert into ...` for fake users, example data |
+|                         | Migrations                                            | Seed                                           |
+| ----------------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| **Purpose**             | Define/evolve schema                                  | Populate development data                      |
+| **Where it runs**       | Every environment (local, staging, prod)              | Local dev only                                 |
+| **Version controlled?** | Yes, in order, immutable once shipped                 | Yes, but replaceable at will                   |
+| **Touches production?** | Yes                                                   | **Never**                                      |
+| **Contents**            | `create table`, `alter table`, RLS policies, triggers | `insert into ...` for fake users, example data |
 
 The division matters because the **audience** is different. Migrations are written for the database schema itself — they have to run the same way in every environment, forever, and the schema they describe is shared by every user of your app. Seeds are written for **you, the developer** — they only need to run in your laptop's local Postgres, and they should contain data that makes it easy to develop against.
 
@@ -70,6 +70,7 @@ The Supabase CLI's `db reset` command is what triggers seeding. It's only ever m
 This is by design. Seed data is fake. It's for development only. Imagine if your production database had a user named "Test User" with the password `password123` — that's an instant security incident. Supabase prevents that by design: `seed.sql` runs only on local `db reset`.
 
 That means:
+
 1. You can put anything in seeds — fake users, hardcoded UUIDs, insecure passwords — and it stays local.
 2. You should **never** put real customer data or real credentials in seeds, because the file is committed to git and visible to every developer on the project.
 3. Real production data comes from real users signing up through your real signup flow.
@@ -238,6 +239,7 @@ Open Studio at `http://localhost:54323` (the URL is printed by `pnpm supabase st
 Visit `http://localhost:5173/login`, enter `test@example.com` / `password123`, and submit. You should land on `/dashboard` (or wherever your authenticated landing page is). If login succeeds, bcrypt hashing and Supabase Auth are both happy with your seed data.
 
 If the login fails, the most likely culprits are:
+
 - `pgcrypto` not enabled (rare on Supabase — it's enabled by default).
 - The password in `crypt()` doesn't match what you typed in the form (spaces, capitalization).
 - The row didn't actually insert (check Studio to confirm).
@@ -315,11 +317,13 @@ Never run seed files on production. Ever. The tooling protects you by default; d
 We hardcoded `00000000-0000-0000-0000-000000000001`. Tools like Postgres' `gen_random_uuid()` could generate a fresh UUID every time. Why hardcode?
 
 **Reasons to hardcode** (what we do):
+
 - You can reliably reference the ID from other seed inserts (e.g., in Lesson 4.8, every contact's `user_id` references this exact UUID).
 - Tests that snapshot database state produce stable snapshots (no random UUIDs breaking diffs).
 - Debugging is easier — the UUID is memorable and searchable in logs.
 
 **Reasons to randomize**:
+
 - You can seed multiple test users in parallel without ID collisions (useful for large fixture sets).
 - Randomization more closely mimics real user UUIDs.
 

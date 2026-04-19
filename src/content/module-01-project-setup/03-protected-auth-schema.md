@@ -1,9 +1,9 @@
 ---
-title: "1.3 - Protected Auth Schema"
+title: '1.3 - Protected Auth Schema'
 module: 1
 lesson: 3
-moduleSlug: "module-01-project-setup"
-lessonSlug: "03-protected-auth-schema"
+moduleSlug: 'module-01-project-setup'
+lessonSlug: '03-protected-auth-schema'
 description: "Understand Supabase's built-in auth schema and how it protects user credentials from direct database access."
 duration: 10
 preview: false
@@ -47,7 +47,7 @@ your Supabase project
 └── public      ← YOUR code — tables your app creates and manages
 ```
 
-**The rule: one schema, one owner.** The `auth` schema is Supabase's territory. The `public` schema is yours. When you write a migration, every `create table`, `create function`, `create policy` goes into `public` (or a schema *you* create, which we won't need for this course). When you want information from `auth`, you read it indirectly through Supabase-provided functions.
+**The rule: one schema, one owner.** The `auth` schema is Supabase's territory. The `public` schema is yours. When you write a migration, every `create table`, `create function`, `create policy` goes into `public` (or a schema _you_ create, which we won't need for this course). When you want information from `auth`, you read it indirectly through Supabase-provided functions.
 
 ---
 
@@ -74,6 +74,7 @@ That's a **bcrypt hash**, not encryption. The distinction matters:
 - **Hashing** is one-way — there's no key, and no mathematical way to recover the original input from the hash.
 
 When a user logs in, Supabase:
+
 1. Receives the plaintext password over TLS.
 2. Runs the same bcrypt function on it (using the salt already baked into the stored hash).
 3. Compares the result against the stored hash.
@@ -99,6 +100,7 @@ Supabase Auth manages `auth.users` through a hardened internal API. When a user 
 8. Return a signed JWT session token.
 
 If you bypass that API and write directly to `auth.users` with plain SQL, you skip every one of those steps. You could accidentally:
+
 - Store a plaintext password (security disaster).
 - Create a user with an invalid email (login will fail cryptically).
 - Forget to generate the `id` or `confirmation_token` (auth breaks for that user).
@@ -159,6 +161,7 @@ create policy "Users can view own profile"
 Read it like English: "Create a rule named 'Users can view own profile' on the `profiles` table for SELECT queries, using the condition that `auth.uid()` equals the `id` column."
 
 When a logged-in user runs `select * from profiles`, Postgres does this for every row:
+
 - Evaluate `auth.uid() = id`.
 - If true → include this row in the result.
 - If false → hide this row (not an error; just invisible).
@@ -179,7 +182,7 @@ No matter what the user's query looks like — no WHERE clause, weird JOINs, any
 
 **The key principle is "default deny, allow by exception."** This is the opposite of "default allow, deny by exception." If you forget to write a policy, the table is locked down, not wide open. Forgotten policies cause bugs — they never cause security breaches.
 
-Without RLS, a naive SELECT query against your profiles table would return everyone's data. With RLS, the same query returns only the authenticated user's row. Your app code gets simpler *and* more secure at the same time.
+Without RLS, a naive SELECT query against your profiles table would return everyone's data. With RLS, the same query returns only the authenticated user's row. Your app code gets simpler _and_ more secure at the same time.
 
 You'll write your first RLS policy in lesson 1.4.
 
@@ -226,11 +229,11 @@ Two critical parts of that definition:
 
 This is **separation of concerns**, a foundational architecture principle:
 
-| Responsibility | Table | Owner |
-|---|---|---|
-| Identity (who am I?) | `auth.users` | Supabase Auth |
-| Profile data (display name, avatar) | `public.profiles` | Your code |
-| Business data (contacts, subscriptions) | `public.contacts`, `public.subscriptions` | Your code |
+| Responsibility                          | Table                                     | Owner         |
+| --------------------------------------- | ----------------------------------------- | ------------- |
+| Identity (who am I?)                    | `auth.users`                              | Supabase Auth |
+| Profile data (display name, avatar)     | `public.profiles`                         | Your code     |
+| Business data (contacts, subscriptions) | `public.contacts`, `public.subscriptions` | Your code     |
 
 Identity belongs to Supabase because identity is hard and has a right way. Profile and business data belongs to you because it's specific to Contactly.
 
@@ -257,6 +260,7 @@ This is how senior engineers think: **put the rule at the lowest level it can li
 Studio's UI has buttons to create tables, add columns, and change types. For a quick local experiment it's fine. For a real project — **do not use them.**
 
 Schema changes made through Studio exist only in your local database. They are not:
+
 - Committed to git.
 - Reproducible on a teammate's machine.
 - Applied to your staging or production environments.
@@ -272,7 +276,7 @@ Studio is for reading data and running one-off queries. Never schema changes.
 
 1. **Layered authorization is defense in depth.** Contactly has authorization at three layers: (a) route guards in `+layout.server.ts`, (b) RLS policies on tables, (c) constraints on columns. If any one layer fails, the others still protect the data. Never rely on a single check.
 
-2. **Putting user identity at the database layer is unusual and powerful.** Most web frameworks put authorization in middleware — a piece of JavaScript that checks `req.user.id` before every query. That works, but it's brittle: a new developer writing a new route can forget the check, and your app is open. Supabase puts the check *inside the database*. The check can't be forgotten because it runs even when your app code runs `select * from everything`.
+2. **Putting user identity at the database layer is unusual and powerful.** Most web frameworks put authorization in middleware — a piece of JavaScript that checks `req.user.id` before every query. That works, but it's brittle: a new developer writing a new route can forget the check, and your app is open. Supabase puts the check _inside the database_. The check can't be forgotten because it runs even when your app code runs `select * from everything`.
 
 3. **The `auth`/`public` boundary mirrors organizational ownership.** In a larger company, the team that owns auth is different from the team that owns user-facing features. Postgres schemas let those teams own different slices of the database without stepping on each other. Even as a solo dev, practicing the discipline now prepares you for scale later.
 

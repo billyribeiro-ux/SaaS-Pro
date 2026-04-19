@@ -25,7 +25,7 @@ This lesson teaches remote functions end-to-end. Not theoretically — we will r
 
 By the end of this lesson you will:
 
-- Understand the problem remote functions solve and when *not* to use them.
+- Understand the problem remote functions solve and when _not_ to use them.
 - Turn on the two experimental flags safely in `svelte.config.js`.
 - Know the four flavors — `query`, `form`, `command`, `prerender` — and when each is the right tool.
 - Refactor a full page of Contactly (load function + form action + API endpoint) into one remote file.
@@ -51,11 +51,17 @@ src/routes/api/contacts/search/+server.ts   # GET handler for typeahead search
 Now open `+page.server.ts`. You have three things in that one file:
 
 ```ts
-export const load = async ({ locals }) => { /* read contacts */ }
+export const load = async ({ locals }) => {
+	/* read contacts */
+};
 export const actions = {
-  create: async ({ request, locals }) => { /* write contact */ },
-  delete: async ({ request, locals }) => { /* delete contact */ }
-}
+	create: async ({ request, locals }) => {
+		/* write contact */
+	},
+	delete: async ({ request, locals }) => {
+		/* delete contact */
+	}
+};
 ```
 
 Each of these is a slightly different function signature. `load` gets `{ locals, params, url }`. `actions` get `{ request, locals, params, url, cookies }`. The API endpoint in `search/+server.ts` gets a full `RequestEvent`. Each one parses its inputs differently — load reads `url.searchParams`, actions read `await request.formData()`, the endpoint reads `url.searchParams` again. Each one returns a different shape — load returns a plain object, actions return objects augmented with `fail()` or `redirect()`, and endpoints return a `Response` (usually via `json()`).
@@ -66,7 +72,7 @@ On the client, there are three different consumption patterns:
 - Form action results arrive via the `form` prop (or via `enhance`).
 - API endpoint results arrive via a manual `fetch('/api/contacts/search?q=...')` call.
 
-Each one has a different type-safety story. Load data is typed via `PageData`. Form data is typed via `ActionData`. API endpoints are *not typed at all* — you wrote a `+server.ts` that returns `json({ results })`, but the `fetch` call in your component has no idea what `results` contains. You have to either define a shared type and hope both sides stay in sync, or cast the response and pray.
+Each one has a different type-safety story. Load data is typed via `PageData`. Form data is typed via `ActionData`. API endpoints are _not typed at all_ — you wrote a `+server.ts` that returns `json({ results })`, but the `fetch` call in your component has no idea what `results` contains. You have to either define a shared type and hope both sides stay in sync, or cast the response and pray.
 
 Zoom out. The three patterns exist because they solve slightly different problems — and that is legitimate. But in practice, 80% of the code in a typical CRUD app is "read a list, write a new item, delete an item." That code does not need three different ergonomics. It needs one.
 
@@ -93,18 +99,18 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
-  kit: {
-    adapter: adapter(),
-    experimental: {
-      remoteFunctions: true
-    }
-  },
-  compilerOptions: {
-    experimental: {
-      async: true
-    }
-  }
+	preprocess: vitePreprocess(),
+	kit: {
+		adapter: adapter(),
+		experimental: {
+			remoteFunctions: true
+		}
+	},
+	compilerOptions: {
+		experimental: {
+			async: true
+		}
+	}
 };
 
 export default config;
@@ -126,12 +132,12 @@ When you flip these flags, Vite will rebuild and you may see type-generation gli
 
 Remote functions come in four flavors. Each one is a simple wrapper imported from `$app/server`. Here is the mental model:
 
-| Flavor | What it does | Replaces |
-|--------|--------------|----------|
-| `query` | Read data. Cached by argument. Re-runs when you call `.refresh()`. | `+page.server.ts` load functions, GET endpoints |
-| `form` | Write data, triggered by a `<form>` submission. Degrades without JS. | Form actions |
-| `command` | Write data, triggered by JS (button click, keypress, timer). Requires JS. | `fetch('/api/...')` POST/DELETE calls |
-| `prerender` | Read data at **build time**. Output is static. | Static `+page.server.ts` loads with `export const prerender = true` |
+| Flavor      | What it does                                                              | Replaces                                                            |
+| ----------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `query`     | Read data. Cached by argument. Re-runs when you call `.refresh()`.        | `+page.server.ts` load functions, GET endpoints                     |
+| `form`      | Write data, triggered by a `<form>` submission. Degrades without JS.      | Form actions                                                        |
+| `command`   | Write data, triggered by JS (button click, keypress, timer). Requires JS. | `fetch('/api/...')` POST/DELETE calls                               |
+| `prerender` | Read data at **build time**. Output is static.                            | Static `+page.server.ts` loads with `export const prerender = true` |
 
 A few principles to internalize:
 
@@ -153,64 +159,64 @@ import * as z from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 
 const contactSchema = z.object({
-  first_name: z.string().min(1, 'First name required'),
-  last_name: z.string().min(1, 'Last name required'),
-  email: z.email(),
-  phone: z.string().optional(),
-  company: z.string().optional()
+	first_name: z.string().min(1, 'First name required'),
+	last_name: z.string().min(1, 'Last name required'),
+	email: z.email(),
+	phone: z.string().optional(),
+	company: z.string().optional()
 });
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const user = await locals.getUser();
-  if (!user) redirect(303, '/login');
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
 
-  const { data, error: dbError } = await locals.supabase
-    .from('contacts')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+	const { data, error: dbError } = await locals.supabase
+		.from('contacts')
+		.select('*')
+		.eq('user_id', user.id)
+		.order('created_at', { ascending: false });
 
-  if (dbError) error(500, dbError.message);
-  return { contacts: data ?? [] };
+	if (dbError) error(500, dbError.message);
+	return { contacts: data ?? [] };
 };
 
 export const actions: Actions = {
-  create: async ({ request, locals }) => {
-    const user = await locals.getUser();
-    if (!user) return fail(401, { message: 'Unauthorized' });
+	create: async ({ request, locals }) => {
+		const user = await locals.getUser();
+		if (!user) return fail(401, { message: 'Unauthorized' });
 
-    const formData = await request.formData();
-    const raw = Object.fromEntries(formData);
-    const parsed = contactSchema.safeParse(raw);
-    if (!parsed.success) {
-      return fail(400, { errors: parsed.error.flatten().fieldErrors, values: raw });
-    }
+		const formData = await request.formData();
+		const raw = Object.fromEntries(formData);
+		const parsed = contactSchema.safeParse(raw);
+		if (!parsed.success) {
+			return fail(400, { errors: parsed.error.flatten().fieldErrors, values: raw });
+		}
 
-    const { error: dbError } = await locals.supabase
-      .from('contacts')
-      .insert({ ...parsed.data, user_id: user.id });
-    if (dbError) return fail(500, { message: dbError.message });
+		const { error: dbError } = await locals.supabase
+			.from('contacts')
+			.insert({ ...parsed.data, user_id: user.id });
+		if (dbError) return fail(500, { message: dbError.message });
 
-    return { success: true };
-  },
+		return { success: true };
+	},
 
-  delete: async ({ request, locals }) => {
-    const user = await locals.getUser();
-    if (!user) return fail(401, { message: 'Unauthorized' });
+	delete: async ({ request, locals }) => {
+		const user = await locals.getUser();
+		if (!user) return fail(401, { message: 'Unauthorized' });
 
-    const formData = await request.formData();
-    const id = formData.get('id');
-    if (typeof id !== 'string') return fail(400, { message: 'Invalid id' });
+		const formData = await request.formData();
+		const id = formData.get('id');
+		if (typeof id !== 'string') return fail(400, { message: 'Invalid id' });
 
-    const { error: dbError } = await locals.supabase
-      .from('contacts')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id);
-    if (dbError) return fail(500, { message: dbError.message });
+		const { error: dbError } = await locals.supabase
+			.from('contacts')
+			.delete()
+			.eq('id', id)
+			.eq('user_id', user.id);
+		if (dbError) return fail(500, { message: dbError.message });
 
-    return { success: true };
-  }
+		return { success: true };
+	}
 };
 ```
 
@@ -221,21 +227,21 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
-  const user = await locals.getUser();
-  if (!user) error(401, 'Unauthorized');
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const q = url.searchParams.get('q')?.trim() ?? '';
-  if (q.length < 2) return json({ results: [] });
+	const q = url.searchParams.get('q')?.trim() ?? '';
+	if (q.length < 2) return json({ results: [] });
 
-  const { data, error: dbError } = await locals.supabase
-    .from('contacts')
-    .select('*')
-    .eq('user_id', user.id)
-    .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
-    .limit(10);
+	const { data, error: dbError } = await locals.supabase
+		.from('contacts')
+		.select('*')
+		.eq('user_id', user.id)
+		.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
+		.limit(10);
 
-  if (dbError) error(500, dbError.message);
-  return json({ results: data ?? [] });
+	if (dbError) error(500, dbError.message);
+	return json({ results: data ?? [] });
 };
 ```
 
@@ -243,39 +249,45 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  let { data, form } = $props();
-  let query = $state('');
-  let results = $state<Contact[]>([]);
+	import { enhance } from '$app/forms';
+	let { data, form } = $props();
+	let query = $state('');
+	let results = $state<Contact[]>([]);
 
-  async function search() {
-    if (query.length < 2) { results = []; return; }
-    const res = await fetch(`/api/contacts/search?q=${encodeURIComponent(query)}`);
-    const json = await res.json();
-    results = json.results;
-  }
+	async function search() {
+		if (query.length < 2) {
+			results = [];
+			return;
+		}
+		const res = await fetch(`/api/contacts/search?q=${encodeURIComponent(query)}`);
+		const json = await res.json();
+		results = json.results;
+	}
 </script>
 
 <input bind:value={query} oninput={search} />
-<ul>{#each results as r}<li>{r.first_name}</li>{/each}</ul>
+<ul>
+	{#each results as r}<li>{r.first_name}</li>{/each}
+</ul>
 
 <form method="POST" action="?/create" use:enhance>
-  <input name="first_name" />
-  <input name="last_name" />
-  <input name="email" />
-  <button>Create</button>
+	<input name="first_name" />
+	<input name="last_name" />
+	<input name="email" />
+	<button>Create</button>
 </form>
 
 <ul>
-  {#each data.contacts as c}
-    <li>
-      {c.first_name} {c.last_name}
-      <form method="POST" action="?/delete" use:enhance>
-        <input type="hidden" name="id" value={c.id} />
-        <button>Delete</button>
-      </form>
-    </li>
-  {/each}
+	{#each data.contacts as c}
+		<li>
+			{c.first_name}
+			{c.last_name}
+			<form method="POST" action="?/delete" use:enhance>
+				<input type="hidden" name="id" value={c.id} />
+				<button>Delete</button>
+			</form>
+		</li>
+	{/each}
 </ul>
 ```
 
@@ -297,65 +309,63 @@ import { error, redirect } from '@sveltejs/kit';
 import { query, form, command, getRequestEvent } from '$app/server';
 
 const contactSchema = z.object({
-  first_name: z.string().min(1, 'First name required'),
-  last_name: z.string().min(1, 'Last name required'),
-  email: z.email(),
-  phone: z.string().optional(),
-  company: z.string().optional()
+	first_name: z.string().min(1, 'First name required'),
+	last_name: z.string().min(1, 'Last name required'),
+	email: z.email(),
+	phone: z.string().optional(),
+	company: z.string().optional()
 });
 
 async function requireUser() {
-  const { locals } = getRequestEvent();
-  const user = await locals.getUser();
-  if (!user) error(401, 'Unauthorized');
-  return { user, supabase: locals.supabase };
+	const { locals } = getRequestEvent();
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
+	return { user, supabase: locals.supabase };
 }
 
 export const getContacts = query(async () => {
-  const { user, supabase } = await requireUser();
-  const { data, error: dbError } = await supabase
-    .from('contacts')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-  if (dbError) error(500, dbError.message);
-  return data;
+	const { user, supabase } = await requireUser();
+	const { data, error: dbError } = await supabase
+		.from('contacts')
+		.select('*')
+		.eq('user_id', user.id)
+		.order('created_at', { ascending: false });
+	if (dbError) error(500, dbError.message);
+	return data;
 });
 
 export const searchContacts = query(z.string().min(2).max(50), async (q) => {
-  const { user, supabase } = await requireUser();
-  const { data, error: dbError } = await supabase
-    .from('contacts')
-    .select('*')
-    .eq('user_id', user.id)
-    .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
-    .limit(10);
-  if (dbError) error(500, dbError.message);
-  return data;
+	const { user, supabase } = await requireUser();
+	const { data, error: dbError } = await supabase
+		.from('contacts')
+		.select('*')
+		.eq('user_id', user.id)
+		.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
+		.limit(10);
+	if (dbError) error(500, dbError.message);
+	return data;
 });
 
 export const createContact = form(contactSchema, async (data) => {
-  const { user, supabase } = await requireUser();
-  const { error: dbError } = await supabase
-    .from('contacts')
-    .insert({ ...data, user_id: user.id });
-  if (dbError) error(500, dbError.message);
+	const { user, supabase } = await requireUser();
+	const { error: dbError } = await supabase.from('contacts').insert({ ...data, user_id: user.id });
+	if (dbError) error(500, dbError.message);
 
-  void getContacts().refresh();
+	void getContacts().refresh();
 
-  return { success: true };
+	return { success: true };
 });
 
 export const deleteContact = command(z.uuid(), async (id) => {
-  const { user, supabase } = await requireUser();
-  const { error: dbError } = await supabase
-    .from('contacts')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id);
-  if (dbError) error(500, dbError.message);
+	const { user, supabase } = await requireUser();
+	const { error: dbError } = await supabase
+		.from('contacts')
+		.delete()
+		.eq('id', id)
+		.eq('user_id', user.id);
+	if (dbError) error(500, dbError.message);
 
-  void getContacts().refresh();
+	void getContacts().refresh();
 });
 ```
 
@@ -369,7 +379,7 @@ Line-by-line walkthrough — this is the heart of the lesson.
 
 **Lines 5–11: the Zod schema.** This is unchanged from the old form action. Zod v4 uses `z.email()` as a top-level validator (in v3 it was `z.string().email()`). Nothing SvelteKit-specific here.
 
-**Lines 13–18: `requireUser()` helper.** Authentication is factored into one function. Inside a remote function you *do not* receive an event parameter — but you can get it at any time by calling `getRequestEvent()`. This is a huge ergonomic win: you write small helper functions that reach for the current request without threading an `event` argument through every layer of your code. The `locals.getUser()` call works exactly as it does in a load function, and throwing with `error(401, ...)` aborts the request with a 401 response and a JSON error body.
+**Lines 13–18: `requireUser()` helper.** Authentication is factored into one function. Inside a remote function you _do not_ receive an event parameter — but you can get it at any time by calling `getRequestEvent()`. This is a huge ergonomic win: you write small helper functions that reach for the current request without threading an `event` argument through every layer of your code. The `locals.getUser()` call works exactly as it does in a load function, and throwing with `error(401, ...)` aborts the request with a 401 response and a JSON error body.
 
 **Lines 20–29: `getContacts` query.** This replaces the `load` function. `query()` takes a single async function and returns a wrapped version that:
 
@@ -394,85 +404,81 @@ Notice there are no parameters and no explicit typing — the return type of the
 
 ```svelte
 <script lang="ts">
-  import {
-    getContacts,
-    searchContacts,
-    createContact,
-    deleteContact
-  } from './contacts.remote';
+	import { getContacts, searchContacts, createContact, deleteContact } from './contacts.remote';
 
-  let query = $state('');
+	let query = $state('');
 </script>
 
 <svelte:boundary>
-  {#snippet pending()}
-    <p>Loading contacts...</p>
-  {/snippet}
+	{#snippet pending()}
+		<p>Loading contacts...</p>
+	{/snippet}
 
-  {#snippet failed(err, reset)}
-    <p>Could not load: {err.message}</p>
-    <button onclick={reset}>Retry</button>
-  {/snippet}
+	{#snippet failed(err, reset)}
+		<p>Could not load: {err.message}</p>
+		<button onclick={reset}>Retry</button>
+	{/snippet}
 
-  <section>
-    <h2>Search</h2>
-    <input bind:value={query} placeholder="Type at least 2 characters..." />
+	<section>
+		<h2>Search</h2>
+		<input bind:value={query} placeholder="Type at least 2 characters..." />
 
-    {#if query.length >= 2}
-      <ul>
-        {#each await searchContacts(query) as c (c.id)}
-          <li>{c.first_name} {c.last_name}</li>
-        {/each}
-      </ul>
-    {/if}
-  </section>
+		{#if query.length >= 2}
+			<ul>
+				{#each await searchContacts(query) as c (c.id)}
+					<li>{c.first_name} {c.last_name}</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
 
-  <section>
-    <h2>Add contact</h2>
-    <form {...createContact}>
-      <label>
-        First name
-        <input {...createContact.fields.first_name.as('text')} />
-        {#each createContact.fields.first_name.issues() as i}
-          <span class="error">{i.message}</span>
-        {/each}
-      </label>
+	<section>
+		<h2>Add contact</h2>
+		<form {...createContact}>
+			<label>
+				First name
+				<input {...createContact.fields.first_name.as('text')} />
+				{#each createContact.fields.first_name.issues() as i}
+					<span class="error">{i.message}</span>
+				{/each}
+			</label>
 
-      <label>
-        Last name
-        <input {...createContact.fields.last_name.as('text')} />
-        {#each createContact.fields.last_name.issues() as i}
-          <span class="error">{i.message}</span>
-        {/each}
-      </label>
+			<label>
+				Last name
+				<input {...createContact.fields.last_name.as('text')} />
+				{#each createContact.fields.last_name.issues() as i}
+					<span class="error">{i.message}</span>
+				{/each}
+			</label>
 
-      <label>
-        Email
-        <input {...createContact.fields.email.as('email')} />
-        {#each createContact.fields.email.issues() as i}
-          <span class="error">{i.message}</span>
-        {/each}
-      </label>
+			<label>
+				Email
+				<input {...createContact.fields.email.as('email')} />
+				{#each createContact.fields.email.issues() as i}
+					<span class="error">{i.message}</span>
+				{/each}
+			</label>
 
-      <button>Add</button>
-    </form>
+			<button>Add</button>
+		</form>
 
-    {#if createContact.result?.success}
-      <p class="success">Contact added!</p>
-    {/if}
-  </section>
+		{#if createContact.result?.success}
+			<p class="success">Contact added!</p>
+		{/if}
+	</section>
 
-  <section>
-    <h2>All contacts</h2>
-    <ul>
-      {#each await getContacts() as contact (contact.id)}
-        <li>
-          {contact.first_name} {contact.last_name} — {contact.email}
-          <button onclick={() => deleteContact(contact.id)}>Delete</button>
-        </li>
-      {/each}
-    </ul>
-  </section>
+	<section>
+		<h2>All contacts</h2>
+		<ul>
+			{#each await getContacts() as contact (contact.id)}
+				<li>
+					{contact.first_name}
+					{contact.last_name} — {contact.email}
+					<button onclick={() => deleteContact(contact.id)}>Delete</button>
+				</li>
+			{/each}
+		</ul>
+	</section>
 </svelte:boundary>
 ```
 
@@ -498,7 +504,7 @@ Line-by-line:
 
 3. `{#each createContact.fields.first_name.issues() as i}` — this renders per-field validation errors. When validation fails, `.issues()` returns `[{ message: 'First name required' }, ...]`. When there are no issues, it returns `[]`. You do not need to manage error state manually.
 
-**Line 63: `createContact.result?.success`** — the success message. The `.result` property holds the return value of the form handler. It is *ephemeral*: it vanishes if the form is resubmitted, if the user navigates away, or if the page reloads. Perfect for a toast that dismisses on the next interaction.
+**Line 63: `createContact.result?.success`** — the success message. The `.result` property holds the return value of the form handler. It is _ephemeral_: it vanishes if the form is resubmitted, if the user navigates away, or if the page reloads. Perfect for a toast that dismisses on the next interaction.
 
 **Lines 67–73: the list.** `{#each await getContacts() as contact (contact.id)}` — await in markup, keyed by `contact.id` (crucial for correct DOM diffing when items move or are deleted). The delete button calls `deleteContact(contact.id)` directly — a plain async function call. No form, no `fetch`, no event boilerplate. Just an RPC.
 
@@ -519,10 +525,10 @@ Look at our `createContact` again:
 
 ```ts
 export const createContact = form(contactSchema, async (data) => {
-  const { user, supabase } = await requireUser();
-  await supabase.from('contacts').insert({ ...data, user_id: user.id });
-  void getContacts().refresh();
-  return { success: true };
+	const { user, supabase } = await requireUser();
+	await supabase.from('contacts').insert({ ...data, user_id: user.id });
+	void getContacts().refresh();
+	return { success: true };
 });
 ```
 
@@ -531,7 +537,7 @@ The magic is `void getContacts().refresh()`. Here is what happens:
 1. The client POSTs the form data to the generated endpoint.
 2. The handler inserts the contact.
 3. `getContacts().refresh()` is called **on the server**. SvelteKit intercepts this — it knows "the client has `getContacts()` active in a reactive context; it wants fresh data." The server re-runs `getContacts()`, capturing the new list.
-4. The response to the POST contains both the form's return value (`{ success: true }`) *and* the refreshed query data.
+4. The response to the POST contains both the form's return value (`{ success: true }`) _and_ the refreshed query data.
 5. The client receives the response. SvelteKit applies the new query data to the `getContacts()` cache on the client. Every component that awaits `getContacts()` instantly sees the new list.
 
 One round-trip. No manual refetch. No optimistic update that could diverge. `void` is there because we do not need to await the refresh — SvelteKit awaits it internally before sending the response.
@@ -542,19 +548,19 @@ Sometimes your mutation already has the data the query would fetch. Why re-run t
 
 ```ts
 export const updateContact = form(updateSchema, async (data) => {
-  const { user, supabase } = await requireUser();
-  const { data: updated, error: dbError } = await supabase
-    .from('contacts')
-    .update(data)
-    .eq('id', data.id)
-    .eq('user_id', user.id)
-    .select()
-    .single();
-  if (dbError) error(500, dbError.message);
+	const { user, supabase } = await requireUser();
+	const { data: updated, error: dbError } = await supabase
+		.from('contacts')
+		.update(data)
+		.eq('id', data.id)
+		.eq('user_id', user.id)
+		.select()
+		.single();
+	if (dbError) error(500, dbError.message);
 
-  getContact(data.id).set(updated);
+	getContact(data.id).set(updated);
 
-  return { success: true };
+	return { success: true };
 });
 ```
 
@@ -564,7 +570,7 @@ export const updateContact = form(updateSchema, async (data) => {
 
 The server cannot always know which query arguments the client has active. If a client has `getContacts({ filter: 'starred' })` and `getContacts({ filter: 'archived' })` both rendered, the server does not have that information.
 
-For these cases, the client tells the server: "when you mutate, refresh *my* instances of this query."
+For these cases, the client tells the server: "when you mutate, refresh _my_ instances of this query."
 
 ```ts
 // Client side
@@ -578,12 +584,12 @@ For these cases, the client tells the server: "when you mutate, refresh *my* ins
 import { requested, command } from '$app/server';
 
 export const deleteContact = command(z.uuid(), async (id) => {
-  const { user, supabase } = await requireUser();
-  await supabase.from('contacts').delete().eq('id', id).eq('user_id', user.id);
+	const { user, supabase } = await requireUser();
+	await supabase.from('contacts').delete().eq('id', id).eq('user_id', user.id);
 
-  for (const arg of requested(getContacts, 5)) {
-    void getContacts(arg).refresh();
-  }
+	for (const arg of requested(getContacts, 5)) {
+		void getContacts(arg).refresh();
+	}
 });
 ```
 
@@ -603,13 +609,13 @@ Remote functions use [Standard Schema](https://standardschema.dev/) for validati
 import * as z from 'zod';
 
 const userSchema = z.object({
-  email: z.email(),
-  age: z.number().int().min(18),
-  role: z.enum(['admin', 'user']),
-  id: z.uuid(),
-  tags: z.array(z.string()).max(5),
-  avatar: z.url().optional(),
-  password: z.string().min(8).max(128)
+	email: z.email(),
+	age: z.number().int().min(18),
+	role: z.enum(['admin', 'user']),
+	id: z.uuid(),
+	tags: z.array(z.string()).max(5),
+	avatar: z.url().optional(),
+	password: z.string().min(8).max(128)
 });
 ```
 
@@ -626,7 +632,7 @@ You can skip validation entirely by passing the literal string `'unchecked'`:
 
 ```ts
 export const getThing = query('unchecked', async (arg: { id: string }) => {
-  // arg is typed as { id: string } but NOT runtime-validated
+	// arg is typed as { id: string } but NOT runtime-validated
 });
 ```
 
@@ -653,14 +659,14 @@ You can customize the response body with `handleValidationError` in `src/hooks.s
 import type { HandleValidationError } from '@sveltejs/kit';
 
 export const handleValidationError: HandleValidationError = ({ event, issues }) => {
-  console.warn('validation failed', {
-    url: event.url.pathname,
-    issues: issues.map((i) => i.message)
-  });
+	console.warn('validation failed', {
+		url: event.url.pathname,
+		issues: issues.map((i) => i.message)
+	});
 
-  return {
-    message: 'Invalid request'
-  };
+	return {
+		message: 'Invalid request'
+	};
 };
 ```
 
@@ -672,9 +678,9 @@ Remote queries have a subtle property: **they deduplicate by argument.**
 
 ```svelte
 <script>
-  const a = getContact('abc');
-  const b = getContact('abc');
-  console.log(a === b); // true — same cached instance
+	const a = getContact('abc');
+	const b = getContact('abc');
+	console.log(a === b); // true — same cached instance
 </script>
 ```
 
@@ -682,15 +688,17 @@ On the server, this means one request spawns one database call per unique argume
 
 ### The reactive-context rule
 
-Here is the principal-engineer gotcha. A query's cached instance is kept alive only while something is *reactively observing it*. In practice:
+Here is the principal-engineer gotcha. A query's cached instance is kept alive only while something is _reactively observing it_. In practice:
 
 **OK:**
+
 - Calling `getContact('abc')` in `<script>` (reactive context = the component)
 - Calling `await getContact('abc')` in markup (reactive)
 - Calling it inside `$derived` (reactive)
 - Calling it inside `$effect` (reactive)
 
 **NOT OK:**
+
 - Calling `getContact('abc')` inside an `onclick` handler and awaiting its data
 - Calling it in module-top-level code (no reactive context, no cleanup)
 - Calling it in a universal `load` function
@@ -703,14 +711,16 @@ When you genuinely want one-shot access to a query's result without caching:
 
 ```svelte
 <script>
-  import { getContact } from './data.remote';
+	import { getContact } from './data.remote';
 </script>
 
-<button onclick={async () => {
-  const contact = await getContact('abc').run();
-  console.log(contact);
-}}>
-  Log contact
+<button
+	onclick={async () => {
+		const contact = await getContact('abc').run();
+		console.log(contact);
+	}}
+>
+	Log contact
 </button>
 ```
 
@@ -733,24 +743,24 @@ import * as z from 'zod';
 import { query, getRequestEvent } from '$app/server';
 
 export const getTagsForContact = query.batch(z.uuid(), async (contactIds) => {
-  const { locals } = getRequestEvent();
-  const user = await locals.getUser();
-  if (!user) error(401, 'Unauthorized');
+	const { locals } = getRequestEvent();
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { data, error: dbError } = await locals.supabase
-    .from('contact_tags')
-    .select('contact_id, tag')
-    .in('contact_id', contactIds)
-    .eq('user_id', user.id);
-  if (dbError) error(500, dbError.message);
+	const { data, error: dbError } = await locals.supabase
+		.from('contact_tags')
+		.select('contact_id, tag')
+		.in('contact_id', contactIds)
+		.eq('user_id', user.id);
+	if (dbError) error(500, dbError.message);
 
-  const lookup = new Map<string, string[]>();
-  for (const row of data ?? []) {
-    if (!lookup.has(row.contact_id)) lookup.set(row.contact_id, []);
-    lookup.get(row.contact_id)!.push(row.tag);
-  }
+	const lookup = new Map<string, string[]>();
+	for (const row of data ?? []) {
+		if (!lookup.has(row.contact_id)) lookup.set(row.contact_id, []);
+		lookup.get(row.contact_id)!.push(row.tag);
+	}
 
-  return (contactId) => lookup.get(contactId) ?? [];
+	return (contactId) => lookup.get(contactId) ?? [];
 });
 ```
 
@@ -765,14 +775,14 @@ Usage looks identical to a regular query:
 
 ```svelte
 {#each await getContacts() as contact (contact.id)}
-  <li>
-    {contact.first_name}
-    <span class="tags">
-      {#each await getTagsForContact(contact.id) as tag}
-        <span>{tag}</span>
-      {/each}
-    </span>
-  </li>
+	<li>
+		{contact.first_name}
+		<span class="tags">
+			{#each await getTagsForContact(contact.id) as tag}
+				<span>{tag}</span>
+			{/each}
+		</span>
+	</li>
 {/each}
 ```
 
@@ -784,24 +794,24 @@ By default, form validation happens on the server after the user submits. That i
 
 ```svelte
 <script module lang="ts">
-  import * as z from 'zod';
-  export const preflightSchema = z.object({
-    first_name: z.string().min(1, 'First name required'),
-    last_name: z.string().min(1, 'Last name required'),
-    email: z.email()
-  });
+	import * as z from 'zod';
+	export const preflightSchema = z.object({
+		first_name: z.string().min(1, 'First name required'),
+		last_name: z.string().min(1, 'Last name required'),
+		email: z.email()
+	});
 </script>
 
 <script lang="ts">
-  import { createContact } from './contacts.remote';
+	import { createContact } from './contacts.remote';
 </script>
 
 <form {...createContact.preflight(preflightSchema)} oninput={() => createContact.validate()}>
-  <input {...createContact.fields.first_name.as('text')} />
-  {#each createContact.fields.first_name.issues() as i}
-    <span class="error">{i.message}</span>
-  {/each}
-  <!-- ... -->
+	<input {...createContact.fields.first_name.as('text')} />
+	{#each createContact.fields.first_name.issues() as i}
+		<span class="error">{i.message}</span>
+	{/each}
+	<!-- ... -->
 </form>
 ```
 
@@ -811,7 +821,7 @@ Walkthrough:
 - `createContact.preflight(schema)` — returns a new enhanced form object that validates before calling the server. If the preflight fails, the request never goes out.
 - `oninput={() => createContact.validate()}` — runs validation on every keystroke. Combined with preflight, this means users see errors the moment they are possible, not after a server round-trip.
 
-**Critical:** your server-side schema should *also* validate. Preflight is a UX optimization, not a security measure. An attacker can bypass the client and POST directly to the endpoint, so the server schema is the source of truth for correctness.
+**Critical:** your server-side schema should _also_ validate. Preflight is a UX optimization, not a security measure. An attacker can bypass the client and POST directly to the endpoint, so the server schema is the source of truth for correctness.
 
 ## 10. Handling sensitive data
 
@@ -821,17 +831,17 @@ The convention is a leading underscore:
 
 ```svelte
 <form {...register}>
-  <label>
-    Email
-    <input {...register.fields.email.as('email')} />
-  </label>
+	<label>
+		Email
+		<input {...register.fields.email.as('email')} />
+	</label>
 
-  <label>
-    Password
-    <input {...register.fields._password.as('password')} />
-  </label>
+	<label>
+		Password
+		<input {...register.fields._password.as('password')} />
+	</label>
 
-  <button>Sign up</button>
+	<button>Sign up</button>
 </form>
 ```
 
@@ -839,17 +849,17 @@ Corresponding server schema:
 
 ```ts
 export const register = form(
-  z.object({
-    email: z.email(),
-    _password: z.string().min(8)
-  }),
-  async ({ email, _password }) => {
-    // hash and store
-  }
+	z.object({
+		email: z.email(),
+		_password: z.string().min(8)
+	}),
+	async ({ email, _password }) => {
+		// hash and store
+	}
 );
 ```
 
-The `_` prefix tells SvelteKit "do not echo this field back to the client on failure." If registration fails because the email is taken, the email input repopulates with what they typed. The password input does *not* — they re-enter it. This is correct: passwords should never cross the network more than necessary, and should certainly never be inlined into HTML on a failed form reload.
+The `_` prefix tells SvelteKit "do not echo this field back to the client on failure." If registration fails because the email is taken, the email input repopulates with what they typed. The password input does _not_ — they re-enter it. This is correct: passwords should never cross the network more than necessary, and should certainly never be inlined into HTML on a failed form reload.
 
 Use the underscore prefix for:
 

@@ -1,9 +1,9 @@
 ---
-title: "10.1 - Validate Tier Helpers"
+title: '10.1 - Validate Tier Helpers'
 module: 10
 lesson: 1
-moduleSlug: "module-10-access-control"
-lessonSlug: "01-validate-tier-helpers"
+moduleSlug: 'module-10-access-control'
+lessonSlug: '01-validate-tier-helpers'
 description: "Build server-side helper functions that check a user's subscription status."
 duration: 12
 preview: false
@@ -94,32 +94,32 @@ Create `src/lib/utils/access.ts`:
 
 ```typescript
 // src/lib/utils/access.ts
-import { supabaseAdmin } from '$server/supabase'
+import { supabaseAdmin } from '$server/supabase';
 
-const ACTIVE_STATUSES = ['active', 'trialing'] as const
+const ACTIVE_STATUSES = ['active', 'trialing'] as const;
 
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
-  const { data } = await supabaseAdmin
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', userId)
-    .in('status', ACTIVE_STATUSES)
-    .limit(1)
-    .maybeSingle()
+	const { data } = await supabaseAdmin
+		.from('subscriptions')
+		.select('status')
+		.eq('user_id', userId)
+		.in('status', ACTIVE_STATUSES)
+		.limit(1)
+		.maybeSingle();
 
-  return !!data
+	return !!data;
 }
 
 export async function getSubscriptionStatus(userId: string): Promise<string | null> {
-  const { data } = await supabaseAdmin
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+	const { data } = await supabaseAdmin
+		.from('subscriptions')
+		.select('status')
+		.eq('user_id', userId)
+		.order('created_at', { ascending: false })
+		.limit(1)
+		.maybeSingle();
 
-  return data?.status ?? null
+	return data?.status ?? null;
 }
 ```
 
@@ -142,16 +142,16 @@ This is the **entitlement rule**. We consider two Stripe subscription statuses a
 
 **Why those two and not others?** Stripe emits a full lifecycle of statuses:
 
-| Status | What it means | Gated? |
-|---|---|---|
-| `active` | Paid, current billing period | Yes — user has access |
-| `trialing` | In trial, not yet charged | Yes — user has access |
-| `past_due` | Payment failed, grace period active | No — we downgrade them |
-| `unpaid` | Payment failed past grace period | No — no access |
-| `canceled` | Explicitly canceled (or trial ended without payment) | No |
-| `incomplete` | First payment hasn't succeeded yet | No |
-| `incomplete_expired` | First payment timed out | No |
-| `paused` | Subscription paused (manual Stripe action) | No |
+| Status               | What it means                                        | Gated?                 |
+| -------------------- | ---------------------------------------------------- | ---------------------- |
+| `active`             | Paid, current billing period                         | Yes — user has access  |
+| `trialing`           | In trial, not yet charged                            | Yes — user has access  |
+| `past_due`           | Payment failed, grace period active                  | No — we downgrade them |
+| `unpaid`             | Payment failed past grace period                     | No — no access         |
+| `canceled`           | Explicitly canceled (or trial ended without payment) | No                     |
+| `incomplete`         | First payment hasn't succeeded yet                   | No                     |
+| `incomplete_expired` | First payment timed out                              | No                     |
+| `paused`             | Subscription paused (manual Stripe action)           | No                     |
 
 We include `trialing` because a user who starts a trial expects to use the product. If we gated them out, the trial would be a broken promise. We exclude `past_due` — a payment failed, they need to fix their card, and immediate downgrade creates pressure to pay. (Many SaaS companies give a grace period — send emails for 3–7 days before flipping off access. That's a retention-tuning decision; we'll default to strict.)
 
@@ -165,12 +165,12 @@ The type signature is the API contract. `userId: string` in, `Promise<boolean>` 
 
 ```typescript
 const { data } = await supabaseAdmin
-  .from('subscriptions')
-  .select('status')
-  .eq('user_id', userId)
-  .in('status', ACTIVE_STATUSES)
-  .limit(1)
-  .single()
+	.from('subscriptions')
+	.select('status')
+	.eq('user_id', userId)
+	.in('status', ACTIVE_STATUSES)
+	.limit(1)
+	.single();
 ```
 
 Reading it top to bottom:
@@ -195,7 +195,7 @@ The second function returns the raw status string. Why do we need this if we hav
 Three use cases:
 
 1. **UI nuance.** "Your subscription is past due — update your card" is a much better message than a generic "upgrade to continue." Knowing the raw status lets us branch.
-2. **Telemetry.** When tracking "user hit feature gate," we want to log *why* they failed — `canceled` and `past_due` are very different signals for product analytics.
+2. **Telemetry.** When tracking "user hit feature gate," we want to log _why_ they failed — `canceled` and `past_due` are very different signals for product analytics.
 3. **Debug endpoints.** An internal admin page might render the raw status for a customer-success rep.
 
 Same mechanics as before with two differences:
@@ -213,38 +213,38 @@ The helpers are trivial to call. You'll see these exact shapes in lessons 10.2 a
 
 ```typescript
 // inside a +page.server.ts load function
-import { hasActiveSubscription } from '$lib/utils/access'
-import { redirect } from '@sveltejs/kit'
+import { hasActiveSubscription } from '$lib/utils/access';
+import { redirect } from '@sveltejs/kit';
 
 export async function load({ locals }) {
-  const user = await locals.getUser()
-  if (!user) redirect(303, '/login')
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
 
-  const isSubscribed = await hasActiveSubscription(user.id)
+	const isSubscribed = await hasActiveSubscription(user.id);
 
-  return { isSubscribed }
+	return { isSubscribed };
 }
 ```
 
 And in a form action:
 
 ```typescript
-import { hasActiveSubscription } from '$lib/utils/access'
-import { fail, redirect } from '@sveltejs/kit'
+import { hasActiveSubscription } from '$lib/utils/access';
+import { fail, redirect } from '@sveltejs/kit';
 
 export const actions = {
-  default: async ({ locals }) => {
-    const user = await locals.getUser()
-    if (!user) redirect(303, '/login')
+	default: async ({ locals }) => {
+		const user = await locals.getUser();
+		if (!user) redirect(303, '/login');
 
-    const subscribed = await hasActiveSubscription(user.id)
-    if (!subscribed) {
-      return fail(403, { error: 'Upgrade to continue' })
-    }
+		const subscribed = await hasActiveSubscription(user.id);
+		if (!subscribed) {
+			return fail(403, { error: 'Upgrade to continue' });
+		}
 
-    // ... do the paid thing
-  }
-}
+		// ... do the paid thing
+	}
+};
 ```
 
 Notice the pattern: **always get the user first, then pass `user.id` into the helper.** Never read `user_id` from a form field; never pull it from a URL. The helper's contract is that `userId` comes from a trusted source, and `locals.getUser()` is that source.
@@ -257,17 +257,17 @@ The helpers don't render anything; they're pure functions. We verify by calling 
 
 ```typescript
 // src/routes/(app)/dashboard/+page.server.ts
-import { hasActiveSubscription, getSubscriptionStatus } from '$lib/utils/access'
+import { hasActiveSubscription, getSubscriptionStatus } from '$lib/utils/access';
 
 export async function load({ locals }) {
-  const user = await locals.getUser()
-  if (!user) return { }
+	const user = await locals.getUser();
+	if (!user) return {};
 
-  const isSubscribed = await hasActiveSubscription(user.id)
-  const status = await getSubscriptionStatus(user.id)
+	const isSubscribed = await hasActiveSubscription(user.id);
+	const status = await getSubscriptionStatus(user.id);
 
-  console.log({ isSubscribed, status })
-  return { isSubscribed, status }
+	console.log({ isSubscribed, status });
+	return { isSubscribed, status };
 }
 ```
 
@@ -292,7 +292,7 @@ Remove the `console.log` before committing. The structured `return` is fine — 
 
 ### Authorization as a separate layer
 
-The best-run codebases I've seen treat authorization (authz) as a distinct concern from authentication (authn). Authn answers *who are you?* Authz answers *what are you allowed to do?*
+The best-run codebases I've seen treat authorization (authz) as a distinct concern from authentication (authn). Authn answers _who are you?_ Authz answers _what are you allowed to do?_
 
 In Contactly, authn lives in `hooks.server.ts` and `locals.getUser()`. Authz now lives in `$lib/utils/access.ts`. Keeping them separate gives you three wins:
 
@@ -312,23 +312,23 @@ Centralized helpers turn that into a single diff. A reviewer sees the rule chang
 
 ```typescript
 // Sketch — do NOT build this yet; only when you have metrics showing it matters.
-const cache = new Map<string, { value: boolean; expiresAt: number }>()
+const cache = new Map<string, { value: boolean; expiresAt: number }>();
 
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
-  const cached = cache.get(userId)
-  if (cached && cached.expiresAt > Date.now()) return cached.value
+	const cached = cache.get(userId);
+	if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-  const { data } = await supabaseAdmin
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', userId)
-    .in('status', ACTIVE_STATUSES)
-    .limit(1)
-    .maybeSingle()
+	const { data } = await supabaseAdmin
+		.from('subscriptions')
+		.select('status')
+		.eq('user_id', userId)
+		.in('status', ACTIVE_STATUSES)
+		.limit(1)
+		.maybeSingle();
 
-  const value = !!data
-  cache.set(userId, { value, expiresAt: Date.now() + 60_000 })
-  return value
+	const value = !!data;
+	cache.set(userId, { value, expiresAt: Date.now() + 60_000 });
+	return value;
 }
 ```
 

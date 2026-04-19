@@ -2,12 +2,7 @@ import { fail } from '@sveltejs/kit';
 import * as z from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import { supabaseAdmin } from '$server/supabase';
-import {
-	requireAdmin,
-	setUserRole,
-	grantEntitlement,
-	revokeEntitlement
-} from '$server/admin';
+import { requireAdmin, setUserRole, grantEntitlement, revokeEntitlement } from '$server/admin';
 import { PRICING_LOOKUP_KEYS } from '$config/pricing.config';
 
 const PAGE_SIZE = 25;
@@ -29,9 +24,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (q) {
 		// Single ilike on email/full_name. Postgres uses lower-case ILIKE under
 		// the hood; pattern is wrapped in % so partial matches work.
-		profilesQuery = profilesQuery.or(
-			`email.ilike.%${q}%,full_name.ilike.%${q}%`
-		);
+		profilesQuery = profilesQuery.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
 	}
 
 	const { data: profiles, count } = await profilesQuery;
@@ -39,11 +32,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const ids = (profiles ?? []).map((p) => p.id);
 	const [subsRes, entitlementsRes] = await Promise.all([
 		ids.length === 0
-			? Promise.resolve({ data: [] as Array<{ user_id: string; status: string; price_id: string | null }> })
-			: supabaseAdmin
-					.from('subscriptions')
-					.select('user_id, status, price_id')
-					.in('user_id', ids),
+			? Promise.resolve({
+					data: [] as Array<{ user_id: string; status: string; price_id: string | null }>
+				})
+			: supabaseAdmin.from('subscriptions').select('user_id, status, price_id').in('user_id', ids),
 		ids.length === 0
 			? Promise.resolve({
 					data: [] as Array<{
@@ -72,7 +64,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const entByUser = new Map<
 		string,
-		Array<{ id: string; tier: string; reason: string; granted_at: string; expires_at: string | null }>
+		Array<{
+			id: string;
+			tier: string;
+			reason: string;
+			granted_at: string;
+			expires_at: string | null;
+		}>
 	>();
 	for (const e of entitlementsRes.data ?? []) {
 		const list = entByUser.get(e.user_id) ?? [];

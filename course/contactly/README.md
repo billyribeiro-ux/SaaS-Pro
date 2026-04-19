@@ -1,10 +1,16 @@
 # Contactly
 
+> _Last revised: 2026-04-19. Reflects state through Module 12 (cassette
+> harness) and Module 11 (Vercel deploy + hardening)._
+
 Contactly is the multi-tenant contact-management SaaS that students build, end
 to end, through the **SaaS-Pro** course. This directory holds the actual
 project source. Each lesson tag (`course/lesson-XX-YY-...`) marks the exact
 state the codebase reaches at the end of that lesson, so you can check out
 any tag and run a working app.
+
+For the per-module implementation docs (one folder per major surface), see
+[`docs/README.md`](./docs/README.md).
 
 > **Heads up.** This project lives inside the `course/` folder of the
 > larger `saas-pro` repository, but it is intentionally **standalone** — it

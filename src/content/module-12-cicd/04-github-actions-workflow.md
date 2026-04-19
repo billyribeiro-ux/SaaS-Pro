@@ -1,10 +1,10 @@
 ---
-title: "12.4 - GitHub Actions Workflow"
+title: '12.4 - GitHub Actions Workflow'
 module: 12
 lesson: 4
-moduleSlug: "module-12-cicd"
-lessonSlug: "04-github-actions-workflow"
-description: "Write the complete GitHub Actions workflow that automates testing and deployment on every push to main."
+moduleSlug: 'module-12-cicd'
+lessonSlug: '04-github-actions-workflow'
+description: 'Write the complete GitHub Actions workflow that automates testing and deployment on every push to main.'
 duration: 20
 preview: false
 ---
@@ -142,8 +142,7 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      ...
+    steps: ...
 ```
 
 **`jobs:`** — workflows have one or more jobs. Jobs run in parallel by default (on separate runners) unless one `needs:` another. Our single job is `test-and-deploy`; we intentionally put all steps in one job so they share the same file system — the dependencies installed in step 4 are available for step 5, the built artifacts from step 5 are available for step 6, etc.
@@ -247,6 +246,7 @@ git commit -m "Commit Supabase project config"
 ```
 
 **The two secrets:**
+
 - `SUPABASE_ACCESS_TOKEN` — personal access token you generate at supabase.com/dashboard/account/tokens. Tells the CLI "I'm authorized as this Supabase account user." Treat like a password.
 - `SUPABASE_DB_PASSWORD` — the database password you set in lesson 12.2. The CLI uses it to authenticate to Postgres for the actual `db push`.
 
@@ -302,6 +302,7 @@ The only step guarded by `if:`. Two conditions:
 **`vercel --prod --token=...`** — deploys to production (not a preview). The `--token` argument authenticates the CLI.
 
 **Three Vercel secrets:**
+
 - `VERCEL_TOKEN` — generated at vercel.com/account/tokens. Scoped to your account; treat as a password.
 - `VERCEL_ORG_ID` — the ID of your Vercel team/account. Found in **Settings** → **General**.
 - `VERCEL_PROJECT_ID` — the ID of the specific Contactly project. Found in your project's **Settings** → **General**.
@@ -316,15 +317,15 @@ Go to your GitHub repo → **Settings** → **Secrets and variables** → **Acti
 
 Add each one, one at a time. Name (uppercase, underscores) → Value (paste, no quotes). Here's the full list:
 
-| Secret Name | Value | Source |
-|---|---|---|
-| `SUPABASE_ACCESS_TOKEN` | `sbp_...` | supabase.com/dashboard/account/tokens → Generate |
-| `SUPABASE_DB_PASSWORD` | (your prod DB password) | Password manager from lesson 12.2 |
-| `PUBLIC_SUPABASE_URL_TEST` | `https://abc123.supabase.co` | Test Supabase project → Settings → API |
-| `PUBLIC_SUPABASE_ANON_KEY_TEST` | `eyJ...` | Test Supabase project → Settings → API |
-| `VERCEL_TOKEN` | `abc123...` | vercel.com/account/tokens → Create |
-| `VERCEL_ORG_ID` | `team_abc` or `user_abc` | Vercel → Settings → General |
-| `VERCEL_PROJECT_ID` | `prj_abc` | Vercel project → Settings → General |
+| Secret Name                     | Value                        | Source                                           |
+| ------------------------------- | ---------------------------- | ------------------------------------------------ |
+| `SUPABASE_ACCESS_TOKEN`         | `sbp_...`                    | supabase.com/dashboard/account/tokens → Generate |
+| `SUPABASE_DB_PASSWORD`          | (your prod DB password)      | Password manager from lesson 12.2                |
+| `PUBLIC_SUPABASE_URL_TEST`      | `https://abc123.supabase.co` | Test Supabase project → Settings → API           |
+| `PUBLIC_SUPABASE_ANON_KEY_TEST` | `eyJ...`                     | Test Supabase project → Settings → API           |
+| `VERCEL_TOKEN`                  | `abc123...`                  | vercel.com/account/tokens → Create               |
+| `VERCEL_ORG_ID`                 | `team_abc` or `user_abc`     | Vercel → Settings → General                      |
+| `VERCEL_PROJECT_ID`             | `prj_abc`                    | Vercel project → Settings → General              |
 
 Seven secrets. Miss any one and the pipeline fails.
 
@@ -355,6 +356,7 @@ GitHub → repo **Settings** → **Branches** → **Add rule** (or **Edit** an e
 **Branch name pattern:** `main`
 
 Enable:
+
 - **Require a pull request before merging** — direct pushes to main are blocked. Everything goes through a PR.
 - **Require status checks to pass before merging** — PRs can't be merged until the CI pipeline is green.
   - In the search box, find `test-and-deploy` (the job name from our workflow) and add it as a required check.
@@ -386,6 +388,7 @@ Every secret in our workflow has broader access than it strictly needs.
 - `VERCEL_TOKEN` is similar — it works across every Vercel project your account owns.
 
 Mitigations:
+
 - **Separate accounts for CI.** Some teams create a dedicated "ci-bot@company.com" account that's a member of the Supabase org and Vercel team with only the permissions it needs. If the token leaks, the blast radius is scoped.
 - **Rotate regularly.** Set a 90-day rotation policy. Whoever's on call that month generates fresh tokens, updates the GitHub secrets, and deletes the old ones.
 - **Audit logs.** Both Supabase and Vercel have audit logs. Monitor them for unexpected API calls — especially from CI tokens.
@@ -416,8 +419,7 @@ jobs:
     concurrency:
       group: deploy-${{ github.ref }}
       cancel-in-progress: false
-    steps:
-      ...
+    steps: ...
 ```
 
 - `group: deploy-${{ github.ref }}` — all runs on the same branch share a group name.

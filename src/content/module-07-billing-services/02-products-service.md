@@ -1,10 +1,10 @@
 ---
-title: "7.2 - Products Service"
+title: '7.2 - Products Service'
 module: 7
 lesson: 2
-moduleSlug: "module-07-billing-services"
-lessonSlug: "02-products-service"
-description: "Build the products service that syncs Stripe product data into Supabase via webhooks."
+moduleSlug: 'module-07-billing-services'
+lessonSlug: '02-products-service'
+description: 'Build the products service that syncs Stripe product data into Supabase via webhooks.'
 duration: 12
 preview: false
 ---
@@ -79,23 +79,21 @@ Create `src/lib/server/billing/products.service.ts`:
 
 ```typescript
 // src/lib/server/billing/products.service.ts
-import type Stripe from 'stripe'
-import { supabaseAdmin } from '$server/supabase'
+import type Stripe from 'stripe';
+import { supabaseAdmin } from '$server/supabase';
 
 export async function upsertProduct(product: Stripe.Product): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('products')
-    .upsert({
-      id: product.id,
-      name: product.name,
-      description: product.description ?? null,
-      active: product.active,
-      metadata: product.metadata,
-      updated_at: new Date().toISOString()
-    })
-  if (error) {
-    throw new Error(`Failed to upsert product ${product.id}: ${error.message}`)
-  }
+	const { error } = await supabaseAdmin.from('products').upsert({
+		id: product.id,
+		name: product.name,
+		description: product.description ?? null,
+		active: product.active,
+		metadata: product.metadata,
+		updated_at: new Date().toISOString()
+	});
+	if (error) {
+		throw new Error(`Failed to upsert product ${product.id}: ${error.message}`);
+	}
 }
 ```
 
@@ -104,8 +102,8 @@ Twelve lines including the import block. Let's go through every one.
 ### The imports
 
 ```typescript
-import type Stripe from 'stripe'
-import { supabaseAdmin } from '$server/supabase'
+import type Stripe from 'stripe';
+import { supabaseAdmin } from '$server/supabase';
 ```
 
 `import type Stripe from 'stripe'` is a **type-only import**. We don't use the `Stripe` constructor here — we only use its `Stripe.Product` type annotation. Type-only imports are erased during compilation, so this line has zero runtime cost. It also tells IDE tooling "don't bundle the full Stripe SDK into any client bundle that accidentally imports this file" (which won't happen because we're in `/server`, but the type-only annotation is still correct hygiene).
@@ -115,7 +113,7 @@ import { supabaseAdmin } from '$server/supabase'
 ### The signature
 
 ```typescript
-export async function upsertProduct(product: Stripe.Product): Promise<void>
+export async function upsertProduct(product: Stripe.Product): Promise<void>;
 ```
 
 The parameter is `Stripe.Product` — the exact type Stripe's SDK gives us when an event's `data.object` is a product. This is the single most important line of the function. TypeScript will now:
@@ -129,16 +127,14 @@ The return type is `Promise<void>` — we don't return the inserted row. The cal
 ### The upsert
 
 ```typescript
-const { error } = await supabaseAdmin
-  .from('products')
-  .upsert({
-    id: product.id,
-    name: product.name,
-    description: product.description ?? null,
-    active: product.active,
-    metadata: product.metadata,
-    updated_at: new Date().toISOString()
-  })
+const { error } = await supabaseAdmin.from('products').upsert({
+	id: product.id,
+	name: product.name,
+	description: product.description ?? null,
+	active: product.active,
+	metadata: product.metadata,
+	updated_at: new Date().toISOString()
+});
 ```
 
 `supabaseAdmin.from('products')` returns a query builder for the `products` table. Because `database.types.ts` is generated, TypeScript knows the exact column types — no `any`, no drift.
@@ -154,7 +150,7 @@ Let's walk the fields:
 
 - `id: product.id` — Stripe's product ID. This is the upsert key.
 - `name: product.name` — required string; always present on a `Stripe.Product`.
-- `description: product.description ?? null` — Stripe's type is `string | null`. We explicitly coerce to `null` if it's nullish, because `undefined` in a Supabase upsert would be ignored (left unchanged), which is *not* what we want. If a product's description gets cleared in Stripe, we need to clear it in our mirror too. Upserting `null` replaces the column; upserting `undefined` leaves the column alone. The difference matters.
+- `description: product.description ?? null` — Stripe's type is `string | null`. We explicitly coerce to `null` if it's nullish, because `undefined` in a Supabase upsert would be ignored (left unchanged), which is _not_ what we want. If a product's description gets cleared in Stripe, we need to clear it in our mirror too. Upserting `null` replaces the column; upserting `undefined` leaves the column alone. The difference matters.
 - `active: product.active` — boolean, always present.
 - `metadata: product.metadata` — Stripe's metadata dict, stored as `jsonb`. Always present (Stripe returns an empty object `{}` if the user set no metadata).
 - `updated_at: new Date().toISOString()` — we set this on every upsert. We could let the DB default handle it on inserts, but on updates we need to bump it manually — Postgres won't update a `default now()` column on its own during UPDATE.
@@ -163,7 +159,7 @@ Let's walk the fields:
 
 ```typescript
 if (error) {
-  throw new Error(`Failed to upsert product ${product.id}: ${error.message}`)
+	throw new Error(`Failed to upsert product ${product.id}: ${error.message}`);
 }
 ```
 
@@ -180,7 +176,7 @@ Open `src/routes/api/webhooks/stripe/+server.ts`. You already have the verified 
 Add the import at the top:
 
 ```typescript
-import { upsertProduct } from '$server/billing/products.service'
+import { upsertProduct } from '$server/billing/products.service';
 ```
 
 Inside the switch, replace the product placeholders with:
@@ -211,7 +207,7 @@ The `{` ... `}` around the case body is a **block scope**. It's not strictly nec
 ### `event.data.object` is strongly typed
 
 ```typescript
-await upsertProduct(event.data.object)
+await upsertProduct(event.data.object);
 ```
 
 Stripe's SDK overloads the `Event` type such that within a narrowed case — `event.type === 'product.created'` — TypeScript knows `event.data.object` is a `Stripe.Product`. That's why we don't need an explicit cast. The type narrowing happens on the string literal of `event.type`, so `case 'product.created':` is all we need to get the precise type.
@@ -221,10 +217,10 @@ Stripe's SDK overloads the `Event` type such that within a narrowed case — `ev
 ### `break` — critical
 
 ```typescript
-break
+break;
 ```
 
-Without `break`, execution falls through to the next case. That's how we made `case 'product.created':` and `case 'product.updated':` share a body: the first case has no `break`, so it falls into the second. But after the upsert runs, we *must* break, or we'd fall through into whatever case comes next (maybe `customer.created` — which would then try to run with a `Stripe.Product` as its `event.data.object`, and everything breaks).
+Without `break`, execution falls through to the next case. That's how we made `case 'product.created':` and `case 'product.updated':` share a body: the first case has no `break`, so it falls into the second. But after the upsert runs, we _must_ break, or we'd fall through into whatever case comes next (maybe `customer.created` — which would then try to run with a `Stripe.Product` as its `event.data.object`, and everything breaks).
 
 Cases without `break` are a classic JS footgun. Always `break`. Always.
 
@@ -236,48 +232,48 @@ After this lesson your `+server.ts` looks roughly like this (the non-product cas
 
 ```typescript
 // src/routes/api/webhooks/stripe/+server.ts
-import { json, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { upsertProduct } from '$server/billing/products.service'
-import { STRIPE_WEBHOOK_SECRET } from '$env/static/private'
-import type { RequestHandler } from './$types'
-import type Stripe from 'stripe'
+import { json, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { upsertProduct } from '$server/billing/products.service';
+import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import type { RequestHandler } from './$types';
+import type Stripe from 'stripe';
 
 export const POST: RequestHandler = async ({ request }) => {
-  const signature = request.headers.get('stripe-signature')
-  if (!signature) error(400, 'Missing stripe-signature header')
+	const signature = request.headers.get('stripe-signature');
+	if (!signature) error(400, 'Missing stripe-signature header');
 
-  const rawBody = await request.text()
+	const rawBody = await request.text();
 
-  let event: Stripe.Event
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    error(400, `Webhook signature verification failed: ${message}`)
-  }
+	let event: Stripe.Event;
+	try {
+		event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : 'Unknown error';
+		error(400, `Webhook signature verification failed: ${message}`);
+	}
 
-  try {
-    switch (event.type) {
-      case 'product.created':
-      case 'product.updated': {
-        await upsertProduct(event.data.object)
-        break
-      }
+	try {
+		switch (event.type) {
+			case 'product.created':
+			case 'product.updated': {
+				await upsertProduct(event.data.object);
+				break;
+			}
 
-      // price, customer, and subscription cases added in 7.3 and 7.4.
+			// price, customer, and subscription cases added in 7.3 and 7.4.
 
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error(`Webhook handler error for ${event.type}:`, message)
-    error(500, message)
-  }
+			default:
+				console.log(`Unhandled event type: ${event.type}`);
+		}
+	} catch (err) {
+		const message = err instanceof Error ? err.message : 'Unknown error';
+		console.error(`Webhook handler error for ${event.type}:`, message);
+		error(500, message);
+	}
 
-  return json({ received: true })
-}
+	return json({ received: true });
+};
 ```
 
 A few notes on the overall shape — these are patterns you'll keep for the whole module:
@@ -348,11 +344,11 @@ description: product.description,
 ```typescript
 // WRONG
 try {
-  await upsertProduct(event.data.object)
+	await upsertProduct(event.data.object);
 } catch (err) {
-  console.error(err)  // swallows the error
+	console.error(err); // swallows the error
 }
-return json({ received: true })  // tells Stripe "success"
+return json({ received: true }); // tells Stripe "success"
 ```
 
 Now our DB is out of sync and Stripe thinks everything's fine. No retry. Forever out of sync. Re-throw or return 500 so Stripe retries.
@@ -386,7 +382,7 @@ Stripe's v22 SDK uses `snake_case` everywhere in the payloads (because Stripe's 
 
 ### Idempotency is the defining property of good webhook handlers
 
-Webhooks are a distributed systems problem dressed up as a REST endpoint. Stripe promises **at-least-once delivery** of events — meaning you *will* receive the same event twice, at some frequency, forever. Common reasons:
+Webhooks are a distributed systems problem dressed up as a REST endpoint. Stripe promises **at-least-once delivery** of events — meaning you _will_ receive the same event twice, at some frequency, forever. Common reasons:
 
 - Your server returned a non-2xx status; Stripe retries after exponential backoff.
 - Stripe's side hiccuped and queued a duplicate.
@@ -417,7 +413,7 @@ on conflict (id) do update
       updated_at = excluded.updated_at;
 ```
 
-Only the columns you include in the upsert object are updated. `created_at` — which we don't pass — remains untouched on the existing row. That's why `created_at` reflects the original insert time, not each update. If you ever want to exclude *specific* columns from being updated on conflict, Supabase exposes `onConflict` and `ignoreDuplicates` options; we won't need them here.
+Only the columns you include in the upsert object are updated. `created_at` — which we don't pass — remains untouched on the existing row. That's why `created_at` reflects the original insert time, not each update. If you ever want to exclude _specific_ columns from being updated on conflict, Supabase exposes `onConflict` and `ignoreDuplicates` options; we won't need them here.
 
 ### Retry safety and eventual consistency
 
@@ -427,7 +423,7 @@ Some billing systems try to be strictly synchronous (read-through to Stripe on e
 
 - Feature gates should tolerate "just-expired" states for a few seconds — worst case, user retains access for 60 seconds after their sub ends. Fine.
 - Pricing displays lag product edits by a few seconds — Stripe sends `product.updated`, we mirror it, the UI re-renders. Fine.
-- In-flight checkouts write to Stripe first; the webhook writes to us *after*. The "checkout success" page might need to wait for a moment or poll until the subscription row appears.
+- In-flight checkouts write to Stripe first; the webhook writes to us _after_. The "checkout success" page might need to wait for a moment or poll until the subscription row appears.
 
 These tradeoffs are fine for a SaaS app. They'd not be fine for a high-frequency trading system. Know which industry you're in.
 

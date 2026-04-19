@@ -3,10 +3,7 @@ import * as z from 'zod';
 import type { RequestHandler } from './$types';
 import { stripe } from '$server/stripe';
 import { getOrCreateStripeCustomer } from '$server/billing/customers.service';
-import {
-	ALL_LOOKUP_KEYS,
-	PRICING_LOOKUP_KEYS
-} from '$config/pricing.config';
+import { ALL_LOOKUP_KEYS, PRICING_LOOKUP_KEYS } from '$config/pricing.config';
 import { SITE } from '$config/site.config';
 
 const bodySchema = z.object({

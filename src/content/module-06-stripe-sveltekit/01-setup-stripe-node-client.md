@@ -1,10 +1,10 @@
 ---
-title: "6.1 - Setup Stripe Node Client"
+title: '6.1 - Setup Stripe Node Client'
 module: 6
 lesson: 1
-moduleSlug: "module-06-stripe-sveltekit"
-lessonSlug: "01-setup-stripe-node-client"
-description: "Install the Stripe Node.js SDK and create a typed server-side client."
+moduleSlug: 'module-06-stripe-sveltekit'
+lessonSlug: '01-setup-stripe-node-client'
+description: 'Install the Stripe Node.js SDK and create a typed server-side client.'
 duration: 10
 preview: false
 ---
@@ -56,10 +56,10 @@ Before v22, you could construct the SDK two ways:
 
 ```typescript
 // Old, deprecated (v21 and earlier)
-const stripe = Stripe(STRIPE_SECRET_KEY, { apiVersion: '...' })
+const stripe = Stripe(STRIPE_SECRET_KEY, { apiVersion: '...' });
 
 // Modern, required (v22+)
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '...' })
+const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '...' });
 ```
 
 In v22, Stripe removed the factory-function form entirely. The only valid way to construct the client is with the `new` keyword. If you forget it, TypeScript gives you a clear error:
@@ -98,12 +98,12 @@ Create `src/lib/server/stripe.ts`:
 
 ```typescript
 // src/lib/server/stripe.ts
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '$env/static/private'
+import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
 
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 ```
 
 Six lines, but every single one is a deliberate decision. Let's walk through them.
@@ -120,7 +120,7 @@ This is a TypeScript feature called "declaration merging" — a single identifie
 ```typescript
 // Later in the course, you'll write things like:
 async function upsertSubscription(sub: Stripe.Subscription) {
-  // 'sub' now has full IntelliSense — Stripe.Subscription has ~50 typed fields
+	// 'sub' now has full IntelliSense — Stripe.Subscription has ~50 typed fields
 }
 ```
 
@@ -139,9 +139,9 @@ Compare this to the Node-native alternative:
 
 ```typescript
 // What Node would give you without SvelteKit:
-const key = process.env.STRIPE_SECRET_KEY
+const key = process.env.STRIPE_SECRET_KEY;
 // Type: string | undefined — you'd need to null-check every use
-if (!key) throw new Error('STRIPE_SECRET_KEY missing')
+if (!key) throw new Error('STRIPE_SECRET_KEY missing');
 ```
 
 SvelteKit's `$env/static/private` handles all of that at build time. If `STRIPE_SECRET_KEY` is missing from `.env`, the build fails loudly instead of crashing at runtime in production.
@@ -193,7 +193,7 @@ Try it. Open your root `+page.svelte` and add, purely as a test:
 
 ```svelte
 <script lang="ts">
-  import { stripe } from '$lib/server/stripe'  // This will fail to build
+	import { stripe } from '$lib/server/stripe'; // This will fail to build
 </script>
 ```
 
@@ -224,9 +224,9 @@ If that key ever ships to the browser — even once, even in a source map — yo
 Throughout this course we use `$server` as a shorthand for `$lib/server`. If you set it up in Module 2's `svelte.config.js` (revisit that file to confirm), you can write:
 
 ```typescript
-import { stripe } from '$server/stripe'
+import { stripe } from '$server/stripe';
 // instead of
-import { stripe } from '$lib/server/stripe'
+import { stripe } from '$lib/server/stripe';
 ```
 
 Both work. The `$server` form is shorter and reinforces intent ("this is server-only"). Every subsequent lesson will use `$server/stripe`.
@@ -241,14 +241,14 @@ Create `src/routes/api/stripe-check/+server.ts`:
 
 ```typescript
 // src/routes/api/stripe-check/+server.ts — temporary, delete after
-import { json } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
+import { json } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
 
 export const GET = async () => {
-  // List up to 3 products; empty is fine.
-  const products = await stripe.products.list({ limit: 3 })
-  return json({ count: products.data.length })
-}
+	// List up to 3 products; empty is fine.
+	const products = await stripe.products.list({ limit: 3 });
+	return json({ count: products.data.length });
+};
 ```
 
 Run `pnpm dev`, visit `http://localhost:5173/api/stripe-check`. You should see `{"count": 0}` (or however many products you have in test mode). A non-zero count means the request reached Stripe and returned successfully. A 500 means the key is wrong or `apiVersion` is invalid — check the terminal for the real error.
@@ -272,19 +272,19 @@ Add `new`.
 ### Mistake 2: Importing from `'stripe'` as a named export
 
 ```typescript
-import { Stripe } from 'stripe'  // Wrong
+import { Stripe } from 'stripe'; // Wrong
 ```
 
 The SDK uses a **default** export. Always:
 
 ```typescript
-import Stripe from 'stripe'  // Correct
+import Stripe from 'stripe'; // Correct
 ```
 
 ### Mistake 3: Reading the key with `process.env`
 
 ```typescript
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '...' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '...' });
 ```
 
 This works, but you're bypassing SvelteKit's type safety. The non-null assertion (`!`) masks the real issue: you'd rather the build fail at compile time if the variable is missing. Use `$env/static/private`.
@@ -304,7 +304,7 @@ Rule: **if a file imports a secret, it lives in `src/lib/server/`**. No exceptio
 ### Mistake 5: Hardcoding the API version as an unreleased string
 
 ```typescript
-apiVersion: '2030-12-31.pumpkin'  // Made-up version
+apiVersion: '2030-12-31.pumpkin'; // Made-up version
 ```
 
 At runtime, Stripe rejects API requests with an unknown version and returns a 400 error. Always use a version that's documented in the [Stripe API changelog](https://stripe.com/docs/upgrades). For the course we use `'2026-03-25.dahlia'`, which matches the SDK's built-in types.

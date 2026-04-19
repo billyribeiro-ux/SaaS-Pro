@@ -1,10 +1,10 @@
 ---
-title: "3.2 - User Login"
+title: '3.2 - User Login'
 module: 3
 lesson: 2
-moduleSlug: "module-03-user-auth"
-lessonSlug: "02-user-login"
-description: "Build a secure login page using signInWithPassword, with opaque errors, redirect handling, and already-logged-in UX."
+moduleSlug: 'module-03-user-auth'
+lessonSlug: '02-user-login'
+description: 'Build a secure login page using signInWithPassword, with opaque errors, redirect handling, and already-logged-in UX.'
 duration: 18
 preview: false
 ---
@@ -70,81 +70,75 @@ Create two files:
 ```svelte
 <!-- src/routes/(auth)/login/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms'
+	import { enhance } from '$app/forms';
 
-  let { form } = $props()
+	let { form } = $props();
 
-  let submitting = $state(false)
+	let submitting = $state(false);
 </script>
 
-<div class="bg-white rounded-lg shadow-sm p-8">
-  <h1 class="text-2xl font-semibold text-gray-900 mb-2">Welcome back</h1>
-  <p class="text-gray-600 mb-6">Sign in to your Contactly account.</p>
+<div class="rounded-lg bg-white p-8 shadow-sm">
+	<h1 class="mb-2 text-2xl font-semibold text-gray-900">Welcome back</h1>
+	<p class="mb-6 text-gray-600">Sign in to your Contactly account.</p>
 
-  {#if form?.error}
-    <div
-      class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-      role="alert"
-    >
-      {form.error}
-    </div>
-  {/if}
+	{#if form?.error}
+		<div
+			class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+			role="alert"
+		>
+			{form.error}
+		</div>
+	{/if}
 
-  <form
-    method="POST"
-    use:enhance={() => {
-      submitting = true
-      return async ({ update }) => {
-        await update()
-        submitting = false
-      }
-    }}
-    class="space-y-4"
-  >
-    <div>
-      <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-        Email
-      </label>
-      <input
-        id="email"
-        name="email"
-        type="email"
-        autocomplete="email"
-        required
-        value={form?.data?.email ?? ''}
-        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-      />
-    </div>
+	<form
+		method="POST"
+		use:enhance={() => {
+			submitting = true;
+			return async ({ update }) => {
+				await update();
+				submitting = false;
+			};
+		}}
+		class="space-y-4"
+	>
+		<div>
+			<label for="email" class="mb-1 block text-sm font-medium text-gray-700"> Email </label>
+			<input
+				id="email"
+				name="email"
+				type="email"
+				autocomplete="email"
+				required
+				value={form?.data?.email ?? ''}
+				class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+			/>
+		</div>
 
-    <div>
-      <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-        Password
-      </label>
-      <input
-        id="password"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        required
-        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-      />
-    </div>
+		<div>
+			<label for="password" class="mb-1 block text-sm font-medium text-gray-700"> Password </label>
+			<input
+				id="password"
+				name="password"
+				type="password"
+				autocomplete="current-password"
+				required
+				class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+			/>
+		</div>
 
-    <button
-      type="submit"
-      disabled={submitting}
-      class="w-full rounded-md bg-indigo-600 px-4 py-2 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {submitting ? 'Signing in…' : 'Sign in'}
-    </button>
-  </form>
+		<button
+			type="submit"
+			disabled={submitting}
+			class="w-full rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+		>
+			{submitting ? 'Signing in…' : 'Sign in'}
+		</button>
+	</form>
 
-  <p class="mt-6 text-center text-sm text-gray-600">
-    Don't have an account?
-    <a href="/register" class="text-indigo-600 hover:text-indigo-700 font-medium">
-      Create one
-    </a>
-  </p>
+	<p class="mt-6 text-center text-sm text-gray-600">
+		Don't have an account?
+		<a href="/register" class="font-medium text-indigo-600 hover:text-indigo-700"> Create one </a>
+	</p>
 </div>
 ```
 
@@ -197,62 +191,62 @@ Now the backend. Create `src/routes/(auth)/login/+page.server.ts`:
 
 ```typescript
 // src/routes/(auth)/login/+page.server.ts
-import { fail, redirect } from '@sveltejs/kit'
-import * as z from 'zod'
-import type { Actions, PageServerLoad } from './$types'
+import { fail, redirect } from '@sveltejs/kit';
+import * as z from 'zod';
+import type { Actions, PageServerLoad } from './$types';
 
 const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required')
-})
+	email: z.string().email('Enter a valid email address'),
+	password: z.string().min(1, 'Password is required')
+});
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const user = await locals.getUser()
+	const user = await locals.getUser();
 
-  if (user) {
-    const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect =
-      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
-    redirect(303, safeRedirect)
-  }
+	if (user) {
+		const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
+		const safeRedirect =
+			redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
+		redirect(303, safeRedirect);
+	}
 
-  return {}
-}
+	return {};
+};
 
 export const actions: Actions = {
-  default: async ({ request, url, locals }) => {
-    const formData = await request.formData()
-    const raw = {
-      email: formData.get('email'),
-      password: formData.get('password')
-    }
+	default: async ({ request, url, locals }) => {
+		const formData = await request.formData();
+		const raw = {
+			email: formData.get('email'),
+			password: formData.get('password')
+		};
 
-    const parsed = loginSchema.safeParse(raw)
-    if (!parsed.success) {
-      return fail(400, {
-        error: 'Enter a valid email and password',
-        data: { email: typeof raw.email === 'string' ? raw.email : '' }
-      })
-    }
+		const parsed = loginSchema.safeParse(raw);
+		if (!parsed.success) {
+			return fail(400, {
+				error: 'Enter a valid email and password',
+				data: { email: typeof raw.email === 'string' ? raw.email : '' }
+			});
+		}
 
-    const { error } = await locals.supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password
-    })
+		const { error } = await locals.supabase.auth.signInWithPassword({
+			email: parsed.data.email,
+			password: parsed.data.password
+		});
 
-    if (error) {
-      return fail(400, {
-        error: 'Invalid email or password',
-        data: { email: parsed.data.email }
-      })
-    }
+		if (error) {
+			return fail(400, {
+				error: 'Invalid email or password',
+				data: { email: parsed.data.email }
+			});
+		}
 
-    const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect =
-      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
-    redirect(303, safeRedirect)
-  }
-}
+		const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
+		const safeRedirect =
+			redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
+		redirect(303, safeRedirect);
+	}
+};
 ```
 
 This file is short, but **every single line carries security weight**. Let's disassemble it.
@@ -263,9 +257,9 @@ This file is short, but **every single line carries security weight**. Let's dis
 
 ```typescript
 const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required')
-})
+	email: z.string().email('Enter a valid email address'),
+	password: z.string().min(1, 'Password is required')
+});
 ```
 
 **`z.string().email(...)`** — Zod's built-in email validator. It's a syntactic check: is the shape roughly `something@something.tld`? It doesn't check whether the email **exists** or whether the user owns it.
@@ -286,17 +280,17 @@ This separation is a **Principal Engineer** pattern: each layer enforces only wh
 
 ```typescript
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const user = await locals.getUser()
+	const user = await locals.getUser();
 
-  if (user) {
-    const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect =
-      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
-    redirect(303, safeRedirect)
-  }
+	if (user) {
+		const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
+		const safeRedirect =
+			redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
+		redirect(303, safeRedirect);
+	}
 
-  return {}
-}
+	return {};
+};
 ```
 
 A `load` function runs on the server **every time the page is requested** (whether by direct URL, client-side nav, or form action reload). This one does exactly one job: **if the visitor is already signed in, skip the login page and send them where they were going.**
@@ -326,8 +320,8 @@ This is one of the most under-appreciated web vulnerabilities. It's in the OWASP
 Imagine we wrote the redirect naively:
 
 ```typescript
-const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-redirect(303, redirectTo) // NO VALIDATION
+const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
+redirect(303, redirectTo); // NO VALIDATION
 ```
 
 A phishing attacker sends an email:
@@ -344,9 +338,7 @@ The trick: the attacker leveraged **our login page's trust** (real domain, real 
 
 ```typescript
 const safeRedirect =
-  redirectTo.startsWith('/') && !redirectTo.startsWith('//')
-    ? redirectTo
-    : '/dashboard'
+	redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
 ```
 
 Only allow redirect targets that start with `/` **and** aren't protocol-relative. That means only same-origin paths. `https://evil.com/...`? Rejected (doesn't start with `/`). `//evil.com/...`? Rejected (the `!startsWith('//')` guard). `/dashboard/contacts`? Allowed.
@@ -359,7 +351,7 @@ A naïve version that only checks one slash is **not** enough:
 
 ```typescript
 // ❌ INCOMPLETE — lets //evil.com through
-const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard'
+const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
 ```
 
 Always combine the two conditions.
@@ -369,8 +361,8 @@ Always combine the two conditions.
 The gold standard is an explicit whitelist of allowed redirect targets:
 
 ```typescript
-const allowedRedirects = ['/dashboard', '/dashboard/contacts', '/account', /* ... */]
-const safeRedirect = allowedRedirects.includes(redirectTo) ? redirectTo : '/dashboard'
+const allowedRedirects = ['/dashboard', '/dashboard/contacts', '/account' /* ... */];
+const safeRedirect = allowedRedirects.includes(redirectTo) ? redirectTo : '/dashboard';
 ```
 
 But this requires maintenance — every new route needs to be added. For a small SaaS, `startsWith('/') && !startsWith('//')` is a pragmatic middle ground.
@@ -381,39 +373,39 @@ But this requires maintenance — every new route needs to be added. For a small
 
 ```typescript
 export const actions: Actions = {
-  default: async ({ request, url, locals }) => {
-    const formData = await request.formData()
-    const raw = {
-      email: formData.get('email'),
-      password: formData.get('password')
-    }
+	default: async ({ request, url, locals }) => {
+		const formData = await request.formData();
+		const raw = {
+			email: formData.get('email'),
+			password: formData.get('password')
+		};
 
-    const parsed = loginSchema.safeParse(raw)
-    if (!parsed.success) {
-      return fail(400, {
-        error: 'Enter a valid email and password',
-        data: { email: typeof raw.email === 'string' ? raw.email : '' }
-      })
-    }
+		const parsed = loginSchema.safeParse(raw);
+		if (!parsed.success) {
+			return fail(400, {
+				error: 'Enter a valid email and password',
+				data: { email: typeof raw.email === 'string' ? raw.email : '' }
+			});
+		}
 
-    const { error } = await locals.supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password
-    })
+		const { error } = await locals.supabase.auth.signInWithPassword({
+			email: parsed.data.email,
+			password: parsed.data.password
+		});
 
-    if (error) {
-      return fail(400, {
-        error: 'Invalid email or password',
-        data: { email: parsed.data.email }
-      })
-    }
+		if (error) {
+			return fail(400, {
+				error: 'Invalid email or password',
+				data: { email: parsed.data.email }
+			});
+		}
 
-    const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
-    const safeRedirect =
-      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
-    redirect(303, safeRedirect)
-  }
-}
+		const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
+		const safeRedirect =
+			redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
+		redirect(303, safeRedirect);
+	}
+};
 ```
 
 Let's walk through each part.
@@ -421,11 +413,11 @@ Let's walk through each part.
 ### Reading the form data
 
 ```typescript
-const formData = await request.formData()
+const formData = await request.formData();
 const raw = {
-  email: formData.get('email'),
-  password: formData.get('password')
-}
+	email: formData.get('email'),
+	password: formData.get('password')
+};
 ```
 
 `request` is a standard `Request` object (the same one the web platform has had since Fetch API was designed). `formData()` parses the POST body as `multipart/form-data` or `application/x-www-form-urlencoded` and returns a `FormData` object.
@@ -435,12 +427,12 @@ const raw = {
 ### Validation
 
 ```typescript
-const parsed = loginSchema.safeParse(raw)
+const parsed = loginSchema.safeParse(raw);
 if (!parsed.success) {
-  return fail(400, {
-    error: 'Enter a valid email and password',
-    data: { email: typeof raw.email === 'string' ? raw.email : '' }
-  })
+	return fail(400, {
+		error: 'Enter a valid email and password',
+		data: { email: typeof raw.email === 'string' ? raw.email : '' }
+	});
 }
 ```
 
@@ -452,9 +444,9 @@ If validation fails, we return a generic error message — **not** field-specifi
 
 ```typescript
 const { error } = await locals.supabase.auth.signInWithPassword({
-  email: parsed.data.email,
-  password: parsed.data.password
-})
+	email: parsed.data.email,
+	password: parsed.data.password
+});
 ```
 
 `signInWithPassword` does three things atomically:
@@ -471,10 +463,10 @@ Supabase writes the session cookies **for us**, using the cookies adapter we con
 
 ```typescript
 if (error) {
-  return fail(400, {
-    error: 'Invalid email or password',
-    data: { email: parsed.data.email }
-  })
+	return fail(400, {
+		error: 'Invalid email or password',
+		data: { email: parsed.data.email }
+	});
 }
 ```
 
@@ -487,10 +479,10 @@ Imagine we wrote error handling naively:
 ```typescript
 // ❌ DON'T DO THIS
 if (error?.message === 'User not found') {
-  return fail(400, { error: 'No account with that email' })
+	return fail(400, { error: 'No account with that email' });
 }
 if (error?.message === 'Invalid password') {
-  return fail(400, { error: 'Wrong password' })
+	return fail(400, { error: 'Wrong password' });
 }
 ```
 
@@ -511,10 +503,10 @@ What if the user genuinely mistyped their password three times in a row? They sh
 ### The success redirect — again with safe-redirect
 
 ```typescript
-const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard'
+const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
 const safeRedirect =
-  redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard'
-redirect(303, safeRedirect)
+	redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/dashboard';
+redirect(303, safeRedirect);
 ```
 
 Same pattern as the `load` function. Note we read `redirectTo` from `url` **inside the action** — `url` here is the URL of the request being handled (including query params from the original navigation). If the user was sent to `/login?redirectTo=/dashboard/contacts` by the auth guard, that query param is still on the URL when they submit the form, and we honor it here.
@@ -547,8 +539,10 @@ With `pnpm dev` running:
 
 ```typescript
 // ❌ DON'T
-const session = await locals.supabase.auth.getSession()
-if (session) { /* ... */ }
+const session = await locals.supabase.auth.getSession();
+if (session) {
+	/* ... */
+}
 ```
 
 `getSession()` **trusts the cookies without verifying them**. An attacker who can forge a cookie (because your cookie-signing secret leaked, for instance) would pass this check. `getUser()` hits Supabase's auth server to validate the JWT — it's the only way to be **sure**.
@@ -560,9 +554,9 @@ See Lesson 2.3 for the full threat model.
 ```typescript
 // ❌ DON'T
 return fail(400, {
-  errors: parsed.error.flatten().fieldErrors, // { email: ['Invalid email'] }
-  data: { email: raw.email }
-})
+	errors: parsed.error.flatten().fieldErrors, // { email: ['Invalid email'] }
+	data: { email: raw.email }
+});
 ```
 
 Granular errors are great on registration (the user wants to know which field failed). On login, they leak information. Stick to a single opaque message.
@@ -571,7 +565,7 @@ Granular errors are great on registration (the user wants to know which field fa
 
 ```typescript
 // ❌ DON'T
-redirect(303, url.searchParams.get('redirectTo') ?? '/dashboard')
+redirect(303, url.searchParams.get('redirectTo') ?? '/dashboard');
 ```
 
 You just built a free open redirect for phishing campaigns. Always validate that the target is a same-origin path.
@@ -598,8 +592,8 @@ This disables browser password masking, breaks password manager integration, and
 
 ```typescript
 // ❌ DON'T
-const stored = await db.getUserPasswordHash(email)
-const match = bcrypt.compareSync(password, stored)
+const stored = await db.getUserPasswordHash(email);
+const match = bcrypt.compareSync(password, stored);
 ```
 
 Don't hand-roll authentication when you have `signInWithPassword`. It handles timing attacks (constant-time comparison), rate limiting, session creation, refresh tokens, and a dozen other things you'd have to get right. Using the platform's built-in primitive is the correct default.
@@ -629,11 +623,11 @@ These mitigations are out of scope for this lesson but worth knowing exist.
 ```typescript
 // Belt-and-suspenders version
 function safeRedirect(raw: string | null, fallback = '/dashboard'): string {
-  if (!raw) return fallback
-  if (!raw.startsWith('/')) return fallback // absolute URL
-  if (raw.startsWith('//')) return fallback // protocol-relative
-  if (raw.includes('\\')) return fallback   // Windows-path smuggling
-  return raw
+	if (!raw) return fallback;
+	if (!raw.startsWith('/')) return fallback; // absolute URL
+	if (raw.startsWith('//')) return fallback; // protocol-relative
+	if (raw.includes('\\')) return fallback; // Windows-path smuggling
+	return raw;
 }
 ```
 

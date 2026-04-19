@@ -1,10 +1,10 @@
 ---
-title: "9.3 - Stripe Test Clocks"
+title: '9.3 - Stripe Test Clocks'
 module: 9
 lesson: 3
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "03-stripe-test-clocks"
-description: "Use Stripe test clocks to simulate the passage of time and test subscription lifecycle events."
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '03-stripe-test-clocks'
+description: 'Use Stripe test clocks to simulate the passage of time and test subscription lifecycle events.'
 duration: 10
 preview: false
 ---
@@ -41,17 +41,18 @@ A test clock is a Stripe object — `Stripe.TestHelpers.TestClock` — that repr
 
 ```typescript
 const clock = await stripe.testHelpers.testClocks.create({
-  frozen_time: Math.floor(Date.now() / 1000),
-  name: 'trial-flow-test'
-})
+	frozen_time: Math.floor(Date.now() / 1000),
+	name: 'trial-flow-test'
+});
 
 const customer = await stripe.customers.create({
-  email: 'alice@example.com',
-  test_clock: clock.id
-})
+	email: 'alice@example.com',
+	test_clock: clock.id
+});
 ```
 
 After this:
+
 - The customer's billing cycles, subscription renewals, trial ends — all calculated relative to the clock, not wall-clock time.
 - When you advance the clock, all of the customer's Stripe objects advance in sync. Invoices generate. Subscriptions transition. Trial ends. Webhooks fire. Everything you'd see in real time is compressed into the single `testHelpers.testClocks.advance()` call.
 - The customer can only be operated on with this clock active. Deleting the clock deletes the customer and everything attached to it.
@@ -91,39 +92,39 @@ Quick and visual. No code required. Excellent for sanity-checking an expected be
 In a script:
 
 ```typescript
-import Stripe from 'stripe'
+import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 
 async function main() {
-  const clock = await stripe.testHelpers.testClocks.create({
-    frozen_time: Math.floor(Date.now() / 1000),
-    name: 'trial-flow-' + new Date().toISOString()
-  })
+	const clock = await stripe.testHelpers.testClocks.create({
+		frozen_time: Math.floor(Date.now() / 1000),
+		name: 'trial-flow-' + new Date().toISOString()
+	});
 
-  const customer = await stripe.customers.create({
-    email: `test+${Date.now()}@saaspro.dev`,
-    test_clock: clock.id
-  })
+	const customer = await stripe.customers.create({
+		email: `test+${Date.now()}@saaspro.dev`,
+		test_clock: clock.id
+	});
 
-  const prices = await stripe.prices.list({
-    lookup_keys: ['pro_monthly'],
-    limit: 1
-  })
+	const prices = await stripe.prices.list({
+		lookup_keys: ['pro_monthly'],
+		limit: 1
+	});
 
-  const subscription = await stripe.subscriptions.create({
-    customer: customer.id,
-    items: [{ price: prices.data[0].id }],
-    trial_period_days: 14,
-    default_payment_method: 'pm_card_visa' // a Stripe test PM token
-  })
+	const subscription = await stripe.subscriptions.create({
+		customer: customer.id,
+		items: [{ price: prices.data[0].id }],
+		trial_period_days: 14,
+		default_payment_method: 'pm_card_visa' // a Stripe test PM token
+	});
 
-  console.log({ clock: clock.id, customer: customer.id, subscription: subscription.id })
+	console.log({ clock: clock.id, customer: customer.id, subscription: subscription.id });
 }
 
-main().catch(console.error)
+main().catch(console.error);
 ```
 
 This is the pattern you'd use in an automated integration test. It takes ~2 seconds to run and gives you a clock, a customer, and a trialing subscription — all ready for time-travel.
@@ -140,8 +141,8 @@ From the API:
 
 ```typescript
 await stripe.testHelpers.testClocks.advance(clock.id, {
-  frozen_time: Math.floor(Date.now() / 1000) + 15 * 24 * 60 * 60 // 15 days from now
-})
+	frozen_time: Math.floor(Date.now() / 1000) + 15 * 24 * 60 * 60 // 15 days from now
+});
 ```
 
 Advance the clock past the 14-day trial, and within a few seconds you'll see:
@@ -188,7 +189,7 @@ Your `past_due` UX — the banner telling the user to update their card — is n
 When you're done with a clock:
 
 ```typescript
-await stripe.testHelpers.testClocks.delete(clock.id)
+await stripe.testHelpers.testClocks.delete(clock.id);
 ```
 
 Or delete it from the dashboard. **This deletes every customer, subscription, invoice, and payment intent attached to the clock.** That's usually what you want — test data is ephemeral. If you forget, Stripe auto-deletes test clocks after 30 days of no activity.
@@ -272,7 +273,7 @@ The CI runs billing lifecycle assertions on every pull request. Regressions surf
 
 5. **Be mindful of test data.** Each test clock run creates a handful of Stripe objects (customer, subscription, invoice, payment intent). They live in test mode but they do show up in your test dashboard. Name clocks with a prefix like `ci-` or `manual-` so you can bulk-delete them periodically.
 
-6. **Clock drift is a silent source of flakiness.** If your test code uses `Date.now()` *and* the clock's `frozen_time`, mismatches create subtle timing bugs. Always compute advance targets from the clock's reported time, not from wall clock. Stripe's SDK returns the clock's `frozen_time` in every response — use it.
+6. **Clock drift is a silent source of flakiness.** If your test code uses `Date.now()` _and_ the clock's `frozen_time`, mismatches create subtle timing bugs. Always compute advance targets from the clock's reported time, not from wall clock. Stripe's SDK returns the clock's `frozen_time` in every response — use it.
 
 ---
 

@@ -40,66 +40,66 @@ We only install this for the import side. For export, building CSV by hand is fi
 ### `src/routes/api/contacts/export/+server.ts`
 
 ```ts
-import { redirect } from '@sveltejs/kit'
-import type { RequestHandler } from './$types'
+import { redirect } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
-const CSV_HEADERS = ['first_name', 'last_name', 'email', 'company', 'phone', 'notes'] as const
-type CsvColumn = (typeof CSV_HEADERS)[number]
-type ContactRow = Record<CsvColumn, unknown>
+const CSV_HEADERS = ['first_name', 'last_name', 'email', 'company', 'phone', 'notes'] as const;
+type CsvColumn = (typeof CSV_HEADERS)[number];
+type ContactRow = Record<CsvColumn, unknown>;
 
 /** Escape a single CSV field per RFC 4180. */
 function csvField(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  const str = String(value)
-  // If the value contains a comma, quote, CR, or LF, wrap in quotes and
-  // double up any internal quotes.
-  if (/[",\r\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`
-  }
-  return str
+	if (value === null || value === undefined) return '';
+	const str = String(value);
+	// If the value contains a comma, quote, CR, or LF, wrap in quotes and
+	// double up any internal quotes.
+	if (/[",\r\n]/.test(str)) {
+		return `"${str.replace(/"/g, '""')}"`;
+	}
+	return str;
 }
 
 function toCsvRow(values: unknown[]): string {
-  return values.map(csvField).join(',')
+	return values.map(csvField).join(',');
 }
 
 export const GET: RequestHandler = async ({ locals: { supabase, getUser } }) => {
-  const user = await getUser()
-  if (!user) throw redirect(303, '/login')
+	const user = await getUser();
+	if (!user) throw redirect(303, '/login');
 
-  // RLS already filters to the user's rows, but we add an explicit user_id
-  // filter as defense-in-depth.
-  const { data: contacts, error } = await supabase
-    .from('contacts')
-    .select(CSV_HEADERS.join(','))
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
+	// RLS already filters to the user's rows, but we add an explicit user_id
+	// filter as defense-in-depth.
+	const { data: contacts, error } = await supabase
+		.from('contacts')
+		.select(CSV_HEADERS.join(','))
+		.eq('user_id', user.id)
+		.order('created_at', { ascending: true });
 
-  if (error) {
-    return new Response(`Export failed: ${error.message}`, { status: 500 })
-  }
+	if (error) {
+		return new Response(`Export failed: ${error.message}`, { status: 500 });
+	}
 
-  const lines: string[] = []
-  lines.push(toCsvRow(CSV_HEADERS))
-  for (const c of (contacts ?? []) as ContactRow[]) {
-    lines.push(toCsvRow(CSV_HEADERS.map((h) => c[h])))
-  }
-  // RFC 4180 uses CRLF between records.
-  const body = lines.join('\r\n') + '\r\n'
+	const lines: string[] = [];
+	lines.push(toCsvRow(CSV_HEADERS));
+	for (const c of (contacts ?? []) as ContactRow[]) {
+		lines.push(toCsvRow(CSV_HEADERS.map((h) => c[h])));
+	}
+	// RFC 4180 uses CRLF between records.
+	const body = lines.join('\r\n') + '\r\n';
 
-  // UTF-8 BOM so Excel on Windows recognizes the encoding. Modern tools
-  // do not need it, but it is harmless and fixes a real UX bug for users
-  // with non-ASCII names.
-  const bom = '\uFEFF'
+	// UTF-8 BOM so Excel on Windows recognizes the encoding. Modern tools
+	// do not need it, but it is harmless and fixes a real UX bug for users
+	// with non-ASCII names.
+	const bom = '\uFEFF';
 
-  return new Response(bom + body, {
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="contactly-contacts-${new Date().toISOString().slice(0, 10)}.csv"`,
-      'Cache-Control': 'no-store'
-    }
-  })
-}
+	return new Response(bom + body, {
+		headers: {
+			'Content-Type': 'text/csv; charset=utf-8',
+			'Content-Disposition': `attachment; filename="contactly-contacts-${new Date().toISOString().slice(0, 10)}.csv"`,
+			'Cache-Control': 'no-store'
+		}
+	});
+};
 ```
 
 Line by line:
@@ -119,13 +119,20 @@ Somewhere on the settings page or contacts list:
 
 ```svelte
 <a
-  href="/api/contacts/export"
-  class="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-gray-50"
+	href="/api/contacts/export"
+	class="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-gray-50"
 >
-  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-    <path d="M12 3v14m0 0l-4-4m4 4l4-4M4 21h16" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  Export CSV
+	<svg
+		class="h-4 w-4"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		aria-hidden="true"
+	>
+		<path d="M12 3v14m0 0l-4-4m4 4l4-4M4 21h16" stroke-linecap="round" stroke-linejoin="round" />
+	</svg>
+	Export CSV
 </a>
 ```
 
@@ -151,109 +158,104 @@ We will build a two-step flow: **upload/parse** step shows a preview and error t
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms'
+	import { enhance } from '$app/forms';
 
-  let { form } = $props()
+	let { form } = $props();
 
-  // `form` will hold either { preview: [...], errors: [...] } after parse
-  // or { inserted: N, skipped: N } after confirm.
+	// `form` will hold either { preview: [...], errors: [...] } after parse
+	// or { inserted: N, skipped: N } after confirm.
 </script>
 
 <h1 class="text-2xl font-semibold">Import contacts</h1>
 <p class="mt-2 text-sm text-gray-600">
-  Upload a CSV with headers: first_name, last_name, email, company, phone, notes.
+	Upload a CSV with headers: first_name, last_name, email, company, phone, notes.
 </p>
 
 <!-- Step 1: Upload & parse (preview) -->
 <form
-  method="POST"
-  action="?/parse"
-  enctype="multipart/form-data"
-  use:enhance
-  class="mt-6 flex items-center gap-3"
+	method="POST"
+	action="?/parse"
+	enctype="multipart/form-data"
+	use:enhance
+	class="mt-6 flex items-center gap-3"
 >
-  <input
-    type="file"
-    name="file"
-    accept=".csv,text/csv"
-    required
-    class="block text-sm file:mr-3 file:rounded file:border-0 file:bg-black file:px-3 file:py-2 file:text-white"
-  />
-  <button class="rounded border px-3 py-2 text-sm">Parse preview</button>
+	<input
+		type="file"
+		name="file"
+		accept=".csv,text/csv"
+		required
+		class="block text-sm file:mr-3 file:rounded file:border-0 file:bg-black file:px-3 file:py-2 file:text-white"
+	/>
+	<button class="rounded border px-3 py-2 text-sm">Parse preview</button>
 </form>
 
 {#if form?.preview}
-  <h2 class="mt-8 text-lg font-semibold">Preview ({form.preview.length} valid rows)</h2>
-  <div class="mt-2 overflow-x-auto rounded border">
-    <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 text-left">
-        <tr>
-          <th class="px-3 py-2">#</th>
-          <th class="px-3 py-2">First</th>
-          <th class="px-3 py-2">Last</th>
-          <th class="px-3 py-2">Email</th>
-          <th class="px-3 py-2">Company</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y">
-        {#each form.preview.slice(0, 20) as row, i}
-          <tr>
-            <td class="px-3 py-1 text-gray-500">{i + 1}</td>
-            <td class="px-3 py-1">{row.first_name ?? ''}</td>
-            <td class="px-3 py-1">{row.last_name ?? ''}</td>
-            <td class="px-3 py-1">{row.email ?? ''}</td>
-            <td class="px-3 py-1">{row.company ?? ''}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
-  {#if form.preview.length > 20}
-    <p class="mt-2 text-xs text-gray-500">...and {form.preview.length - 20} more.</p>
-  {/if}
+	<h2 class="mt-8 text-lg font-semibold">Preview ({form.preview.length} valid rows)</h2>
+	<div class="mt-2 overflow-x-auto rounded border">
+		<table class="min-w-full text-sm">
+			<thead class="bg-gray-50 text-left">
+				<tr>
+					<th class="px-3 py-2">#</th>
+					<th class="px-3 py-2">First</th>
+					<th class="px-3 py-2">Last</th>
+					<th class="px-3 py-2">Email</th>
+					<th class="px-3 py-2">Company</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y">
+				{#each form.preview.slice(0, 20) as row, i}
+					<tr>
+						<td class="px-3 py-1 text-gray-500">{i + 1}</td>
+						<td class="px-3 py-1">{row.first_name ?? ''}</td>
+						<td class="px-3 py-1">{row.last_name ?? ''}</td>
+						<td class="px-3 py-1">{row.email ?? ''}</td>
+						<td class="px-3 py-1">{row.company ?? ''}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+	{#if form.preview.length > 20}
+		<p class="mt-2 text-xs text-gray-500">...and {form.preview.length - 20} more.</p>
+	{/if}
 
-  <form
-    method="POST"
-    action="?/confirm"
-    use:enhance
-    class="mt-4"
-  >
-    <input type="hidden" name="payload" value={JSON.stringify(form.preview)} />
-    <button class="rounded bg-black px-4 py-2 text-white">
-      Import {form.preview.length} contacts
-    </button>
-  </form>
+	<form method="POST" action="?/confirm" use:enhance class="mt-4">
+		<input type="hidden" name="payload" value={JSON.stringify(form.preview)} />
+		<button class="rounded bg-black px-4 py-2 text-white">
+			Import {form.preview.length} contacts
+		</button>
+	</form>
 {/if}
 
 {#if form?.errors && form.errors.length > 0}
-  <h2 class="mt-8 text-lg font-semibold text-red-700">
-    {form.errors.length} row(s) had errors and will be skipped
-  </h2>
-  <div class="mt-2 overflow-x-auto rounded border border-red-200">
-    <table class="min-w-full text-sm">
-      <thead class="bg-red-50 text-left">
-        <tr>
-          <th class="px-3 py-2">CSV line</th>
-          <th class="px-3 py-2">Problem</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y">
-        {#each form.errors as e}
-          <tr>
-            <td class="px-3 py-1 text-red-700">{e.line}</td>
-            <td class="px-3 py-1 text-red-700">{e.message}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
+	<h2 class="mt-8 text-lg font-semibold text-red-700">
+		{form.errors.length} row(s) had errors and will be skipped
+	</h2>
+	<div class="mt-2 overflow-x-auto rounded border border-red-200">
+		<table class="min-w-full text-sm">
+			<thead class="bg-red-50 text-left">
+				<tr>
+					<th class="px-3 py-2">CSV line</th>
+					<th class="px-3 py-2">Problem</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y">
+				{#each form.errors as e}
+					<tr>
+						<td class="px-3 py-1 text-red-700">{e.line}</td>
+						<td class="px-3 py-1 text-red-700">{e.message}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {/if}
 
 {#if form?.inserted !== undefined}
-  <p class="mt-6 rounded bg-green-50 p-3 text-sm text-green-800">
-    Imported {form.inserted} contact(s).
-    {#if form.skipped}(Skipped {form.skipped} duplicates by email.){/if}
-  </p>
+	<p class="mt-6 rounded bg-green-50 p-3 text-sm text-green-800">
+		Imported {form.inserted} contact(s).
+		{#if form.skipped}(Skipped {form.skipped} duplicates by email.){/if}
+	</p>
 {/if}
 ```
 
@@ -266,142 +268,167 @@ Three visual sections: upload, preview + errors, success message. The preview sh
 ### `src/routes/(app)/settings/import/+page.server.ts`
 
 ```ts
-import { fail, redirect } from '@sveltejs/kit'
-import Papa from 'papaparse'
-import * as z from 'zod'
-import type { Actions } from './$types'
+import { fail, redirect } from '@sveltejs/kit';
+import Papa from 'papaparse';
+import * as z from 'zod';
+import type { Actions } from './$types';
 
 const RowSchema = z.object({
-  first_name: z.string().trim().max(100).optional().transform((v) => v || null),
-  last_name: z.string().trim().max(100).optional().transform((v) => v || null),
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email()
-    .optional()
-    .transform((v) => v || null),
-  company: z.string().trim().max(200).optional().transform((v) => v || null),
-  phone: z.string().trim().max(50).optional().transform((v) => v || null),
-  notes: z.string().trim().max(2000).optional().transform((v) => v || null)
-})
+	first_name: z
+		.string()
+		.trim()
+		.max(100)
+		.optional()
+		.transform((v) => v || null),
+	last_name: z
+		.string()
+		.trim()
+		.max(100)
+		.optional()
+		.transform((v) => v || null),
+	email: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.email()
+		.optional()
+		.transform((v) => v || null),
+	company: z
+		.string()
+		.trim()
+		.max(200)
+		.optional()
+		.transform((v) => v || null),
+	phone: z
+		.string()
+		.trim()
+		.max(50)
+		.optional()
+		.transform((v) => v || null),
+	notes: z
+		.string()
+		.trim()
+		.max(2000)
+		.optional()
+		.transform((v) => v || null)
+});
 
-type Row = z.infer<typeof RowSchema>
+type Row = z.infer<typeof RowSchema>;
 
-const MAX_ROWS = 10_000
-const MAX_BYTES = 5 * 1024 * 1024
+const MAX_ROWS = 10_000;
+const MAX_BYTES = 5 * 1024 * 1024;
 
 export const actions: Actions = {
-  parse: async ({ request, locals: { getUser } }) => {
-    const user = await getUser()
-    if (!user) throw redirect(303, '/login')
+	parse: async ({ request, locals: { getUser } }) => {
+		const user = await getUser();
+		if (!user) throw redirect(303, '/login');
 
-    const form = await request.formData()
-    const file = form.get('file')
+		const form = await request.formData();
+		const file = form.get('file');
 
-    if (!(file instanceof File) || file.size === 0) {
-      return fail(400, { error: 'Please choose a CSV file.' })
-    }
-    if (file.size > MAX_BYTES) {
-      return fail(400, { error: `CSV too large. Max ${MAX_BYTES / 1024 / 1024}MB.` })
-    }
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { error: 'Please choose a CSV file.' });
+		}
+		if (file.size > MAX_BYTES) {
+			return fail(400, { error: `CSV too large. Max ${MAX_BYTES / 1024 / 1024}MB.` });
+		}
 
-    const text = await file.text()
+		const text = await file.text();
 
-    const parsed = Papa.parse<Record<string, string>>(text, {
-      header: true,
-      skipEmptyLines: 'greedy',
-      transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, '_')
-    })
+		const parsed = Papa.parse<Record<string, string>>(text, {
+			header: true,
+			skipEmptyLines: 'greedy',
+			transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, '_')
+		});
 
-    if (parsed.errors.length > 0) {
-      return fail(400, {
-        error: `CSV parse failed on line ${parsed.errors[0].row}: ${parsed.errors[0].message}`
-      })
-    }
+		if (parsed.errors.length > 0) {
+			return fail(400, {
+				error: `CSV parse failed on line ${parsed.errors[0].row}: ${parsed.errors[0].message}`
+			});
+		}
 
-    if (parsed.data.length > MAX_ROWS) {
-      return fail(400, { error: `Too many rows. Max is ${MAX_ROWS}.` })
-    }
+		if (parsed.data.length > MAX_ROWS) {
+			return fail(400, { error: `Too many rows. Max is ${MAX_ROWS}.` });
+		}
 
-    const preview: Row[] = []
-    const errors: { line: number; message: string }[] = []
+		const preview: Row[] = [];
+		const errors: { line: number; message: string }[] = [];
 
-    parsed.data.forEach((raw, i) => {
-      // CSV line = header (1) + this row's 0-index + 1
-      const lineNumber = i + 2
-      const result = RowSchema.safeParse(raw)
-      if (!result.success) {
-        const msg = result.error.issues
-          .map((iss) => `${iss.path.join('.') || '(row)'}: ${iss.message}`)
-          .join('; ')
-        errors.push({ line: lineNumber, message: msg })
-        return
-      }
-      // Require at least one of first_name/last_name/email to be present.
-      if (!result.data.first_name && !result.data.last_name && !result.data.email) {
-        errors.push({ line: lineNumber, message: 'Row must have at least a name or an email' })
-        return
-      }
-      preview.push(result.data)
-    })
+		parsed.data.forEach((raw, i) => {
+			// CSV line = header (1) + this row's 0-index + 1
+			const lineNumber = i + 2;
+			const result = RowSchema.safeParse(raw);
+			if (!result.success) {
+				const msg = result.error.issues
+					.map((iss) => `${iss.path.join('.') || '(row)'}: ${iss.message}`)
+					.join('; ');
+				errors.push({ line: lineNumber, message: msg });
+				return;
+			}
+			// Require at least one of first_name/last_name/email to be present.
+			if (!result.data.first_name && !result.data.last_name && !result.data.email) {
+				errors.push({ line: lineNumber, message: 'Row must have at least a name or an email' });
+				return;
+			}
+			preview.push(result.data);
+		});
 
-    return { preview, errors }
-  },
+		return { preview, errors };
+	},
 
-  confirm: async ({ request, locals: { supabase, getUser } }) => {
-    const user = await getUser()
-    if (!user) throw redirect(303, '/login')
+	confirm: async ({ request, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) throw redirect(303, '/login');
 
-    const form = await request.formData()
-    const payload = form.get('payload')
-    if (typeof payload !== 'string') {
-      return fail(400, { error: 'Missing payload.' })
-    }
+		const form = await request.formData();
+		const payload = form.get('payload');
+		if (typeof payload !== 'string') {
+			return fail(400, { error: 'Missing payload.' });
+		}
 
-    let rows: Row[]
-    try {
-      const parsed = JSON.parse(payload)
-      rows = z.array(RowSchema).parse(parsed)
-    } catch {
-      return fail(400, { error: 'Invalid payload.' })
-    }
+		let rows: Row[];
+		try {
+			const parsed = JSON.parse(payload);
+			rows = z.array(RowSchema).parse(parsed);
+		} catch {
+			return fail(400, { error: 'Invalid payload.' });
+		}
 
-    // Attach user_id and chunk into batches of 100.
-    const withUser = rows.map((r) => ({ ...r, user_id: user.id }))
-    const BATCH = 100
-    let inserted = 0
-    let skipped = 0
+		// Attach user_id and chunk into batches of 100.
+		const withUser = rows.map((r) => ({ ...r, user_id: user.id }));
+		const BATCH = 100;
+		let inserted = 0;
+		let skipped = 0;
 
-    for (let i = 0; i < withUser.length; i += BATCH) {
-      const batch = withUser.slice(i, i + BATCH)
+		for (let i = 0; i < withUser.length; i += BATCH) {
+			const batch = withUser.slice(i, i + BATCH);
 
-      // Rows without email cannot be deduped; insert plain.
-      // Rows with email use upsert on (user_id, email).
-      const withEmail = batch.filter((b) => b.email)
-      const noEmail = batch.filter((b) => !b.email)
+			// Rows without email cannot be deduped; insert plain.
+			// Rows with email use upsert on (user_id, email).
+			const withEmail = batch.filter((b) => b.email);
+			const noEmail = batch.filter((b) => !b.email);
 
-      if (withEmail.length > 0) {
-        const { data, error } = await supabase
-          .from('contacts')
-          .upsert(withEmail, { onConflict: 'user_id,email', ignoreDuplicates: true })
-          .select('id')
-        if (error) return fail(500, { error: error.message })
-        const n = data?.length ?? 0
-        inserted += n
-        skipped += withEmail.length - n
-      }
+			if (withEmail.length > 0) {
+				const { data, error } = await supabase
+					.from('contacts')
+					.upsert(withEmail, { onConflict: 'user_id,email', ignoreDuplicates: true })
+					.select('id');
+				if (error) return fail(500, { error: error.message });
+				const n = data?.length ?? 0;
+				inserted += n;
+				skipped += withEmail.length - n;
+			}
 
-      if (noEmail.length > 0) {
-        const { data, error } = await supabase.from('contacts').insert(noEmail).select('id')
-        if (error) return fail(500, { error: error.message })
-        inserted += data?.length ?? 0
-      }
-    }
+			if (noEmail.length > 0) {
+				const { data, error } = await supabase.from('contacts').insert(noEmail).select('id');
+				if (error) return fail(500, { error: error.message });
+				inserted += data?.length ?? 0;
+			}
+		}
 
-    return { inserted, skipped }
-  }
-}
+		return { inserted, skipped };
+	}
+};
 ```
 
 ### Walkthrough

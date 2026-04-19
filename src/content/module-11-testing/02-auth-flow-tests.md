@@ -1,10 +1,10 @@
 ---
-title: "11.2 - Auth Flow Tests"
+title: '11.2 - Auth Flow Tests'
 module: 11
 lesson: 2
-moduleSlug: "module-11-testing"
-lessonSlug: "02-auth-flow-tests"
-description: "Write end-to-end tests for registration, login, and logout flows."
+moduleSlug: 'module-11-testing'
+lessonSlug: '02-auth-flow-tests'
+description: 'Write end-to-end tests for registration, login, and logout flows.'
 duration: 18
 preview: false
 ---
@@ -52,45 +52,45 @@ Create the file `tests/auth.test.ts` at the project root and paste the whole thi
 
 ```typescript
 // tests/auth.test.ts
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
-const TEST_EMAIL = `test-${Date.now()}@example.com`
-const TEST_PASSWORD = 'password123!'
+const TEST_EMAIL = `test-${Date.now()}@example.com`;
+const TEST_PASSWORD = 'password123!';
 
 test.describe('Authentication', () => {
-  test('user can register', async ({ page }) => {
-    await page.goto('/register')
-    await page.fill('input[name="full_name"]', 'Test User')
-    await page.fill('input[name="email"]', TEST_EMAIL)
-    await page.fill('input[name="password"]', TEST_PASSWORD)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL('/dashboard')
-  })
+	test('user can register', async ({ page }) => {
+		await page.goto('/register');
+		await page.fill('input[name="full_name"]', 'Test User');
+		await page.fill('input[name="email"]', TEST_EMAIL);
+		await page.fill('input[name="password"]', TEST_PASSWORD);
+		await page.click('button[type="submit"]');
+		await expect(page).toHaveURL('/dashboard');
+	});
 
-  test('user can log in', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[name="email"]', 'test@example.com')
-    await page.fill('input[name="password"]', 'password123')
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL('/dashboard')
-  })
+	test('user can log in', async ({ page }) => {
+		await page.goto('/login');
+		await page.fill('input[name="email"]', 'test@example.com');
+		await page.fill('input[name="password"]', 'password123');
+		await page.click('button[type="submit"]');
+		await expect(page).toHaveURL('/dashboard');
+	});
 
-  test('protected routes redirect to login', async ({ page }) => {
-    await page.goto('/dashboard')
-    await expect(page).toHaveURL(/\/login/)
-  })
+	test('protected routes redirect to login', async ({ page }) => {
+		await page.goto('/dashboard');
+		await expect(page).toHaveURL(/\/login/);
+	});
 
-  test('user can log out', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[name="email"]', 'test@example.com')
-    await page.fill('input[name="password"]', 'password123')
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL('/dashboard')
+	test('user can log out', async ({ page }) => {
+		await page.goto('/login');
+		await page.fill('input[name="email"]', 'test@example.com');
+		await page.fill('input[name="password"]', 'password123');
+		await page.click('button[type="submit"]');
+		await expect(page).toHaveURL('/dashboard');
 
-    await page.click('button:has-text("Log out")')
-    await expect(page).toHaveURL('/login')
-  })
-})
+		await page.click('button:has-text("Log out")');
+		await expect(page).toHaveURL('/login');
+	});
+});
 ```
 
 That's seventy lines including blanks. Small, focused, readable. Now the walk-through.
@@ -100,10 +100,10 @@ That's seventy lines including blanks. Small, focused, readable. Now the walk-th
 ## Imports and Constants
 
 ```typescript
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
-const TEST_EMAIL = `test-${Date.now()}@example.com`
-const TEST_PASSWORD = 'password123!'
+const TEST_EMAIL = `test-${Date.now()}@example.com`;
+const TEST_PASSWORD = 'password123!';
 ```
 
 - **`test`** is the function you call to declare a test. **`expect`** is the assertion library. Both come from `@playwright/test`, not from a separate package — Playwright bundles its own `expect` so the assertions know how to wait for asynchronous DOM changes.
@@ -118,11 +118,11 @@ const TEST_PASSWORD = 'password123!'
 
 ```typescript
 test.describe('Authentication', () => {
-  test('user can register', async ({ page }) => {
-    // ...
-  })
-  // more tests
-})
+	test('user can register', async ({ page }) => {
+		// ...
+	});
+	// more tests
+});
 ```
 
 `test.describe(name, fn)` wraps related tests under a shared label. It does four useful things:
@@ -154,13 +154,13 @@ Other fixtures you'll meet later: `context` (a browser context with cookies/stor
 
 ```typescript
 test('user can register', async ({ page }) => {
-  await page.goto('/register')
-  await page.fill('input[name="full_name"]', 'Test User')
-  await page.fill('input[name="email"]', TEST_EMAIL)
-  await page.fill('input[name="password"]', TEST_PASSWORD)
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL('/dashboard')
-})
+	await page.goto('/register');
+	await page.fill('input[name="full_name"]', 'Test User');
+	await page.fill('input[name="email"]', TEST_EMAIL);
+	await page.fill('input[name="password"]', TEST_PASSWORD);
+	await page.click('button[type="submit"]');
+	await expect(page).toHaveURL('/dashboard');
+});
 ```
 
 Line by line:
@@ -179,12 +179,12 @@ That last point is one of the most important things to internalize. **Playwright
 
 ```typescript
 test('user can log in', async ({ page }) => {
-  await page.goto('/login')
-  await page.fill('input[name="email"]', 'test@example.com')
-  await page.fill('input[name="password"]', 'password123')
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL('/dashboard')
-})
+	await page.goto('/login');
+	await page.fill('input[name="email"]', 'test@example.com');
+	await page.fill('input[name="password"]', 'password123');
+	await page.click('button[type="submit"]');
+	await expect(page).toHaveURL('/dashboard');
+});
 ```
 
 Structurally identical to `user can register`. The differences:
@@ -206,9 +206,9 @@ For this course we go with option 1 because it matches where a solo founder woul
 
 ```typescript
 test('protected routes redirect to login', async ({ page }) => {
-  await page.goto('/dashboard')
-  await expect(page).toHaveURL(/\/login/)
-})
+	await page.goto('/dashboard');
+	await expect(page).toHaveURL(/\/login/);
+});
 ```
 
 Two lines, both load-bearing.
@@ -224,15 +224,15 @@ When in doubt, prefer the regex for URL assertions with query parameters. For UR
 
 ```typescript
 test('user can log out', async ({ page }) => {
-  await page.goto('/login')
-  await page.fill('input[name="email"]', 'test@example.com')
-  await page.fill('input[name="password"]', 'password123')
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL('/dashboard')
+	await page.goto('/login');
+	await page.fill('input[name="email"]', 'test@example.com');
+	await page.fill('input[name="password"]', 'password123');
+	await page.click('button[type="submit"]');
+	await expect(page).toHaveURL('/dashboard');
 
-  await page.click('button:has-text("Log out")')
-  await expect(page).toHaveURL('/login')
-})
+	await page.click('button:has-text("Log out")');
+	await expect(page).toHaveURL('/login');
+});
 ```
 
 This test is a small composition: log in first (the familiar four-line pattern), assert we landed on the dashboard (so we know we're actually logged in before testing logout), then click the logout button and assert we're back on `/login`.
@@ -240,7 +240,7 @@ This test is a small composition: log in first (the familiar four-line pattern),
 The notable piece is the logout selector:
 
 ```typescript
-await page.click('button:has-text("Log out")')
+await page.click('button:has-text("Log out")');
 ```
 
 `:has-text("...")` is a **Playwright selector extension** (it's not valid CSS — real CSS has no such pseudo-class). It says "a button element whose text content contains 'Log out'." Case-insensitive, trims whitespace, substring match.

@@ -46,7 +46,9 @@ const PRICE_SPECS: readonly PriceSpec[] = [
 
 async function findOrCreateManagedProduct(): Promise<Stripe.Product> {
 	const existing = await stripe.products.list({ limit: 100, active: true });
-	const managed = existing.data.find((product) => product.metadata.catalog === MANAGED_PRODUCT_MARKER);
+	const managed = existing.data.find(
+		(product) => product.metadata.catalog === MANAGED_PRODUCT_MARKER
+	);
 	if (managed) {
 		console.log(`Using existing product ${managed.id}`);
 		return managed;
@@ -62,7 +64,8 @@ async function findOrCreateManagedProduct(): Promise<Stripe.Product> {
 }
 
 function priceMatchesSpec(price: Stripe.Price, productId: string, spec: PriceSpec): boolean {
-	const sameProduct = (typeof price.product === 'string' ? price.product : price.product.id) === productId;
+	const sameProduct =
+		(typeof price.product === 'string' ? price.product : price.product.id) === productId;
 	const sameAmount = price.unit_amount === spec.unitAmount && price.currency === spec.currency;
 	const sameCadence =
 		(spec.recurringInterval === null && price.type === 'one_time') ||

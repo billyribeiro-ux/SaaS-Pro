@@ -131,34 +131,51 @@
 	 grid + radial gradient mesh behind the content, both masked to fade at edges.
 	──────────────────────────────────────────────────────────────────────────── -->
 <section class="relative overflow-hidden">
-	<div class="pointer-events-none absolute inset-0 bg-grid mask-radial-fade" aria-hidden="true"></div>
-	<div class="pointer-events-none absolute inset-0 bg-mesh opacity-70" aria-hidden="true"></div>
+	<div
+		class="bg-grid mask-radial-fade pointer-events-none absolute inset-0"
+		aria-hidden="true"
+	></div>
+	<div class="bg-mesh pointer-events-none absolute inset-0 opacity-70" aria-hidden="true"></div>
 
-	<div class="relative mx-auto max-w-6xl px-6 pb-24 pt-20 sm:pt-28">
+	<div class="relative mx-auto max-w-6xl px-6 pt-20 pb-24 sm:pt-28">
 		<div class="mx-auto max-w-3xl text-center">
-			<div class="inline-flex animate-fade-in items-center gap-2 rounded-full border border-slate-200/80 bg-white/60 px-3 py-1 text-xs font-medium text-slate-600 shadow-xs backdrop-blur dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
+			<div
+				class="animate-fade-in inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/60 px-3 py-1 text-xs font-medium text-slate-600 shadow-xs backdrop-blur dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400"
+			>
 				<span class="relative flex size-1.5">
-					<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500 opacity-60"></span>
+					<span
+						class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500 opacity-60"
+					></span>
 					<span class="relative inline-flex size-1.5 rounded-full bg-brand-500"></span>
 				</span>
 				<span>{totalLessons} lessons · {CURRICULUM.length} modules · updated for 2026</span>
 			</div>
 
-			<h1 class="font-display mt-6 animate-slide-up text-5xl font-semibold leading-[1.02] tracking-tight text-slate-900 sm:text-6xl md:text-7xl dark:text-white">
+			<h1
+				class="font-display animate-slide-up mt-6 text-5xl leading-[1.02] font-semibold tracking-tight text-slate-900 sm:text-6xl md:text-7xl dark:text-white"
+			>
 				Ship a real SaaS.
 				<br />
-				<span class="bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 bg-clip-text text-transparent dark:from-brand-300 dark:via-brand-400 dark:to-brand-600">
+				<span
+					class="bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 bg-clip-text text-transparent dark:from-brand-300 dark:via-brand-400 dark:to-brand-600"
+				>
 					End-to-end. No hand-waving.
 				</span>
 			</h1>
 
-			<p class="mx-auto mt-6 max-w-2xl animate-slide-up text-lg leading-relaxed text-slate-600 sm:text-xl dark:text-slate-400" style:animation-delay="80ms">
-				{totalLessons} lessons across {CURRICULUM.length} modules. SvelteKit 2, Svelte 5 runes,
-				TypeScript strict, Supabase, Stripe v22, Vercel, and a full CI/CD pipeline — built the
-				way a staff engineer would ship it.
+			<p
+				class="animate-slide-up mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl dark:text-slate-400"
+				style:animation-delay="80ms"
+			>
+				{totalLessons} lessons across {CURRICULUM.length} modules. SvelteKit 2, Svelte 5 runes, TypeScript
+				strict, Supabase, Stripe v22, Vercel, and a full CI/CD pipeline — built the way a staff engineer
+				would ship it.
 			</p>
 
-			<div class="mt-10 flex animate-slide-up flex-col items-center justify-center gap-3 sm:flex-row" style:animation-delay="160ms">
+			<div
+				class="animate-slide-up mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
+				style:animation-delay="160ms"
+			>
 				<Button href="/pricing" variant="primary" size="lg">
 					Start building
 					<ArrowRight size="md" />
@@ -166,7 +183,9 @@
 				<Button href="/learn" variant="outline" size="lg">Browse the curriculum</Button>
 			</div>
 
-			<p class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-500">
+			<p
+				class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-500"
+			>
 				<span class="inline-flex items-center gap-1.5">
 					<Check size="sm" class="text-emerald-500" /> 14-day free trial
 				</span>
@@ -184,9 +203,13 @@
 <!-- ────────────────────────────────────────────────────────────────────────────
 	 TECH BADGES
 	──────────────────────────────────────────────────────────────────────────── -->
-<section class="relative border-y border-slate-200/80 bg-slate-50/60 py-8 dark:border-slate-800 dark:bg-slate-950">
+<section
+	class="relative border-y border-slate-200/80 bg-slate-50/60 py-8 dark:border-slate-800 dark:bg-slate-950"
+>
 	<div class="mx-auto max-w-6xl px-6">
-		<p class="text-center text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+		<p
+			class="text-center text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+		>
 			Built with the modern stack
 		</p>
 		<div class="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-12">
@@ -209,14 +232,17 @@
 	──────────────────────────────────────────────────────────────────────────── -->
 <section class="mx-auto max-w-6xl px-6 py-24">
 	<div class="mx-auto max-w-2xl text-center">
-		<p class="text-sm font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">
+		<p class="text-sm font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
 			Built different
 		</p>
-		<h2 class="font-display mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
+		<h2
+			class="font-display mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white"
+		>
 			The six patterns that separate toys from production.
 		</h2>
 		<p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
-			Every lesson ships the real version of the thing. No skipped edge cases. No "left as an exercise."
+			Every lesson ships the real version of the thing. No skipped edge cases. No "left as an
+			exercise."
 		</p>
 	</div>
 
@@ -228,12 +254,13 @@
 			>
 				<div
 					class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-					style:background="radial-gradient(400px circle at 50% 0%, oklch(0.62 0.2 268 / 0.08), transparent 60%)"
+					style:background="radial-gradient(400px circle at 50% 0%, oklch(0.62 0.2 268 / 0.08),
+					transparent 60%)"
 					aria-hidden="true"
 				></div>
 				<div class="relative">
 					<span
-						class="grid size-10 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-xs ring-1 ring-inset ring-white/10"
+						class="grid size-10 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-xs ring-1 ring-white/10 ring-inset"
 						aria-hidden="true"
 					>
 						<Icon size="lg" />
@@ -255,10 +282,12 @@
 	──────────────────────────────────────────────────────────────────────────── -->
 <section id="curriculum" class="relative mx-auto max-w-6xl px-6 py-24">
 	<div class="mx-auto max-w-2xl text-center">
-		<p class="text-sm font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">
+		<p class="text-sm font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
 			The full curriculum
 		</p>
-		<h2 class="font-display mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
+		<h2
+			class="font-display mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white"
+		>
 			{CURRICULUM.length} modules. {totalLessons} lessons. {formatDuration(totalMinutes)} of material.
 		</h2>
 		<p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
@@ -266,7 +295,9 @@
 		</p>
 	</div>
 
-	<div class="mx-auto mt-14 max-w-3xl overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800">
+	<div
+		class="mx-auto mt-14 max-w-3xl overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800"
+	>
 		{#each CURRICULUM as module, index (module.slug)}
 			{@const isOpen = openModule === module.slug}
 			{@const moduleDuration = module.lessons.reduce((sum, l) => sum + l.duration, 0)}
@@ -279,11 +310,15 @@
 					aria-expanded={isOpen}
 				>
 					<div class="flex min-w-0 items-center gap-4">
-						<span class="grid size-8 shrink-0 place-items-center rounded-md border border-slate-200 bg-slate-50 font-mono text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+						<span
+							class="grid size-8 shrink-0 place-items-center rounded-md border border-slate-200 bg-slate-50 font-mono text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+						>
 							{String(module.moduleNumber).padStart(2, '0')}
 						</span>
 						<div class="min-w-0">
-							<h3 class="truncate text-base font-semibold tracking-tight text-slate-900 dark:text-white">
+							<h3
+								class="truncate text-base font-semibold tracking-tight text-slate-900 dark:text-white"
+							>
 								{module.title}
 							</h3>
 							<p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
@@ -304,10 +339,7 @@
 					</div>
 				</button>
 				{#if isOpen}
-					<div
-						class="bg-slate-50/60 dark:bg-slate-900/40"
-						transition:slide={{ duration: 180 }}
-					>
+					<div class="bg-slate-50/60 dark:bg-slate-900/40" transition:slide={{ duration: 180 }}>
 						<ul class="divide-y divide-slate-200/80 dark:divide-slate-800">
 							{#each module.lessons as lesson, li (lesson.slug)}
 								<li class="flex items-center justify-between gap-4 px-6 py-3 text-sm">
@@ -340,7 +372,9 @@
 <!-- ────────────────────────────────────────────────────────────────────────────
 	 SOCIAL PROOF (placeholder — tasteful, no fake testimonials)
 	──────────────────────────────────────────────────────────────────────────── -->
-<section class="relative border-y border-slate-200/80 bg-slate-50/60 py-20 dark:border-slate-800 dark:bg-slate-950">
+<section
+	class="relative border-y border-slate-200/80 bg-slate-50/60 py-20 dark:border-slate-800 dark:bg-slate-950"
+>
 	<div class="mx-auto max-w-3xl px-6 text-center">
 		<div class="inline-flex items-center gap-1 text-brand-500" aria-hidden="true">
 			<Sparkles size="md" />
@@ -348,8 +382,11 @@
 			<Sparkles size="md" />
 		</div>
 		<blockquote class="mt-6">
-			<p class="font-display text-2xl font-medium leading-snug tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-				&ldquo;The only course that teaches billing the way you'd actually build it at a real company.&rdquo;
+			<p
+				class="font-display text-2xl leading-snug font-medium tracking-tight text-slate-900 sm:text-3xl dark:text-white"
+			>
+				&ldquo;The only course that teaches billing the way you'd actually build it at a real
+				company.&rdquo;
 			</p>
 			<footer class="mt-6 text-sm text-slate-500 dark:text-slate-400">
 				— Staff Engineer at a YC-backed SaaS
@@ -363,7 +400,9 @@
 	──────────────────────────────────────────────────────────────────────────── -->
 <section id="faq" class="mx-auto max-w-3xl px-6 py-24">
 	<div class="text-center">
-		<h2 class="font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+		<h2
+			class="font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white"
+		>
 			Frequently asked questions
 		</h2>
 	</div>
@@ -400,10 +439,15 @@
 	 FINAL CTA
 	──────────────────────────────────────────────────────────────────────────── -->
 <section class="relative overflow-hidden">
-	<div class="pointer-events-none absolute inset-0 bg-mesh opacity-80" aria-hidden="true"></div>
-	<div class="pointer-events-none absolute inset-0 bg-grid mask-radial-fade" aria-hidden="true"></div>
+	<div class="bg-mesh pointer-events-none absolute inset-0 opacity-80" aria-hidden="true"></div>
+	<div
+		class="bg-grid mask-radial-fade pointer-events-none absolute inset-0"
+		aria-hidden="true"
+	></div>
 	<div class="relative mx-auto max-w-4xl px-6 py-24 text-center">
-		<h2 class="font-display text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
+		<h2
+			class="font-display text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white"
+		>
 			Start the version you'll actually finish.
 		</h2>
 		<p class="mx-auto mt-4 max-w-xl text-lg text-slate-600 dark:text-slate-400">

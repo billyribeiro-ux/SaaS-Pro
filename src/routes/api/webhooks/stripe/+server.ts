@@ -4,10 +4,7 @@ import { env } from '$env/dynamic/private';
 import { stripe } from '$server/stripe';
 import { supabaseAdmin } from '$server/supabase';
 import { upsertPrice, upsertProduct } from '$server/billing/products.service';
-import {
-	markSubscriptionDeleted,
-	upsertSubscription
-} from '$server/billing/subscriptions.service';
+import { markSubscriptionDeleted, upsertSubscription } from '$server/billing/subscriptions.service';
 
 // Stripe webhook handler. Verifies the signature, then dispatches to service
 // methods that own the DB writes. Must return 200 quickly; retries are expensive.

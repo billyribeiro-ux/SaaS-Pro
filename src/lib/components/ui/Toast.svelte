@@ -38,10 +38,7 @@
 	 * The outer container is pointer-events-none so clicks pass through; individual
 	 * toasts re-enable pointer events for their dismiss button.
 	 */
-	const variants: Record<
-		ToastVariant,
-		{ accent: string; icon: string; container: string }
-	> = {
+	const variants: Record<ToastVariant, { accent: string; icon: string; container: string }> = {
 		success: {
 			accent: 'bg-emerald-500',
 			icon: 'text-emerald-600 dark:text-emerald-400',
@@ -71,7 +68,7 @@
 </script>
 
 <div
-	class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2"
+	class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2"
 	aria-live="polite"
 	aria-atomic="true"
 >
@@ -105,7 +102,7 @@
 				type="button"
 				onclick={() => dismiss(toast.id)}
 				aria-label="Dismiss notification"
-				class="absolute right-2 top-2 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+				class="absolute top-2 right-2 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
 			>
 				<X size="xs" />
 			</button>

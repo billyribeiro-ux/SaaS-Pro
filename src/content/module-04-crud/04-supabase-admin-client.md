@@ -1,10 +1,10 @@
 ---
-title: "4.4 - Supabase Admin Client"
+title: '4.4 - Supabase Admin Client'
 module: 4
 lesson: 4
-moduleSlug: "module-04-crud"
-lessonSlug: "04-supabase-admin-client"
-description: "Create a service-role Supabase client that bypasses RLS for server-side administrative operations."
+moduleSlug: 'module-04-crud'
+lessonSlug: '04-supabase-admin-client'
+description: 'Create a service-role Supabase client that bypasses RLS for server-side administrative operations.'
 duration: 10
 preview: false
 ---
@@ -36,15 +36,15 @@ In this lesson you'll create `supabaseAdmin` — a server-side-only Supabase cli
 
 Let's compare the two Supabase clients side by side, because once you see the difference, the "when to use which" decision becomes obvious.
 
-| | `locals.supabase` (user client) | `supabaseAdmin` (this lesson) |
-| --- | --- | --- |
-| **Key used** | `PUBLIC_SUPABASE_ANON_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
-| **RLS** | Enforced | **Bypassed entirely** |
-| **Runs as** | The logged-in user's role | The `service_role` (database superuser-like) |
-| **Needs a session?** | Yes — reads the auth cookie | No — the key **is** the auth |
-| **Where it lives** | `hooks.server.ts`, per-request | `$lib/server/supabase.ts`, module-level |
-| **Use it for** | Anything a specific user does on their own behalf | Anything the system does across users or without a user |
-| **Bundled to client?** | Yes (client-side version too) | **Never — SvelteKit refuses to bundle it** |
+|                        | `locals.supabase` (user client)                   | `supabaseAdmin` (this lesson)                           |
+| ---------------------- | ------------------------------------------------- | ------------------------------------------------------- |
+| **Key used**           | `PUBLIC_SUPABASE_ANON_KEY`                        | `SUPABASE_SERVICE_ROLE_KEY`                             |
+| **RLS**                | Enforced                                          | **Bypassed entirely**                                   |
+| **Runs as**            | The logged-in user's role                         | The `service_role` (database superuser-like)            |
+| **Needs a session?**   | Yes — reads the auth cookie                       | No — the key **is** the auth                            |
+| **Where it lives**     | `hooks.server.ts`, per-request                    | `$lib/server/supabase.ts`, module-level                 |
+| **Use it for**         | Anything a specific user does on their own behalf | Anything the system does across users or without a user |
+| **Bundled to client?** | Yes (client-side version too)                     | **Never — SvelteKit refuses to bundle it**              |
 
 The philosophical divide:
 
@@ -61,11 +61,11 @@ This matters because people coming from simpler stacks often assume "one databas
 
 ```json
 {
-  "iss": "supabase",
-  "ref": "your-project-ref",
-  "role": "service_role",
-  "iat": 1700000000,
-  "exp": 9999999999
+	"iss": "supabase",
+	"ref": "your-project-ref",
+	"role": "service_role",
+	"iat": 1700000000,
+	"exp": 9999999999
 }
 ```
 
@@ -95,6 +95,7 @@ service_role key: eyJhbGciOi...  ← this is SUPABASE_SERVICE_ROLE_KEY
 Copy the `service_role key` value. Note: local keys are **fake** — they're the same on every local install because they're signed with a well-known JWT secret. They only work against your local Supabase. You cannot use them to attack a real Supabase project. That's intentional: dev keys are throwaway.
 
 **Option 2 — hosted (for staging/production):** log in to Supabase Dashboard, go to **Project Settings → API**. You'll see three keys:
+
 - `anon` / `public` — this is your `PUBLIC_SUPABASE_ANON_KEY`
 - `service_role` / `secret` — this is your `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -133,12 +134,12 @@ SUPABASE_SERVICE_ROLE_KEY=your-local-service-role-key-here
 
 SvelteKit exposes environment variables through four named modules:
 
-| Module | Public or private? | Static or dynamic? | Use when |
-| --- | --- | --- | --- |
-| `$env/static/public` | Public | Static | Vars known at build time, safe for browser |
-| `$env/static/private` | Private | Static | Vars known at build time, server-only |
-| `$env/dynamic/public` | Public | Dynamic | Vars read at runtime, safe for browser |
-| `$env/dynamic/private` | Private | Dynamic | Vars read at runtime, server-only |
+| Module                 | Public or private? | Static or dynamic? | Use when                                   |
+| ---------------------- | ------------------ | ------------------ | ------------------------------------------ |
+| `$env/static/public`   | Public             | Static             | Vars known at build time, safe for browser |
+| `$env/static/private`  | Private            | Static             | Vars known at build time, server-only      |
+| `$env/dynamic/public`  | Public             | Dynamic            | Vars read at runtime, safe for browser     |
+| `$env/dynamic/private` | Private            | Dynamic            | Vars read at runtime, server-only          |
 
 We use `$env/static/public` for `PUBLIC_SUPABASE_URL` and `$env/static/private` for `SUPABASE_SERVICE_ROLE_KEY`. "Static" because the values are fixed at build time (you don't change Supabase URLs at runtime). The alternative would be `dynamic/*` — useful if you deploy one bundle to multiple environments, but overkill here.
 
@@ -152,21 +153,21 @@ Create the file:
 
 ```typescript
 // src/lib/server/supabase.ts
-import { createClient } from '@supabase/supabase-js'
-import { PUBLIC_SUPABASE_URL } from '$env/static/public'
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private'
-import type { Database } from '$lib/types/database.types'
+import { createClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import type { Database } from '$lib/types/database.types';
 
 export const supabaseAdmin = createClient<Database>(
-  PUBLIC_SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
+	PUBLIC_SUPABASE_URL,
+	SUPABASE_SERVICE_ROLE_KEY,
+	{
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false
+		}
+	}
+);
 ```
 
 A tiny file. Every line matters. Let's take it apart.
@@ -174,14 +175,14 @@ A tiny file. Every line matters. Let's take it apart.
 ### Imports
 
 ```typescript
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 ```
 
 The core Supabase JS library. Not `@supabase/ssr` — that's for user-facing clients that hook into cookies. For the admin client, there's no session to sync with cookies; we just want a plain "authenticated by key" client. `@supabase/supabase-js` is the right choice.
 
 ```typescript
-import { PUBLIC_SUPABASE_URL } from '$env/static/public'
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private'
+import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 ```
 
 The URL is public (it's just a hostname — visible in every user-facing request anyway). The service role key is imported from **`$env/static/private`**. This is the critical line: it ties the entire file to the server-only universe. If anything anywhere imports from `$lib/server/supabase.ts` and ends up in a client bundle, the `$env/static/private` import triggers the SvelteKit build error.
@@ -194,7 +195,7 @@ Two safeguards, working together:
 Belt **and** suspenders. It would take two independent mistakes to leak the service role key to the browser.
 
 ```typescript
-import type { Database } from '$lib/types/database.types'
+import type { Database } from '$lib/types/database.types';
 ```
 
 The generated Supabase types file (you generated this in Module 2 via `pnpm supabase gen types typescript --local > src/lib/types/database.types.ts`). Importing it with `import type` means it's erased at compile time — no runtime cost. Passing it as the generic parameter `createClient<Database>(...)` makes every query type-aware: `supabaseAdmin.from('contacts').select('first_name, last_last_name')` would flag `last_last_name` as a typo at compile time. Worth doing.
@@ -203,15 +204,15 @@ The generated Supabase types file (you generated this in Module 2 via `pnpm supa
 
 ```typescript
 export const supabaseAdmin = createClient<Database>(
-  PUBLIC_SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
+	PUBLIC_SUPABASE_URL,
+	SUPABASE_SERVICE_ROLE_KEY,
+	{
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false
+		}
+	}
+);
 ```
 
 - **`createClient(url, key, options)`** — the standard constructor. URL and key are the first two args.
@@ -245,8 +246,8 @@ The error points you at the offending import. You can't ship a build that has th
 ```svelte
 <!-- ❌ WOULD EXPOSE SERVICE ROLE KEY IN CLIENT BUNDLE -->
 <script lang="ts">
-  import { supabaseAdmin } from '$lib/server/supabase'
-  // ...
+	import { supabaseAdmin } from '$lib/server/supabase';
+	// ...
 </script>
 ```
 
@@ -256,10 +257,10 @@ The `$lib/server/` rule prevents this absolutely. Place all server-only code the
 
 ### The two layers of protection, restated
 
-| Layer | What it does | When it fires |
-| --- | --- | --- |
+| Layer                      | What it does                                    | When it fires |
+| -------------------------- | ----------------------------------------------- | ------------- |
 | `$lib/server/` folder path | Bans client imports of anything under this path | At build time |
-| `$env/static/private` | Bans client imports of private env vars | At build time |
+| `$env/static/private`      | Bans client imports of private env vars         | At build time |
 
 Both are build-time guarantees. Both will fail the build on violation. You don't need runtime vigilance; the tooling has your back.
 
@@ -276,6 +277,7 @@ You now have two Supabase clients. Every time you write server code that talks t
 - The request came with a session cookie.
 
 **Examples in Contactly**:
+
 - Loading the contact list in `/contacts/+page.server.ts` — a user's own contacts, RLS filters.
 - Updating a profile at `/account/+page.server.ts` — the user editing their own row.
 - Deleting a contact — user owns the row, RLS enforces it.
@@ -287,6 +289,7 @@ You now have two Supabase clients. Every time you write server code that talks t
 - You intentionally need to bypass RLS for a specific administrative action.
 
 **Examples in Contactly** (coming in later modules):
+
 - Stripe webhook receives `customer.subscription.updated` → we need to update `profiles.stripe_customer_id` based on the Stripe event, but there's no logged-in user — Stripe is calling us.
 - A nightly cron job cleans up unverified `auth.users` rows older than 24 hours.
 - An admin panel lets support staff view any user's contacts without logging in as them.
@@ -309,7 +312,7 @@ When you reach for `supabaseAdmin`, understand you've just opted out of RLS. Eve
 ```svelte
 <!-- ❌ BUILD FAILS -->
 <script lang="ts">
-  import { supabaseAdmin } from '$lib/server/supabase'
+	import { supabaseAdmin } from '$lib/server/supabase';
 </script>
 ```
 
@@ -320,13 +323,13 @@ SvelteKit will refuse to build. The error is immediate and loud, which is **grea
 ```typescript
 // ❌ DON'T — RLS bypassed means any user_id could be passed
 export const actions = {
-  updateContact: async ({ request }) => {
-    const formData = await request.formData()
-    const id = formData.get('id')
-    // using admin for a user action is a security hole
-    await supabaseAdmin.from('contacts').update({ name: '...' }).eq('id', id)
-  }
-}
+	updateContact: async ({ request }) => {
+		const formData = await request.formData();
+		const id = formData.get('id');
+		// using admin for a user action is a security hole
+		await supabaseAdmin.from('contacts').update({ name: '...' }).eq('id', id);
+	}
+};
 ```
 
 If `id` comes from form data and you're using `supabaseAdmin`, a malicious user can submit any contact's ID and update it — they're not restricted to their own. Always use `locals.supabase` for user-initiated actions; RLS will reject cross-user queries automatically.
@@ -335,12 +338,12 @@ If `id` comes from form data and you're using `supabaseAdmin`, a malicious user 
 
 ```typescript
 // ❌ won't work — anon key is gated by RLS
-import { createClient } from '@supabase/supabase-js'
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
-const client = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY)
+import { createClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+const client = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 // ...later, in a webhook handler:
-await client.from('profiles').update({ plan: 'pro' }).eq('id', userId)
+await client.from('profiles').update({ plan: 'pro' }).eq('id', userId);
 // fails — no auth.uid(), RLS blocks it
 ```
 
@@ -366,7 +369,9 @@ The service role key is **project-scoped**. A service role key from your staging
 
 ```typescript
 // ❌ pointless, slightly harmful
-auth: { persistSession: true }
+auth: {
+	persistSession: true;
+}
 ```
 
 There's no session to persist — the service role key is the credential. Enabling this just makes the client start writing to a fake session store and consuming memory for no reason. Always `persistSession: false` for admin clients.
@@ -426,9 +431,9 @@ In a growing team, it's useful to grep the codebase periodically for `supabaseAd
 ```typescript
 // We need admin here because Stripe webhooks don't have a user session.
 const { error } = await supabaseAdmin
-  .from('profiles')
-  .update({ plan: 'pro' })
-  .eq('stripe_customer_id', customerId)
+	.from('profiles')
+	.update({ plan: 'pro' })
+	.eq('stripe_customer_id', customerId);
 ```
 
 Forcing the "why" into a comment nudges future developers to think before adding new admin calls. Cheap tooling, high leverage.

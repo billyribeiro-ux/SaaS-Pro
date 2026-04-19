@@ -1,17 +1,17 @@
 ---
-title: "7.3 - Customers Service"
+title: '7.3 - Customers Service'
 module: 7
 lesson: 3
-moduleSlug: "module-07-billing-services"
-lessonSlug: "03-customers-service"
-description: "Build the customers service — creating Stripe customers and mapping them to Supabase users."
+moduleSlug: 'module-07-billing-services'
+lessonSlug: '03-customers-service'
+description: 'Build the customers service — creating Stripe customers and mapping them to Supabase users.'
 duration: 12
 preview: false
 ---
 
 ## Overview
 
-The products service was a pure mirror — Stripe said something, we copied it into our DB. The customers service is different. It **originates** state: the very first time a Contactly user clicks "Upgrade to Pro," we have to create a Stripe customer *on Stripe's side* and record the Supabase-to-Stripe mapping in our DB. There's no Stripe webhook driving this; it's our app doing it proactively, right before we open a checkout session for that user.
+The products service was a pure mirror — Stripe said something, we copied it into our DB. The customers service is different. It **originates** state: the very first time a Contactly user clicks "Upgrade to Pro," we have to create a Stripe customer _on Stripe's side_ and record the Supabase-to-Stripe mapping in our DB. There's no Stripe webhook driving this; it's our app doing it proactively, right before we open a checkout session for that user.
 
 This lesson is the first service that crosses the Stripe/Supabase boundary in both directions. It reads Supabase first (do we already have a Stripe customer for this user?), writes to Stripe if needed (create the customer), then writes back to Supabase (record the mapping). Three network calls, one conceptually simple operation, a handful of edge cases that eat careless engineers.
 
@@ -70,37 +70,34 @@ Create `src/lib/server/billing/customers.service.ts`:
 
 ```typescript
 // src/lib/server/billing/customers.service.ts
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
 
-export async function getOrCreateCustomer(
-  userId: string,
-  email: string
-): Promise<string> {
-  const { data: existing } = await supabaseAdmin
-    .from('customers')
-    .select('stripe_customer_id')
-    .eq('id', userId)
-    .single()
+export async function getOrCreateCustomer(userId: string, email: string): Promise<string> {
+	const { data: existing } = await supabaseAdmin
+		.from('customers')
+		.select('stripe_customer_id')
+		.eq('id', userId)
+		.single();
 
-  if (existing?.stripe_customer_id) {
-    return existing.stripe_customer_id
-  }
+	if (existing?.stripe_customer_id) {
+		return existing.stripe_customer_id;
+	}
 
-  const customer = await stripe.customers.create({
-    email,
-    metadata: { supabase_user_id: userId }
-  })
+	const customer = await stripe.customers.create({
+		email,
+		metadata: { supabase_user_id: userId }
+	});
 
-  const { error } = await supabaseAdmin
-    .from('customers')
-    .insert({ id: userId, stripe_customer_id: customer.id })
+	const { error } = await supabaseAdmin
+		.from('customers')
+		.insert({ id: userId, stripe_customer_id: customer.id });
 
-  if (error) {
-    throw new Error(`Failed to store customer mapping: ${error.message}`)
-  }
+	if (error) {
+		throw new Error(`Failed to store customer mapping: ${error.message}`);
+	}
 
-  return customer.id
+	return customer.id;
 }
 ```
 
@@ -109,8 +106,8 @@ Let's go slowly.
 ### Imports
 
 ```typescript
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
 ```
 
 Two server-only imports — the Stripe client and the admin Supabase client. `$server` is our alias for `$lib/server`. Both files are server-only; any accidental import into a client component would fail at build time. That's by design — no Stripe secret keys in the browser, no service-role token in the browser, ever.
@@ -120,10 +117,7 @@ We don't need `import type Stripe from 'stripe'` here because we're not type-ann
 ### Function signature
 
 ```typescript
-export async function getOrCreateCustomer(
-  userId: string,
-  email: string
-): Promise<string>
+export async function getOrCreateCustomer(userId: string, email: string): Promise<string>;
 ```
 
 Two parameters:
@@ -137,10 +131,10 @@ Return type `Promise<string>` — just the Stripe customer ID. We don't return t
 
 ```typescript
 const { data: existing } = await supabaseAdmin
-  .from('customers')
-  .select('stripe_customer_id')
-  .eq('id', userId)
-  .single()
+	.from('customers')
+	.select('stripe_customer_id')
+	.eq('id', userId)
+	.single();
 ```
 
 This reads the single row for the given `userId`. Three notes:
@@ -149,19 +143,19 @@ This reads the single row for the given `userId`. Three notes:
 - **`.eq('id', userId)`** — because `customers.id` is the PK (and is `profiles.id`), this is a direct primary-key lookup. O(log n), very fast.
 - **`.single()`** — tells Supabase "return at most one row as an object" (rather than an array). If zero rows match, `.single()` returns `{ data: null, error: PostgrestError }` with `error.code === 'PGRST116'` (no rows).
 
-We intentionally **destructure only `data`**, not `error`. Why? Because "no row found" is a *normal* outcome of this query — the user hasn't upgraded before. We don't want to error on that. By ignoring the error and checking `existing?.stripe_customer_id` below, we treat "no row" and "genuine error" the same way — we continue to create a new customer. In the genuinely-broken case (say the DB is down), the next Stripe call would succeed but the subsequent insert would fail, and *that* failure we throw on.
+We intentionally **destructure only `data`**, not `error`. Why? Because "no row found" is a _normal_ outcome of this query — the user hasn't upgraded before. We don't want to error on that. By ignoring the error and checking `existing?.stripe_customer_id` below, we treat "no row" and "genuine error" the same way — we continue to create a new customer. In the genuinely-broken case (say the DB is down), the next Stripe call would succeed but the subsequent insert would fail, and _that_ failure we throw on.
 
 If you're uncomfortable with that logic (and many engineers rightfully are), you can make it explicit:
 
 ```typescript
 const { data: existing, error: lookupError } = await supabaseAdmin
-  .from('customers')
-  .select('stripe_customer_id')
-  .eq('id', userId)
-  .maybeSingle() // returns null instead of error for no-rows
+	.from('customers')
+	.select('stripe_customer_id')
+	.eq('id', userId)
+	.maybeSingle(); // returns null instead of error for no-rows
 
 if (lookupError) {
-  throw new Error(`Failed to look up customer for user ${userId}: ${lookupError.message}`)
+	throw new Error(`Failed to look up customer for user ${userId}: ${lookupError.message}`);
 }
 ```
 
@@ -171,7 +165,7 @@ That's the more rigorous version. For this lesson we'll stick with the simpler f
 
 ```typescript
 if (existing?.stripe_customer_id) {
-  return existing.stripe_customer_id
+	return existing.stripe_customer_id;
 }
 ```
 
@@ -186,9 +180,9 @@ We don't call Stripe. We don't insert anything. We just return the ID we already
 
 ```typescript
 const customer = await stripe.customers.create({
-  email,
-  metadata: { supabase_user_id: userId }
-})
+	email,
+	metadata: { supabase_user_id: userId }
+});
 ```
 
 We call Stripe's API to create a new customer. The return value is a `Stripe.Customer` object with `.id` like `cus_QT9xH...`.
@@ -206,22 +200,22 @@ Notice we do not set `name`, `phone`, `address`. Stripe prefers `email` as the m
 
 ```typescript
 const { error } = await supabaseAdmin
-  .from('customers')
-  .insert({ id: userId, stripe_customer_id: customer.id })
+	.from('customers')
+	.insert({ id: userId, stripe_customer_id: customer.id });
 
 if (error) {
-  throw new Error(`Failed to store customer mapping: ${error.message}`)
+	throw new Error(`Failed to store customer mapping: ${error.message}`);
 }
 ```
 
-We `insert` (not `upsert`) because we got here only after confirming no row exists. If somehow a row *does* exist at this moment — meaning we raced with another concurrent request for the same user — the insert fails on primary-key violation. The error message surfaces as `duplicate key value violates unique constraint "customers_pkey"`.
+We `insert` (not `upsert`) because we got here only after confirming no row exists. If somehow a row _does_ exist at this moment — meaning we raced with another concurrent request for the same user — the insert fails on primary-key violation. The error message surfaces as `duplicate key value violates unique constraint "customers_pkey"`.
 
 In that race case, we've created a Stripe customer that we failed to persist, which means we've leaked a Stripe customer record. That's ugly. But it's not a correctness bug — the next call to `getOrCreateCustomer` will see the row the winning request created, return that ID, and the leaked Stripe customer just sits orphaned in Stripe's database, costing nothing. We'll talk about how to reduce the odds of this in the Principal Engineer notes.
 
 ### Step 3e: Return
 
 ```typescript
-return customer.id
+return customer.id;
 ```
 
 Give the caller the Stripe ID. Done.
@@ -234,37 +228,37 @@ Give the caller the Stripe ID. Done.
 
 ```typescript
 // src/routes/api/checkout/+server.ts (Module 8)
-import { json } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { getOrCreateCustomer } from '$server/billing/customers.service'
-import type { RequestHandler } from './$types'
+import { json } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { getOrCreateCustomer } from '$server/billing/customers.service';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
-  const user = await locals.getUser()
-  if (!user) throw error(401, 'Unauthorized')
+	const user = await locals.getUser();
+	if (!user) throw error(401, 'Unauthorized');
 
-  const { priceId } = await request.json()
+	const { priceId } = await request.json();
 
-  const customerId = await getOrCreateCustomer(user.id, user.email)
+	const customerId = await getOrCreateCustomer(user.id, user.email);
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: '...',
-    cancel_url: '...'
-  })
+	const session = await stripe.checkout.sessions.create({
+		customer: customerId,
+		mode: 'subscription',
+		line_items: [{ price: priceId, quantity: 1 }],
+		success_url: '...',
+		cancel_url: '...'
+	});
 
-  return json({ url: session.url })
-}
+	return json({ url: session.url });
+};
 ```
 
 Two things to notice now:
 
 1. `user.id` and `user.email` come from the authenticated session — not from request input. The user cannot trick us into creating a customer with someone else's email.
-2. The call happens *before* `checkout.sessions.create`. By the time we hand off to Stripe, we've guaranteed a customer ID is ready to hand over.
+2. The call happens _before_ `checkout.sessions.create`. By the time we hand off to Stripe, we've guaranteed a customer ID is ready to hand over.
 
-This is the only place `getOrCreateCustomer` will be called in the normal flow. It is *not* called from webhook handlers — we never proactively create Stripe customers in reaction to inbound events. Only when the user themselves takes a checkout action.
+This is the only place `getOrCreateCustomer` will be called in the normal flow. It is _not_ called from webhook handlers — we never proactively create Stripe customers in reaction to inbound events. Only when the user themselves takes a checkout action.
 
 ---
 
@@ -276,17 +270,17 @@ Create a temporary debug endpoint:
 
 ```typescript
 // src/routes/api/debug/customer/+server.ts (delete after testing)
-import { json } from '@sveltejs/kit'
-import { getOrCreateCustomer } from '$server/billing/customers.service'
-import type { RequestHandler } from './$types'
+import { json } from '@sveltejs/kit';
+import { getOrCreateCustomer } from '$server/billing/customers.service';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user?.email) return json({ error: 'not authed' }, { status: 401 })
+	const user = await locals.getUser();
+	if (!user?.email) return json({ error: 'not authed' }, { status: 401 });
 
-  const id = await getOrCreateCustomer(user.id, user.email)
-  return json({ stripe_customer_id: id })
-}
+	const id = await getOrCreateCustomer(user.id, user.email);
+	return json({ stripe_customer_id: id });
+};
 ```
 
 Hit it twice:
@@ -297,11 +291,13 @@ curl -X POST http://localhost:5173/api/debug/customer \
 ```
 
 First call:
+
 - Creates a Stripe customer (visible in Stripe Dashboard → Customers).
 - Inserts a row in Supabase `customers` table.
 - Returns `{ stripe_customer_id: 'cus_...' }`.
 
 Second call with the same user:
+
 - Finds the existing row.
 - Does not call Stripe (check Stripe's logs to confirm).
 - Returns the same ID.
@@ -316,8 +312,8 @@ Idempotency verified. Delete the debug endpoint.
 
 ```typescript
 // WRONG
-const { userId, email } = await request.json()
-const customerId = await getOrCreateCustomer(userId, email)
+const { userId, email } = await request.json();
+const customerId = await getOrCreateCustomer(userId, email);
 ```
 
 Any user can POST with someone else's `userId` and create Stripe customers in their name. Always derive `userId` and `email` from `locals.getUser()` on the server.
@@ -327,18 +323,18 @@ Any user can POST with someone else's `userId` and create Stripe customers in th
 ```typescript
 // WRONG
 await supabaseAdmin.from('customers').upsert({
-  id: userId,
-  stripe_customer_id: customer.id
-})
+	id: userId,
+	stripe_customer_id: customer.id
+});
 ```
 
-Looks safer ("what if the row already exists?"), but actually hides a race-condition bug. If we got to this line, we already checked the row didn't exist. If it now exists, *something happened between our SELECT and this upsert*, and we probably created a second Stripe customer that now won't be remembered. We want that to fail loudly (so we can see the race in logs and add a cleanup job for the orphan), not silently overwrite.
+Looks safer ("what if the row already exists?"), but actually hides a race-condition bug. If we got to this line, we already checked the row didn't exist. If it now exists, _something happened between our SELECT and this upsert_, and we probably created a second Stripe customer that now won't be remembered. We want that to fail loudly (so we can see the race in logs and add a cleanup job for the orphan), not silently overwrite.
 
 ### Mistake 3: Forgetting the `metadata.supabase_user_id`
 
 ```typescript
 // WRONG
-const customer = await stripe.customers.create({ email })
+const customer = await stripe.customers.create({ email });
 ```
 
 You save a line now, you pay for it later at 2am when a Stripe dispute lands and you're staring at `cus_QT9xH...` wondering which user that is. Metadata back-links are an incident-response investment. Always set them on every Stripe object you create.
@@ -348,12 +344,12 @@ You save a line now, you pay for it later at 2am when a Stripe dispute lands and
 ```typescript
 // WRONG
 const { data: existingRows } = await supabaseAdmin
-  .from('customers')
-  .select('stripe_customer_id')
-  .eq('id', userId)
+	.from('customers')
+	.select('stripe_customer_id')
+	.eq('id', userId);
 
 if (existingRows?.length > 0) {
-  return existingRows[0].stripe_customer_id
+	return existingRows[0].stripe_customer_id;
 }
 ```
 
@@ -370,11 +366,11 @@ if (error) {
 return customer.id
 ```
 
-Now the user has a Stripe customer that your app has never heard of. Next checkout, `getOrCreateCustomer` creates *another* Stripe customer. You now have two orphans in Stripe and still none in your DB. The bug compounds. Throw.
+Now the user has a Stripe customer that your app has never heard of. Next checkout, `getOrCreateCustomer` creates _another_ Stripe customer. You now have two orphans in Stripe and still none in your DB. The bug compounds. Throw.
 
 ### Mistake 6: Calling this from a webhook handler
 
-`getOrCreateCustomer` is for user-initiated flows (checkout). Webhooks that need to resolve "what user does this Stripe customer belong to?" should instead *look up* `customers` by `stripe_customer_id` (we'll do this in 7.4's `upsertSubscription`). Webhook handlers should never mutate Stripe state proactively — that's a recipe for feedback loops.
+`getOrCreateCustomer` is for user-initiated flows (checkout). Webhooks that need to resolve "what user does this Stripe customer belong to?" should instead _look up_ `customers` by `stripe_customer_id` (we'll do this in 7.4's `upsertSubscription`). Webhook handlers should never mutate Stripe state proactively — that's a recipe for feedback loops.
 
 ---
 
@@ -432,7 +428,7 @@ The lesson: **when you need at-most-once semantics across concurrent writers, ex
 
 ### When to call this service from the server vs. trigger via webhook
 
-We call `getOrCreateCustomer` directly from the checkout endpoint — synchronously, before opening checkout. We *don't* use Stripe's `customer.created` webhook to populate our `customers` table. Why?
+We call `getOrCreateCustomer` directly from the checkout endpoint — synchronously, before opening checkout. We _don't_ use Stripe's `customer.created` webhook to populate our `customers` table. Why?
 
 Because the webhook arrives **after** we need the data. The timeline:
 
@@ -443,7 +439,7 @@ Because the webhook arrives **after** we need the data. The timeline:
 
 If we waited for step 4 to populate our DB, step 3 would have nothing to reference. Synchronous creation is the right flow here.
 
-We *could* also listen to the `customer.created` webhook and upsert defensively, which would repair cases where our sync flow fails at step 2. For Contactly we don't bother — the orphan is handled separately. For a more complex system (Stripe customers created by many flows, not just checkout), belt-and-suspenders via webhook is worth adding.
+We _could_ also listen to the `customer.created` webhook and upsert defensively, which would repair cases where our sync flow fails at step 2. For Contactly we don't bother — the orphan is handled separately. For a more complex system (Stripe customers created by many flows, not just checkout), belt-and-suspenders via webhook is worth adding.
 
 ---
 

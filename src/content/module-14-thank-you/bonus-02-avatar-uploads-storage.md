@@ -1,10 +1,10 @@
 ---
-title: "Bonus 2 - Contact Avatars with Supabase Storage"
+title: 'Bonus 2 - Contact Avatars with Supabase Storage'
 module: 14
 lesson: 12
-moduleSlug: "module-14-thank-you"
-lessonSlug: "bonus-02-avatar-uploads-storage"
-description: "Add per-contact profile photos using Supabase Storage, signed URLs, and the right RLS policies."
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-02-avatar-uploads-storage'
+description: 'Add per-contact profile photos using Supabase Storage, signed URLs, and the right RLS policies.'
 duration: 25
 preview: false
 ---
@@ -304,13 +304,11 @@ export async function uploadContactAvatar(args: {
 	const random = crypto.randomUUID().replace(/-/g, '');
 	const key = `${userId}/${contactId}/${random}.${extensionFor(detected)}`;
 
-	const { error: uploadError } = await supabase.storage
-		.from(BUCKET)
-		.upload(key, buffer, {
-			contentType: detected,
-			cacheControl: '3600',
-			upsert: false
-		});
+	const { error: uploadError } = await supabase.storage.from(BUCKET).upload(key, buffer, {
+		contentType: detected,
+		cacheControl: '3600',
+		upsert: false
+	});
 
 	if (uploadError) {
 		console.error('[avatars] upload failed:', uploadError);
@@ -391,11 +389,7 @@ Open `src/routes/(app)/contacts/[id]/edit/+page.server.ts` and add a new action 
 // src/routes/(app)/contacts/[id]/edit/+page.server.ts
 import { error, fail } from '@sveltejs/kit';
 import * as z from 'zod';
-import {
-	AvatarUploadError,
-	removeContactAvatar,
-	uploadContactAvatar
-} from '$lib/server/avatars';
+import { AvatarUploadError, removeContactAvatar, uploadContactAvatar } from '$lib/server/avatars';
 import type { Actions } from './$types';
 
 const uploadAvatarSchema = z.object({
@@ -503,11 +497,7 @@ Now the form. Open `src/routes/(app)/contacts/[id]/edit/+page.svelte` and add th
 			class="size-16 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
 		>
 			{#if preview ?? data.avatarUrl}
-				<img
-					src={preview ?? data.avatarUrl}
-					alt="Contact avatar"
-					class="size-full object-cover"
-				/>
+				<img src={preview ?? data.avatarUrl} alt="Contact avatar" class="size-full object-cover" />
 			{:else}
 				<div class="flex size-full items-center justify-center text-sm text-slate-500">
 					{data.contact.first_name[0]}{data.contact.last_name[0]}
@@ -577,11 +567,7 @@ import { error, fail } from '@sveltejs/kit';
 import { superValidate, withFiles } from 'sveltekit-superforms/server';
 import { zod } from 'sveltekit-superforms/adapters';
 import * as z from 'zod';
-import {
-	AvatarUploadError,
-	removeContactAvatar,
-	uploadContactAvatar
-} from '$lib/server/avatars';
+import { AvatarUploadError, removeContactAvatar, uploadContactAvatar } from '$lib/server/avatars';
 import type { Actions, PageServerLoad } from './$types';
 
 const avatarSchema = z.object({
@@ -690,11 +676,7 @@ Client. Same component as before, but the script and form change:
 			class="size-16 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
 		>
 			{#if preview ?? data.avatarUrl}
-				<img
-					src={preview ?? data.avatarUrl}
-					alt="Contact avatar"
-					class="size-full object-cover"
-				/>
+				<img src={preview ?? data.avatarUrl} alt="Contact avatar" class="size-full object-cover" />
 			{:else}
 				<div class="flex size-full items-center justify-center text-sm text-slate-500">
 					{data.contact.first_name[0]}{data.contact.last_name[0]}
@@ -798,11 +780,7 @@ Now in the list component (`src/routes/(app)/contacts/+page.svelte`), wherever y
 
 ```svelte
 {#if contact.avatar_signed_url}
-	<img
-		src={contact.avatar_signed_url}
-		alt=""
-		class="size-10 rounded-full object-cover"
-	/>
+	<img src={contact.avatar_signed_url} alt="" class="size-10 rounded-full object-cover" />
 {:else}
 	<div
 		class="flex size-10 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"

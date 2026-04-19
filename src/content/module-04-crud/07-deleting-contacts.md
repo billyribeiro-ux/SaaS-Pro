@@ -1,10 +1,10 @@
 ---
-title: "4.7 - Deleting Contacts"
+title: '4.7 - Deleting Contacts'
 module: 4
 lesson: 7
-moduleSlug: "module-04-crud"
-lessonSlug: "07-deleting-contacts"
-description: "Implement contact deletion with a confirmation modal to prevent accidental deletes."
+moduleSlug: 'module-04-crud'
+lessonSlug: '07-deleting-contacts'
+description: 'Implement contact deletion with a confirmation modal to prevent accidental deletes.'
 duration: 10
 preview: false
 ---
@@ -55,34 +55,34 @@ Open `src/routes/(app)/contacts/+page.server.ts` and add the `deleteContact` act
 
 ```typescript
 // src/routes/(app)/contacts/+page.server.ts
-import { error, fail, redirect } from '@sveltejs/kit'
-import type { Actions } from './$types'
+import { error, fail, redirect } from '@sveltejs/kit';
+import type { Actions } from './$types';
 
 export const actions: Actions = {
-  // ... your existing createContact action here ...
+	// ... your existing createContact action here ...
 
-  deleteContact: async ({ request, locals }) => {
-    const user = await locals.getUser()
-    if (!user) error(401, 'Unauthorized')
+	deleteContact: async ({ request, locals }) => {
+		const user = await locals.getUser();
+		if (!user) error(401, 'Unauthorized');
 
-    const formData = await request.formData()
-    const id = formData.get('id')
+		const formData = await request.formData();
+		const id = formData.get('id');
 
-    if (!id || typeof id !== 'string') {
-      return fail(400, { error: 'Contact ID is required' })
-    }
+		if (!id || typeof id !== 'string') {
+			return fail(400, { error: 'Contact ID is required' });
+		}
 
-    const { error: deleteError } = await locals.supabase
-      .from('contacts')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
+		const { error: deleteError } = await locals.supabase
+			.from('contacts')
+			.delete()
+			.eq('id', id)
+			.eq('user_id', user.id);
 
-    if (deleteError) return fail(500, { error: 'Failed to delete contact' })
+		if (deleteError) return fail(500, { error: 'Failed to delete contact' });
 
-    return { success: true }
-  }
-}
+		return { success: true };
+	}
+};
 ```
 
 Let's walk through every line.
@@ -98,8 +98,8 @@ Our modal's delete form uses `action="?/deleteContact"` (you'll see this in Step
 ### Line-by-line walkthrough
 
 ```typescript
-const user = await locals.getUser()
-if (!user) error(401, 'Unauthorized')
+const user = await locals.getUser();
+if (!user) error(401, 'Unauthorized');
 ```
 
 **Always verify identity first.** `locals.getUser()` hits Supabase to validate the session cookie against the auth server, returning either the user or `null`. We **never** use `locals.getSession()` here (remember from Module 3: `getSession` trusts the cookie blindly, `getUser` verifies).
@@ -107,20 +107,21 @@ if (!user) error(401, 'Unauthorized')
 If there's no user, we throw a `401 Unauthorized` using `error()` from `@sveltejs/kit`. `error()` terminates execution — nothing after it runs. The client gets an error response and (via SvelteKit's error handling) redirects to the login page or shows an error banner.
 
 You might wonder: "But the `(app)` layout guard already requires auth — why check again?" Three reasons:
+
 1. **Defense-in-depth.** Belt AND suspenders. If someone ever removes the layout guard, this check still blocks unauthorized deletes.
 2. **We need the user object anyway.** We use `user.id` in the query below. Fetching it here is free (remember, it's memoized per-request from Module 3).
 3. **Form actions can be called from places that skip layouts.** SvelteKit's design generally ensures layout loads fire, but the defense-in-depth habit is worth keeping.
 
 ```typescript
-const formData = await request.formData()
-const id = formData.get('id')
+const formData = await request.formData();
+const id = formData.get('id');
 ```
 
 `request.formData()` returns a `FormData` object containing every field in the submitted form. `formData.get('id')` returns the value of the hidden input named `id` from the modal's form (we'll see it in Step 2). The value type is `FormDataEntryValue | null` — either a string, a `File` object, or null if the field is missing.
 
 ```typescript
 if (!id || typeof id !== 'string') {
-  return fail(400, { error: 'Contact ID is required' })
+	return fail(400, { error: 'Contact ID is required' });
 }
 ```
 
@@ -135,10 +136,10 @@ This little check is also a **TypeScript narrowing** — after it, TypeScript kn
 
 ```typescript
 const { error: deleteError } = await locals.supabase
-  .from('contacts')
-  .delete()
-  .eq('id', id)
-  .eq('user_id', user.id)
+	.from('contacts')
+	.delete()
+	.eq('id', id)
+	.eq('user_id', user.id);
 ```
 
 This is the delete itself. Two things to notice:
@@ -151,13 +152,13 @@ This is the delete itself. Two things to notice:
 We also destructure `error` out of the response and rename it to `deleteError` via `{ error: deleteError }` — because `error` (from `@sveltejs/kit`) is already imported at the top of the file. Two names, no shadowing.
 
 ```typescript
-if (deleteError) return fail(500, { error: 'Failed to delete contact' })
+if (deleteError) return fail(500, { error: 'Failed to delete contact' });
 ```
 
 If Supabase returned an error (network glitch, database unavailable, RLS rejected the query because the user_id didn't match), we `fail(500, ...)`. We intentionally return a **generic** error message, not the raw `deleteError.message`. Why? Because database error messages can leak schema details useful to attackers ("relation 'users' does not exist", "column 'email' violates check constraint"). Generic messages keep the attack surface small. Log the real error on the server (we'll add logging in Module 11) while showing users a safe summary.
 
 ```typescript
-return { success: true }
+return { success: true };
 ```
 
 A successful return. SvelteKit passes this to the page's `form` prop, so the client can display "Contact deleted" or reset UI. We don't redirect — we're already on the contacts list page, and `use:enhance` will automatically re-run the `load` function and refresh the list.
@@ -168,8 +169,8 @@ There's a tempting but horrifying version of this action where `user_id` comes f
 
 ```typescript
 // ❌ CATASTROPHIC
-const userId = formData.get('user_id')
-await locals.supabase.from('contacts').delete().eq('id', id).eq('user_id', userId)
+const userId = formData.get('user_id');
+await locals.supabase.from('contacts').delete().eq('id', id).eq('user_id', userId);
 ```
 
 An attacker can submit **any** `user_id` they like. Combined with RLS being lenient (or a misconfiguration), they could delete other users' contacts. Even if RLS catches the violation, you've made it possible to probe — returning 200 vs 403 tells the attacker whose data they almost touched.
@@ -185,61 +186,60 @@ Create `src/lib/components/ui/DeleteConfirmModal.svelte`:
 ```svelte
 <!-- src/lib/components/ui/DeleteConfirmModal.svelte -->
 <script lang="ts">
-  interface Props {
-    open: boolean
-    contactName: string
-    contactId: string
-    onclose: () => void
-  }
+	interface Props {
+		open: boolean;
+		contactName: string;
+		contactId: string;
+		onclose: () => void;
+	}
 
-  let { open = $bindable(), contactName, contactId, onclose }: Props = $props()
+	let { open = $bindable(), contactName, contactId, onclose }: Props = $props();
 </script>
 
 {#if open}
-  <div
-    class="fixed inset-0 bg-black/50 z-40"
-    role="button"
-    tabindex="0"
-    onclick={onclose}
-    onkeydown={(e) => e.key === 'Escape' && onclose()}
-  ></div>
+	<div
+		class="fixed inset-0 z-40 bg-black/50"
+		role="button"
+		tabindex="0"
+		onclick={onclose}
+		onkeydown={(e) => e.key === 'Escape' && onclose()}
+	></div>
 
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div
-      class="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-modal-title"
-    >
-      <h2 id="delete-modal-title" class="text-lg font-semibold text-gray-900 mb-2">
-        Delete contact
-      </h2>
-      <p class="text-gray-600 mb-6">
-        Are you sure you want to delete <strong>{contactName}</strong>?
-        This cannot be undone.
-      </p>
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+		<div
+			class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="delete-modal-title"
+		>
+			<h2 id="delete-modal-title" class="mb-2 text-lg font-semibold text-gray-900">
+				Delete contact
+			</h2>
+			<p class="mb-6 text-gray-600">
+				Are you sure you want to delete <strong>{contactName}</strong>? This cannot be undone.
+			</p>
 
-      <div class="flex gap-3 justify-end">
-        <button
-          type="button"
-          onclick={onclose}
-          class="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-        >
-          Cancel
-        </button>
+			<div class="flex justify-end gap-3">
+				<button
+					type="button"
+					onclick={onclose}
+					class="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200"
+				>
+					Cancel
+				</button>
 
-        <form method="POST" action="?/deleteContact">
-          <input type="hidden" name="id" value={contactId} />
-          <button
-            type="submit"
-            class="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-          >
-            Delete
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
+				<form method="POST" action="?/deleteContact">
+					<input type="hidden" name="id" value={contactId} />
+					<button
+						type="submit"
+						class="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-700"
+					>
+						Delete
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
 {/if}
 ```
 
@@ -249,13 +249,13 @@ Now let's dissect every piece.
 
 ```typescript
 interface Props {
-  open: boolean
-  contactName: string
-  contactId: string
-  onclose: () => void
+	open: boolean;
+	contactName: string;
+	contactId: string;
+	onclose: () => void;
 }
 
-let { open = $bindable(), contactName, contactId, onclose }: Props = $props()
+let { open = $bindable(), contactName, contactId, onclose }: Props = $props();
 ```
 
 Four props:
@@ -271,7 +271,7 @@ The `interface Props` + `$props()` pattern is the idiomatic way to type Svelte 5
 
 ```svelte
 {#if open}
-  <!-- entire modal DOM only exists when open is true -->
+	<!-- entire modal DOM only exists when open is true -->
 {/if}
 ```
 
@@ -286,11 +286,11 @@ When `open` flips to `true`, Svelte mounts the entire block. When it flips back 
 
 ```svelte
 <div
-  class="fixed inset-0 bg-black/50 z-40"
-  role="button"
-  tabindex="0"
-  onclick={onclose}
-  onkeydown={(e) => e.key === 'Escape' && onclose()}
+	class="fixed inset-0 z-40 bg-black/50"
+	role="button"
+	tabindex="0"
+	onclick={onclose}
+	onkeydown={(e) => e.key === 'Escape' && onclose()}
 ></div>
 ```
 
@@ -308,14 +308,14 @@ Clicking outside the modal to dismiss is a near-universal convention. Escape to 
 
 ```svelte
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-  <div
-    class="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="delete-modal-title"
-  >
-    ...
-  </div>
+	<div
+		class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="delete-modal-title"
+	>
+		...
+	</div>
 </div>
 ```
 
@@ -330,36 +330,33 @@ The inner card is the actual dialog. Three ARIA attributes make it accessible:
 ### The content and buttons
 
 ```svelte
-<h2 id="delete-modal-title" class="text-lg font-semibold text-gray-900 mb-2">
-  Delete contact
-</h2>
-<p class="text-gray-600 mb-6">
-  Are you sure you want to delete <strong>{contactName}</strong>?
-  This cannot be undone.
+<h2 id="delete-modal-title" class="mb-2 text-lg font-semibold text-gray-900">Delete contact</h2>
+<p class="mb-6 text-gray-600">
+	Are you sure you want to delete <strong>{contactName}</strong>? This cannot be undone.
 </p>
 ```
 
 The title and body. `{contactName}` is interpolated so the user sees "Are you sure you want to delete **Alice Johnson**?" — explicit is better than "Are you sure?" alone, which doesn't tell them which contact they're about to remove.
 
 ```svelte
-<div class="flex gap-3 justify-end">
-  <button
-    type="button"
-    onclick={onclose}
-    class="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-  >
-    Cancel
-  </button>
+<div class="flex justify-end gap-3">
+	<button
+		type="button"
+		onclick={onclose}
+		class="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200"
+	>
+		Cancel
+	</button>
 
-  <form method="POST" action="?/deleteContact">
-    <input type="hidden" name="id" value={contactId} />
-    <button
-      type="submit"
-      class="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-    >
-      Delete
-    </button>
-  </form>
+	<form method="POST" action="?/deleteContact">
+		<input type="hidden" name="id" value={contactId} />
+		<button
+			type="submit"
+			class="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-700"
+		>
+			Delete
+		</button>
+	</form>
 </div>
 ```
 
@@ -371,6 +368,7 @@ Two buttons, side by side, justified to the right of the modal:
 Two things are subtle here.
 
 **Why wrap the Delete button in a form element?** Because the form is how we trigger the server-side action. The form has:
+
 - `method="POST"` — we've seen this in every action so far; SvelteKit only handles non-GET requests as actions.
 - `action="?/deleteContact"` — maps to the `deleteContact` function in our actions object.
 - A hidden input `<input type="hidden" name="id" value={contactId} />` — this is how we pass the contact ID to the server. No JavaScript involved.
@@ -383,7 +381,7 @@ A common instinct from other frameworks is to write:
 
 ```javascript
 // ❌ not our approach
-const response = await fetch(`/api/contacts/${id}`, { method: 'DELETE' })
+const response = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
 ```
 
 We don't do that. Instead we use a plain form POST. Three reasons:
@@ -426,7 +424,7 @@ Alternately, you can quickly test via curl against your dev server by copying se
 
 ```typescript
 // ❌ SECURITY HOLE
-const userId = formData.get('user_id')
+const userId = formData.get('user_id');
 ```
 
 Covered above — this lets attackers specify any user ID. Never do it. The verified session is the only trusted source for the current user's identity.
@@ -444,7 +442,7 @@ RLS should catch this, but explicit filtering is cheap insurance against a missi
 
 ```typescript
 // ❌ leaks schema details
-return fail(500, { error: deleteError.message })
+return fail(500, { error: deleteError.message });
 ```
 
 Users don't need database internals. Attackers might use them. Show a generic message; log the real one server-side (we'll build proper logging in Module 11).
@@ -473,8 +471,8 @@ Native `confirm()` dialogs are jarring, inconsistent across browsers, can't be s
 
 ```typescript
 // ❌ silently proceeds with id=null
-const id = formData.get('id')
-await supabase.from('contacts').delete().eq('id', id).eq('user_id', user.id)
+const id = formData.get('id');
+await supabase.from('contacts').delete().eq('id', id).eq('user_id', user.id);
 ```
 
 If `id` is null, `.eq('id', null)` matches **nothing** — Supabase returns a successful empty delete. The user sees "success" but nothing happened. Worse, in edge cases, null handling in SQL can have surprising behavior (comparisons involving NULL are usually NULL, not false). Always validate inputs before using them.
@@ -498,11 +496,13 @@ Two approaches to deleting data:
 **Soft delete** — add a `deleted_at` timestamp column. "Deleting" sets `deleted_at = now()`. Every query in the app has to filter with `where deleted_at is null`.
 
 Soft deletes have real value:
+
 - **Undo support.** Users can restore "deleted" items from a trash bin.
 - **Audit trails.** You know what used to exist without scanning backups.
 - **Compliance.** Certain regulations (SOX, HIPAA) require keeping records even after "deletion."
 
 The cost:
+
 - **Every query needs the filter.** Forget one `.eq('deleted_at', null)` and deleted items leak back into the UI.
 - **Data accumulates.** Your tables grow without bound unless you have a "permanent delete" pass.
 - **Privacy implications.** If a user requests "delete my data" under GDPR, soft-deleted rows are still **there**, which may not satisfy the request. You'd need a secondary hard-delete job.
@@ -516,6 +516,7 @@ For Contactly — a personal contact manager — we use hard deletes. Users dele
 A user with malicious intent (or a compromised account with an API token) could call the delete endpoint in a loop and wipe their entire contact list. For a contact manager, this is "user's own data, user's problem." For a collaborative system or a system with shared resources, it's a DoS vector.
 
 Real-world mitigation:
+
 - Rate-limit destructive endpoints (e.g., 30 deletes per minute per user).
 - Require recent authentication (`re-authenticate to delete this account`).
 - Batch-delete warnings ("you're about to delete 1,000 contacts — type YES to confirm").
@@ -530,11 +531,7 @@ For truly destructive actions, even a modal might not be enough friction. GitHub
 You can build the same pattern with a modal variant:
 
 ```svelte
-<input
-  type="text"
-  placeholder="Type the contact's name to confirm"
-  bind:value={typedName}
-/>
+<input type="text" placeholder="Type the contact's name to confirm" bind:value={typedName} />
 <button disabled={typedName !== contactName}>Delete</button>
 ```
 

@@ -1,31 +1,38 @@
-## Project Configuration
+# CLAUDE.md
 
-- **Language**: TypeScript
-- **Package Manager**: pnpm
-- **Add-ons**: prettier, eslint, vitest, playwright, tailwindcss, sveltekit-adapter, better-auth, mdsvex, mcp, drizzle
+> Claude Code reads this file. The actual rules live in
+> [`AGENTS.md`](./AGENTS.md) — that is the canonical, tool-agnostic
+> source of truth for every AI agent working in this repo.
+>
+> _Last revised: 2026-04-19_
+
+**Read [`AGENTS.md`](./AGENTS.md) before doing anything.**
 
 ---
 
-You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
+## Why two files?
 
-## Available Svelte MCP Tools:
+Different AI tools default to different filenames (`CLAUDE.md` for
+Claude Code, `AGENTS.md` for the cross-tool convention used by Cursor,
+Junie, Windsurf, OpenAI Codex, and others). Maintaining one canonical
+file (`AGENTS.md`) and one pointer (this file) avoids the
+two-sources-of-truth problem.
 
-### 1. list-sections
+If you're updating agent rules, edit [`AGENTS.md`](./AGENTS.md) — never
+this file.
 
-Use this FIRST to discover all available documentation sections. Returns a structured list with titles, use_cases, and paths.
-When asked about Svelte or SvelteKit topics, ALWAYS use this tool at the start of the chat to find relevant sections.
+---
 
-### 2. get-documentation
+## Tool fan-out
 
-Retrieves full documentation content for specific sections. Accepts single or multiple sections.
-After calling the list-sections tool, you MUST analyze the returned documentation sections (especially the use_cases field) and then use the get-documentation tool to fetch ALL documentation sections that are relevant for the user's task.
+Tool-specific skill folders are all symlinks pointing at one source:
 
-### 3. svelte-autofixer
+```
+.agents/skills/      ← canonical Stripe agent skills (real files)
+.claude/skills/      ← symlinks → ../../.agents/skills/*
+.junie/skills/       ← symlinks → ../../.agents/skills/*
+.windsurf/skills/    ← symlinks → ../../.agents/skills/*
+```
 
-Analyzes Svelte code and returns issues and suggestions.
-You MUST use this tool whenever writing Svelte code before sending it to the user. Keep calling it until no issues or suggestions are returned.
-
-### 4. playground-link
-
-Generates a Svelte Playground link with the provided code.
-After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+Add or update a skill in `.agents/skills/` only. The other tools pick it
+up automatically.

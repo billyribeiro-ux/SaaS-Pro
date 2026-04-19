@@ -42,7 +42,8 @@ async function loadLivePrices(): Promise<PriceWithProduct[]> {
 
 		return result.data.map((price) => {
 			const rawProduct = typeof price.product === 'string' ? null : price.product;
-			const product = rawProduct && !('deleted' in rawProduct && rawProduct.deleted) ? rawProduct : null;
+			const product =
+				rawProduct && !('deleted' in rawProduct && rawProduct.deleted) ? rawProduct : null;
 			return {
 				id: price.id,
 				product_id: product?.id ?? null,
@@ -133,7 +134,8 @@ export const actions: Actions = {
 			fullName: user.user_metadata?.full_name ?? null
 		});
 
-		const mode: 'subscription' | 'payment' = price.type === 'recurring' ? 'subscription' : 'payment';
+		const mode: 'subscription' | 'payment' =
+			price.type === 'recurring' ? 'subscription' : 'payment';
 		const appUrl = SITE.url || url.origin;
 
 		const session = await stripe.checkout.sessions.create({

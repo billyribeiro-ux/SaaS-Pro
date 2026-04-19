@@ -1,9 +1,9 @@
 ---
-title: "12.1 - CI/CD Pipeline Overview"
+title: '12.1 - CI/CD Pipeline Overview'
 module: 12
 lesson: 1
-moduleSlug: "module-12-cicd"
-lessonSlug: "01-cicd-pipeline-overview"
+moduleSlug: 'module-12-cicd'
+lessonSlug: '01-cicd-pipeline-overview'
 description: "Understand the CI/CD pipeline we're building — from git push to live production deploy."
 duration: 10
 preview: false
@@ -30,7 +30,7 @@ This first lesson doesn't ship code. It teaches you the **shape** of the pipelin
 
 - What the letters CI and CD actually stand for — and why that distinction matters.
 - The canonical flow: `git push main` → GitHub Actions → type-check → database migrate → Playwright → Vercel deploy.
-- Why automated tests run *before* deploy, not after, and what happens when you get that ordering wrong.
+- Why automated tests run _before_ deploy, not after, and what happens when you get that ordering wrong.
 - The four tools we compose (GitHub Actions, Supabase CLI, Playwright, Vercel CLI) and why we chose these specific four.
 - Principal-engineer concepts: continuous delivery vs. continuous deployment, blue-green + canaries, rollback strategies, and why deployment frequency is the single most-predictive DORA metric.
 
@@ -199,6 +199,7 @@ We use four tools. Each was chosen after real alternatives were considered.
 Alternatives: CircleCI, Buffalo, Jenkins, GitLab CI, Buildkite, Dagger.
 
 We pick GitHub Actions for three reasons:
+
 - **Co-located with the repo.** Your workflow YAML lives in the repo, version-controlled next to the code. Every PR that changes the pipeline is reviewable.
 - **Free for small teams.** Public repos are unlimited; private repos get 2,000 minutes/month free. For a solo SaaS that's months of builds.
 - **Huge ecosystem of pre-built actions.** `actions/checkout`, `pnpm/action-setup`, `supabase/setup-cli` — pre-packaged steps maintained by the community and platform vendors. You compose instead of scripting from scratch.
@@ -212,6 +213,7 @@ We use `supabase db push --linked` to apply migrations. The alternative would be
 Alternatives: Cypress, Selenium, Puppeteer, WebDriverIO.
 
 Playwright wins on:
+
 - **Multi-browser out of the box** — Chromium, Firefox, and WebKit with one API.
 - **Fastest of the modern stack** — parallelization built in, no flaky waits.
 - **Made by the team that wrote Puppeteer.** They fixed Puppeteer's ergonomic warts.
@@ -223,6 +225,7 @@ You set up Playwright in Module 9. This module wires it into CI.
 Alternatives: Netlify, Cloudflare Pages, AWS Amplify, self-hosted with Docker + Fly.io/Railway.
 
 Vercel wins on:
+
 - **First-class SvelteKit support.** The maintainers of SvelteKit and Vercel collaborate on `@sveltejs/adapter-vercel`. Features land in SvelteKit and Vercel supports them the same week.
 - **Edge + serverless mix.** Static assets go to a global CDN; server routes become serverless functions; edge-runtime routes go to POPs near users. All from one deploy.
 - **PR preview deployments free.** Every pull request gets its own `https://contactly-git-pr-123-yourname.vercel.app` URL. Reviewers click a link and see the change running live. No local setup required.
@@ -235,11 +238,11 @@ Hard constraint for this course: we use `@sveltejs/adapter-vercel` and `pnpm`. I
 
 A mental model that will save you grief: every SaaS has three environments. You'll have all three by the end of this module.
 
-| Environment | Purpose | Data | Who sees it |
-|---|---|---|---|
-| **Local** | Daily dev work | Your seed data | You |
-| **CI / Test** | Playwright runs | Ephemeral test data | The pipeline |
-| **Production** | Real users | Real customer data | The internet |
+| Environment    | Purpose         | Data                | Who sees it  |
+| -------------- | --------------- | ------------------- | ------------ |
+| **Local**      | Daily dev work  | Your seed data      | You          |
+| **CI / Test**  | Playwright runs | Ephemeral test data | The pipeline |
+| **Production** | Real users      | Real customer data  | The internet |
 
 Each environment has its own Supabase project, its own Stripe keys (test-mode vs. live-mode), its own `PUBLIC_APP_URL`. Keeping them rigorously separate is the prerequisite for sleeping at night. One shared `.env` file across all three is how Stripe's test webhook fires against live customer records and your metrics dashboard lights on fire.
 
@@ -286,7 +289,7 @@ The painful truth: database rollbacks are hard, which is why schema-migration hy
 
 ### Deployment frequency as a DORA metric
 
-DORA — the DevOps Research & Assessment team — studies what separates elite engineering orgs from low performers. Their research (published in the book *Accelerate*) identifies four key metrics. The single most predictive one is **deployment frequency**.
+DORA — the DevOps Research & Assessment team — studies what separates elite engineering orgs from low performers. Their research (published in the book _Accelerate_) identifies four key metrics. The single most predictive one is **deployment frequency**.
 
 - **Elite performers** deploy multiple times per day.
 - **High performers** deploy between once per day and once per week.

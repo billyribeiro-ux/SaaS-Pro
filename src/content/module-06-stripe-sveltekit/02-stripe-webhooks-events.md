@@ -1,10 +1,10 @@
 ---
-title: "6.2 - Stripe Webhooks & Events"
+title: '6.2 - Stripe Webhooks & Events'
 module: 6
 lesson: 2
-moduleSlug: "module-06-stripe-sveltekit"
-lessonSlug: "02-stripe-webhooks-events"
-description: "Understand why webhooks are essential for SaaS billing and which events you need to handle."
+moduleSlug: 'module-06-stripe-sveltekit'
+lessonSlug: '02-stripe-webhooks-events'
+description: 'Understand why webhooks are essential for SaaS billing and which events you need to handle.'
 duration: 15
 preview: false
 ---
@@ -43,6 +43,7 @@ After this lesson you'll understand:
 Here's a simple problem. A user, Alice, clicks "Upgrade to Pro" in Contactly. She enters her card. Stripe processes the payment. **Now what?**
 
 Your app needs to know:
+
 - The payment succeeded.
 - Alice is now a Pro subscriber.
 - Her subscription ID, plan, billing cycle end date, and customer ID are all X, Y, Z.
@@ -86,25 +87,25 @@ Let's trace what happens when Alice upgrades, step by step:
 ```
   Alice's Browser                Contactly App              Stripe
   ───────────────                ─────────────              ──────
-                                                              
-  1. Clicks "Upgrade to Pro"                              
-      │                                                   
-      └──────── POST /upgrade ────▶                        
-                                  │                        
+
+  1. Clicks "Upgrade to Pro"
+      │
+      └──────── POST /upgrade ────▶
+                                  │
   2.                              │ Creates Checkout Session
-                                  │ via stripe.checkout.    
-                                  │ sessions.create(...)   
-                                  │                         
+                                  │ via stripe.checkout.
+                                  │ sessions.create(...)
+                                  │
                                   └──── POST /v1/checkout/sessions ──▶
                                                                        │
                                                         Returns session URL◀
                                                                        │
-  3.                              │ Receives URL           
-      ◀────────── Redirect ───────┘                        
-      │                                                    
-  4. Browser navigates to Stripe Checkout (Stripe-hosted page)          
-      │                                                    
-      └─────── Enter card info ──────────────────────────▶  
+  3.                              │ Receives URL
+      ◀────────── Redirect ───────┘
+      │
+  4. Browser navigates to Stripe Checkout (Stripe-hosted page)
+      │
+      └─────── Enter card info ──────────────────────────▶
                                                            │
                                                            ┌─────▶ Stripe processes payment
                                                            │         (charges the card)
@@ -114,12 +115,12 @@ Let's trace what happens when Alice upgrades, step by step:
                                                            │   "checkout.session.completed"
                                                            │
                                   │ Handler processes event
-                                  │ Updates Supabase        
-                                  │                         
-                                  ├──── 200 OK ────────▶    
+                                  │ Updates Supabase
+                                  │
+                                  ├──── 200 OK ────────▶
                                                            │
-  6. Browser redirects back to Contactly /dashboard         
-      ◀─────── Thank-you page ────┘                         
+  6. Browser redirects back to Contactly /dashboard
+      ◀─────── Thank-you page ────┘
 ```
 
 Six steps. The key insight is step 5 — the webhook — happens **in parallel** with step 6 (browser redirect). Stripe does not rely on Alice's browser making it back to your app. Even if Alice closes her tab mid-redirect, the webhook still fires, and your database still updates.
@@ -166,7 +167,7 @@ Examples of non-idempotent code:
 
 ```typescript
 // BAD: if we process this event twice, we grant 2 months of Pro access
-await extendSubscription(userId, { days: 30 })
+await extendSubscription(userId, { days: 30 });
 ```
 
 ```typescript
@@ -178,9 +179,12 @@ Examples of idempotent code:
 
 ```typescript
 // GOOD: sets the end date to an exact value; re-running sets the same value
-await supabase.from('subscriptions').update({
-  current_period_end: new Date(sub.current_period_end * 1000).toISOString()
-}).eq('stripe_id', sub.id)
+await supabase
+	.from('subscriptions')
+	.update({
+		current_period_end: new Date(sub.current_period_end * 1000).toISOString()
+	})
+	.eq('stripe_id', sub.id);
 ```
 
 ```typescript
@@ -208,6 +212,7 @@ Stripe fires **hundreds** of different event types. You ignore 99% of them. Cont
 **Payload:** `Stripe.Checkout.Session` — includes the customer ID, subscription ID (if a subscription was created), line items, payment status.
 
 **Why we care:** this is the **"user has paid, set them up"** signal. Contactly uses this event to:
+
 - Retrieve the new customer and subscription IDs.
 - Create or update the `customers` row linking `user_id ↔ stripe_customer_id`.
 - Insert the initial `subscriptions` row.
@@ -322,7 +327,7 @@ A few conventions baked into that URL choice:
 ### Mistake 1: Parsing the body with `request.json()`
 
 ```typescript
-const event = await request.json()  // WRONG
+const event = await request.json(); // WRONG
 // Signature verification will fail because the body bytes have been consumed
 // and re-serialization differs from what Stripe sent.
 ```
@@ -412,12 +417,12 @@ Your webhook handler is a black box from outside. The only way to debug producti
 
 ```typescript
 console.log({
-  webhook: 'stripe',
-  event_id: event.id,
-  event_type: event.type,
-  livemode: event.livemode,
-  created: event.created
-})
+	webhook: 'stripe',
+	event_id: event.id,
+	event_type: event.type,
+	livemode: event.livemode,
+	created: event.created
+});
 ```
 
 When a user reports "my subscription never activated," you grep logs for their Stripe customer ID, see the events received, correlate with Stripe's dashboard, find the broken step. Without logs, you're flying blind.

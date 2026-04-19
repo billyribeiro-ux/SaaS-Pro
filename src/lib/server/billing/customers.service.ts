@@ -34,9 +34,7 @@ export async function getOrCreateStripeCustomer(params: {
 	if (insertError) {
 		// Roll back the Stripe customer so the next call can create cleanly.
 		await stripe.customers.del(customer.id).catch(() => undefined);
-		throw new Error(
-			`[customers.service] insert failed for ${userId}: ${insertError.message}`
-		);
+		throw new Error(`[customers.service] insert failed for ${userId}: ${insertError.message}`);
 	}
 
 	return customer.id;

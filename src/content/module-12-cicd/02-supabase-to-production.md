@@ -1,10 +1,10 @@
 ---
-title: "12.2 - Supabase to Production"
+title: '12.2 - Supabase to Production'
 module: 12
 lesson: 2
-moduleSlug: "module-12-cicd"
-lessonSlug: "02-supabase-to-production"
-description: "Create a production Supabase project and push your migrations to it."
+moduleSlug: 'module-12-cicd'
+lessonSlug: '02-supabase-to-production'
+description: 'Create a production Supabase project and push your migrations to it.'
 duration: 15
 preview: false
 ---
@@ -162,6 +162,7 @@ Don't trust; verify.
 Open your production project's dashboard → **Database** → **Tables**. You should see every table your migrations create: `profiles`, `contacts`, `subscriptions`, `stripe_customers`, etc.
 
 Click `contacts`. Check:
+
 - Columns match what you expect (id, user_id, first_name, last_name, ...).
 - Foreign keys are present (user_id → profiles.id).
 - The RLS badge is green (RLS enabled).
@@ -197,6 +198,7 @@ Under **Project API keys** → **`service_role` `secret`**. Click **Reveal** —
 This is the `SUPABASE_SERVICE_ROLE_KEY`. **Never public.** This key bypasses every RLS policy. With it, code can read and write every row in every table as the Postgres superuser. If this key leaks, your entire database is compromised — anyone on the internet with this key can exfiltrate, modify, or delete all customer data.
 
 Where you use it:
+
 - Stripe webhook handlers (server-only, need to write to subscriptions across tenant boundaries).
 - Admin scripts you run from your laptop.
 - Never in client-side code. Never in a `PUBLIC_` env var. Never in the browser bundle.
@@ -251,6 +253,7 @@ Corollary: once a migration has been applied to production, **never edit that fi
 We built two Supabase projects in this course: local (via Docker) and production (via supabase.com). Real SaaS teams run a third: **staging**. It's a mirror of production — same cloud region, same Postgres version, same RLS policies — but with fake users and no real customer data.
 
 Why? Two use cases:
+
 1. **Test migrations against production-like data volume** before running them on prod. A migration that takes 10ms on 100 local rows might take 4 hours on 5M production rows, during which the table is locked. Catch that in staging.
 2. **Preview potentially breaking changes** with internal QA or a small group of beta testers before rolling to prod.
 

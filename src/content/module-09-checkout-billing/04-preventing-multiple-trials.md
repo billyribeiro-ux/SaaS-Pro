@@ -1,10 +1,10 @@
 ---
-title: "9.4 - Preventing Multiple Trials"
+title: '9.4 - Preventing Multiple Trials'
 module: 9
 lesson: 4
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "04-preventing-multiple-trials"
-description: "Check if a user has already used a free trial before allowing them to start a new one."
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '04-preventing-multiple-trials'
+description: 'Check if a user has already used a free trial before allowing them to start a new one.'
 duration: 12
 preview: false
 ---
@@ -42,7 +42,7 @@ Create `src/lib/server/billing/trial.service.ts`:
 
 ```typescript
 // src/lib/server/billing/trial.service.ts
-import { supabaseAdmin } from '$server/supabase'
+import { supabaseAdmin } from '$server/supabase';
 
 /**
  * Returns true if the user has ever started a subscription trial.
@@ -52,19 +52,19 @@ import { supabaseAdmin } from '$server/supabase'
  * - Stripe's search API is rate-limited and slower.
  */
 export async function hasUsedTrial(userId: string): Promise<boolean> {
-  const { data, error } = await supabaseAdmin
-    .from('subscriptions')
-    .select('id')
-    .eq('user_id', userId)
-    .not('trial_start', 'is', null)
-    .limit(1)
-    .maybeSingle()
+	const { data, error } = await supabaseAdmin
+		.from('subscriptions')
+		.select('id')
+		.eq('user_id', userId)
+		.not('trial_start', 'is', null)
+		.limit(1)
+		.maybeSingle();
 
-  if (error) {
-    throw new Error(`Failed to check trial history: ${error.message}`)
-  }
+	if (error) {
+		throw new Error(`Failed to check trial history: ${error.message}`);
+	}
 
-  return !!data
+	return !!data;
 }
 ```
 
@@ -72,7 +72,7 @@ Walkthrough:
 
 - **`supabaseAdmin`** — service-role client from Module 4 that bypasses RLS. We're calling this from server-side code on behalf of a user whose ID we already know; we're not exposing the query to the client.
 
-- **`.from('subscriptions').select('id')`** — we only need to know *whether* a row exists, not its contents. Select the primary key and nothing else.
+- **`.from('subscriptions').select('id')`** — we only need to know _whether_ a row exists, not its contents. Select the primary key and nothing else.
 
 - **`.eq('user_id', userId)`** — filter to this user's subscriptions.
 
@@ -82,7 +82,7 @@ Walkthrough:
   - Were canceled during or after the trial (`status: 'canceled'`).
   - Went past-due after the trial (`status: 'past_due'`).
 
-  In each case, the user has *experienced* the trial. They don't get another.
+  In each case, the user has _experienced_ the trial. They don't get another.
 
 - **`.limit(1).maybeSingle()`** — we only need the first row, and `maybeSingle()` returns `null` rather than throwing when no rows match (as opposed to `.single()` which throws). Cheaper than `count()`.
 
@@ -97,72 +97,72 @@ Why not use `status IN ('trialing', 'active', 'canceled')` directly? `trial_star
 Update `src/routes/api/billing/checkout/+server.ts`:
 
 ```typescript
-import { json, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { getOrCreateCustomer } from '$server/billing/customers.service'
-import { hasUsedTrial } from '$server/billing/trial.service'
-import { PRICING_LOOKUP_KEYS, TRIAL_DAYS, TRIAL_STRATEGY } from '$config/pricing.config'
-import { PUBLIC_APP_URL } from '$env/static/public'
-import type { RequestHandler } from './$types'
+import { json, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { getOrCreateCustomer } from '$server/billing/customers.service';
+import { hasUsedTrial } from '$server/billing/trial.service';
+import { PRICING_LOOKUP_KEYS, TRIAL_DAYS, TRIAL_STRATEGY } from '$config/pricing.config';
+import { PUBLIC_APP_URL } from '$env/static/public';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  const user = await locals.getUser()
-  if (!user) error(401, 'Unauthorized')
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { lookup_key } = await request.json()
+	const { lookup_key } = await request.json();
 
-  const validKeys = Object.values(PRICING_LOOKUP_KEYS)
-  if (!validKeys.includes(lookup_key)) error(400, 'Invalid pricing tier')
+	const validKeys = Object.values(PRICING_LOOKUP_KEYS);
+	if (!validKeys.includes(lookup_key)) error(400, 'Invalid pricing tier');
 
-  const customerId = await getOrCreateCustomer(user.id, user.email!)
+	const customerId = await getOrCreateCustomer(user.id, user.email!);
 
-  const prices = await stripe.prices.list({
-    lookup_keys: [lookup_key],
-    active: true,
-    limit: 1
-  })
+	const prices = await stripe.prices.list({
+		lookup_keys: [lookup_key],
+		active: true,
+		limit: 1
+	});
 
-  const price = prices.data[0]
-  if (!price) error(400, 'Price not found')
+	const price = prices.data[0];
+	if (!price) error(400, 'Price not found');
 
-  const mode = price.type === 'one_time' ? 'payment' : 'subscription'
+	const mode = price.type === 'one_time' ? 'payment' : 'subscription';
 
-  // Only offer a trial to users who haven't used one before.
-  const trialEligible = mode === 'subscription' && !(await hasUsedTrial(user.id))
+	// Only offer a trial to users who haven't used one before.
+	const trialEligible = mode === 'subscription' && !(await hasUsedTrial(user.id));
 
-  const subscriptionData = trialEligible
-    ? {
-        subscription_data: {
-          trial_period_days: TRIAL_DAYS,
-          metadata: { user_id: user.id },
-          ...(TRIAL_STRATEGY === 'no_card' && {
-            trial_settings: {
-              end_behavior: { missing_payment_method: 'cancel' as const }
-            }
-          })
-        },
-        ...(TRIAL_STRATEGY === 'no_card' && {
-          payment_method_collection: 'if_required' as const
-        })
-      }
-    : mode === 'subscription'
-      ? { subscription_data: { metadata: { user_id: user.id } } }
-      : {}
+	const subscriptionData = trialEligible
+		? {
+				subscription_data: {
+					trial_period_days: TRIAL_DAYS,
+					metadata: { user_id: user.id },
+					...(TRIAL_STRATEGY === 'no_card' && {
+						trial_settings: {
+							end_behavior: { missing_payment_method: 'cancel' as const }
+						}
+					})
+				},
+				...(TRIAL_STRATEGY === 'no_card' && {
+					payment_method_collection: 'if_required' as const
+				})
+			}
+		: mode === 'subscription'
+			? { subscription_data: { metadata: { user_id: user.id } } }
+			: {};
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    line_items: [{ price: price.id, quantity: 1 }],
-    mode,
-    success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${PUBLIC_APP_URL}/pricing?checkout=cancelled`,
-    allow_promotion_codes: true,
-    ...subscriptionData
-  })
+	const session = await stripe.checkout.sessions.create({
+		customer: customerId,
+		line_items: [{ price: price.id, quantity: 1 }],
+		mode,
+		success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+		cancel_url: `${PUBLIC_APP_URL}/pricing?checkout=cancelled`,
+		allow_promotion_codes: true,
+		...subscriptionData
+	});
 
-  if (!session.url) error(500, 'Failed to create checkout session')
+	if (!session.url) error(500, 'Failed to create checkout session');
 
-  return json({ url: session.url })
-}
+	return json({ url: session.url });
+};
 ```
 
 Walkthrough of the delta:
@@ -188,18 +188,18 @@ Load eligibility in `+page.server.ts`:
 
 ```typescript
 // src/routes/pricing/+page.server.ts
-import { hasUsedTrial } from '$server/billing/trial.service'
-import type { PageServerLoad } from './$types'
+import { hasUsedTrial } from '$server/billing/trial.service';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const user = await locals.getUser()
+	const user = await locals.getUser();
 
-  const trialEligible = user ? !(await hasUsedTrial(user.id)) : true
-  // Logged-out users see trial copy because they haven't used one yet.
-  // The server will re-check on checkout; no eligibility is ever granted from the client.
+	const trialEligible = user ? !(await hasUsedTrial(user.id)) : true;
+	// Logged-out users see trial copy because they haven't used one yet.
+	// The server will re-check on checkout; no eligibility is ever granted from the client.
 
-  return { trialEligible }
-}
+	return { trialEligible };
+};
 ```
 
 Use it in the page:
@@ -207,11 +207,11 @@ Use it in the page:
 ```svelte
 <!-- src/routes/pricing/+page.svelte (excerpt) -->
 <script lang="ts">
-  let { data } = $props()
+	let { data } = $props();
 </script>
 
 <button onclick={() => subscribe('pro_monthly')}>
-  {data.trialEligible ? 'Start 14-day free trial' : 'Subscribe to Pro'}
+	{data.trialEligible ? 'Start 14-day free trial' : 'Subscribe to Pro'}
 </button>
 ```
 
@@ -238,12 +238,12 @@ A minimal approach: a database function or service method that deletes the user'
 ```typescript
 // $server/billing/trial.service.ts (addition)
 export async function resetTrialEligibility(userId: string): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('subscriptions')
-    .update({ trial_start: null, trial_end: null })
-    .eq('user_id', userId)
+	const { error } = await supabaseAdmin
+		.from('subscriptions')
+		.update({ trial_start: null, trial_end: null })
+		.eq('user_id', userId);
 
-  if (error) throw new Error(error.message)
+	if (error) throw new Error(error.message);
 }
 ```
 
@@ -275,12 +275,12 @@ Gmail ignores everything after a `+` in addresses: `alice+1@gmail.com` and `alic
 
 ```typescript
 function normalizeEmail(email: string): string {
-  const [local, domain] = email.toLowerCase().split('@')
-  // Strip Gmail plus-address and dots (Gmail also ignores dots in the local part)
-  if (domain === 'gmail.com' || domain === 'googlemail.com') {
-    return local.split('+')[0].replace(/\./g, '') + '@gmail.com'
-  }
-  return `${local}@${domain}`
+	const [local, domain] = email.toLowerCase().split('@');
+	// Strip Gmail plus-address and dots (Gmail also ignores dots in the local part)
+	if (domain === 'gmail.com' || domain === 'googlemail.com') {
+		return local.split('+')[0].replace(/\./g, '') + '@gmail.com';
+	}
+	return `${local}@${domain}`;
 }
 ```
 
@@ -294,7 +294,7 @@ Stripe's API returns a stable fingerprint for cards:
 
 ```typescript
 // Every Stripe.PaymentMethod object exposes `card.fingerprint`
-payment_method.card.fingerprint // 'a1b2c3d4e5f6...'
+payment_method.card.fingerprint; // 'a1b2c3d4e5f6...'
 ```
 
 Fingerprints are deterministic: the same card used on different accounts produces the same fingerprint. Store `(user_id, card_fingerprint)` in a table on `customer.subscription.created`. Before starting a trial, check if the card has seen a trial before.

@@ -2,8 +2,8 @@
 title: "What We're Building"
 module: 0
 lesson: 1
-moduleSlug: "module-00-introduction"
-lessonSlug: "01-what-were-building"
+moduleSlug: 'module-00-introduction'
+lessonSlug: '01-what-were-building'
 description: "A walkthrough of Contactly, the SaaS app you'll build across the course."
 duration: 5
 preview: true

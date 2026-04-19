@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { cn } from '$utils/cn';
 	import Badge from '$components/ui/Badge.svelte';
 
@@ -31,7 +32,7 @@
 <section class="mx-auto max-w-6xl px-6 py-10">
 	<header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 		<div>
-			<p class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+			<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400">
 				Operations
 			</p>
 			<h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">Admin console</h1>
@@ -45,7 +46,7 @@
 	<nav class="mb-8 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800">
 		{#each tabs as tab (tab.href)}
 			<a
-				href={tab.href}
+				href={resolve(tab.href)}
 				class={cn(
 					'-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors',
 					isActive(tab.href)

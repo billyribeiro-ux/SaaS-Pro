@@ -1,10 +1,10 @@
 ---
-title: "4.7.1 - Close Modal on Cancel"
+title: '4.7.1 - Close Modal on Cancel'
 module: 4
 lesson: 8
-moduleSlug: "module-04-crud"
-lessonSlug: "07-1-close-modal-on-cancel"
-description: "Wire up the modal close behavior — Cancel button, Escape key, and clicking the backdrop."
+moduleSlug: 'module-04-crud'
+lessonSlug: '07-1-close-modal-on-cancel'
+description: 'Wire up the modal close behavior — Cancel button, Escape key, and clicking the backdrop.'
 duration: 5
 preview: false
 ---
@@ -36,23 +36,23 @@ Open `src/routes/(app)/contacts/+page.svelte` — the contacts list page that re
 
 ```svelte
 <script lang="ts">
-  import DeleteConfirmModal from '$lib/components/ui/DeleteConfirmModal.svelte'
+	import DeleteConfirmModal from '$lib/components/ui/DeleteConfirmModal.svelte';
 
-  let deleteModal = $state({
-    open: false,
-    contactId: '',
-    contactName: ''
-  })
+	let deleteModal = $state({
+		open: false,
+		contactId: '',
+		contactName: ''
+	});
 
-  function openDeleteModal(id: string, name: string) {
-    deleteModal = { open: true, contactId: id, contactName: name }
-  }
+	function openDeleteModal(id: string, name: string) {
+		deleteModal = { open: true, contactId: id, contactName: name };
+	}
 
-  function closeDeleteModal() {
-    deleteModal = { open: false, contactId: '', contactName: '' }
-  }
+	function closeDeleteModal() {
+		deleteModal = { open: false, contactId: '', contactName: '' };
+	}
 
-  let { data } = $props()
+	let { data } = $props();
 </script>
 ```
 
@@ -62,19 +62,19 @@ Let's walk through this.
 
 ```typescript
 let deleteModal = $state({
-  open: false,
-  contactId: '',
-  contactName: ''
-})
+	open: false,
+	contactId: '',
+	contactName: ''
+});
 ```
 
 We could've written three separate pieces of state:
 
 ```typescript
 // ❌ works but verbose
-let deleteModalOpen = $state(false)
-let deleteModalContactId = $state('')
-let deleteModalContactName = $state('')
+let deleteModalOpen = $state(false);
+let deleteModalContactId = $state('');
+let deleteModalContactName = $state('');
 ```
 
 Using a single object has two benefits:
@@ -88,11 +88,11 @@ Using a single object has two benefits:
 
 ```typescript
 function openDeleteModal(id: string, name: string) {
-  deleteModal = { open: true, contactId: id, contactName: name }
+	deleteModal = { open: true, contactId: id, contactName: name };
 }
 
 function closeDeleteModal() {
-  deleteModal = { open: false, contactId: '', contactName: '' }
+	deleteModal = { open: false, contactId: '', contactName: '' };
 }
 ```
 
@@ -109,11 +109,11 @@ Inside the contact list rendering (the `{#each}` block that iterates `data.conta
 ```svelte
 <!-- inside the {#each data.contacts as contact} block -->
 <button
-  type="button"
-  onclick={() => openDeleteModal(contact.id, `${contact.first_name} ${contact.last_name}`)}
-  class="text-red-600 hover:text-red-700 text-sm"
+	type="button"
+	onclick={() => openDeleteModal(contact.id, `${contact.first_name} ${contact.last_name}`)}
+	class="text-sm text-red-600 hover:text-red-700"
 >
-  Delete
+	Delete
 </button>
 ```
 
@@ -130,10 +130,10 @@ At the bottom of the markup (outside any `{#each}` blocks), render the modal onc
 
 ```svelte
 <DeleteConfirmModal
-  bind:open={deleteModal.open}
-  contactId={deleteModal.contactId}
-  contactName={deleteModal.contactName}
-  onclose={closeDeleteModal}
+	bind:open={deleteModal.open}
+	contactId={deleteModal.contactId}
+	contactName={deleteModal.contactName}
+	onclose={closeDeleteModal}
 />
 ```
 
@@ -162,10 +162,7 @@ But sometimes you want two-way flow. A modal needs to let the parent say "open y
 
 ```svelte
 <!-- manual two-way: callback pattern -->
-<Modal
-  open={isOpen}
-  onOpenChange={(newOpen) => isOpen = newOpen}
-/>
+<Modal open={isOpen} onOpenChange={(newOpen) => (isOpen = newOpen)} />
 ```
 
 This works, but it's verbose. The `$bindable` pattern compresses it:
@@ -182,7 +179,7 @@ Inside the component, `$bindable()` is a **rune that creates a bindable prop**:
 
 ```typescript
 // in DeleteConfirmModal.svelte
-let { open = $bindable() }: { open: boolean } = $props()
+let { open = $bindable() }: { open: boolean } = $props();
 ```
 
 The key change versus a regular prop: when the parent uses `bind:open={...}`, writing to `open` inside the child **also writes to the parent's state**. Without `$bindable()`, writing to `open` would be an error (you can't mutate regular props).
@@ -206,6 +203,7 @@ Rule of thumb: **`$bindable` for form-input-like components, callback props for 
 - `<Modal onclose={closeDeleteModal} />` — ← we use this too, because "close" is an event, not a state we mutate.
 
 In our `DeleteConfirmModal`, we use **both**:
+
 - `bind:open` for the state that moves up and down.
 - `onclose` for the event of "the user wanted to close" — the parent decides what that means (in our case, reset the state).
 
@@ -228,11 +226,11 @@ Quick refresher from 4.7: the backdrop div in the modal looks like this:
 
 ```svelte
 <div
-  class="fixed inset-0 bg-black/50 z-40"
-  role="button"
-  tabindex="0"
-  onclick={onclose}
-  onkeydown={(e) => e.key === 'Escape' && onclose()}
+	class="fixed inset-0 z-40 bg-black/50"
+	role="button"
+	tabindex="0"
+	onclick={onclose}
+	onkeydown={(e) => e.key === 'Escape' && onclose()}
 ></div>
 ```
 
@@ -293,12 +291,12 @@ Without `bind:`, writing to `open` inside the modal doesn't affect the parent's 
 ```svelte
 <!-- ❌ 20 modals in the DOM, each hidden -->
 {#each data.contacts as contact}
-  <DeleteConfirmModal
-    open={openForContact === contact.id}
-    contactId={contact.id}
-    contactName={`${contact.first_name} ${contact.last_name}`}
-    onclose={() => openForContact = null}
-  />
+	<DeleteConfirmModal
+		open={openForContact === contact.id}
+		contactId={contact.id}
+		contactName={`${contact.first_name} ${contact.last_name}`}
+		onclose={() => (openForContact = null)}
+	/>
 {/each}
 ```
 
@@ -309,7 +307,7 @@ Instead of tracking "which contact is the modal open for," render one modal and 
 ```typescript
 // ❌ contactId/contactName still populated; could show stale data momentarily
 function closeDeleteModal() {
-  deleteModal = { ...deleteModal, open: false }
+	deleteModal = { ...deleteModal, open: false };
 }
 ```
 
@@ -334,7 +332,7 @@ If you delete the `onkeydown` on the backdrop, users who rely on keyboards (scre
 
 ### Note 1: Focus trapping — what we're not doing (and when to add it)
 
-True accessibility-compliant modals **trap focus**: once the modal opens, Tab and Shift+Tab cycle only through focusable elements *inside* the modal. The user can't accidentally Tab into the hidden page beneath. Our simple modal doesn't do this — focus can still escape to background elements.
+True accessibility-compliant modals **trap focus**: once the modal opens, Tab and Shift+Tab cycle only through focusable elements _inside_ the modal. The user can't accidentally Tab into the hidden page beneath. Our simple modal doesn't do this — focus can still escape to background elements.
 
 For serious accessibility work, libraries like [`svelte-focus-trap`](https://github.com/henrygd/svelte-focus-trap) handle the full lifecycle: move focus into the modal on open, trap it there, restore it to the trigger element on close. Or use a complete component like shadcn-svelte's `<Dialog>`.
 

@@ -1,10 +1,10 @@
 ---
-title: "5.5 - Creating Products & Prices"
+title: '5.5 - Creating Products & Prices'
 module: 5
 lesson: 6
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "05-creating-products-prices"
-description: "Create the Contactly product and its three pricing tiers in Stripe test mode."
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '05-creating-products-prices'
+description: 'Create the Contactly product and its three pricing tiers in Stripe test mode.'
 duration: 15
 preview: false
 ---
@@ -13,11 +13,11 @@ preview: false
 
 Time to put the Product/Price model from Lesson 5.4 into practice. By the end of this lesson, your Stripe test-mode dashboard will contain exactly one Product — **Contactly Pro** — with three Prices attached to it:
 
-| Tier | Price | Cadence | Lookup Key |
-|------|-------|---------|------------|
-| Monthly | $97.00 | per month | `contactly_monthly` |
-| Yearly | $997.00 | per year | `contactly_yearly` |
-| Lifetime | $4,997.00 | one-time | `contactly_lifetime` |
+| Tier     | Price     | Cadence   | Lookup Key           |
+| -------- | --------- | --------- | -------------------- |
+| Monthly  | $97.00    | per month | `contactly_monthly`  |
+| Yearly   | $997.00   | per year  | `contactly_yearly`   |
+| Lifetime | $4,997.00 | one-time  | `contactly_lifetime` |
 
 This is the catalog every other billing lesson in this course (Modules 6, 7, and 8) will stand on. When we wire up Checkout in Module 6, we'll look up each Price by its lookup key. When we process webhooks in Module 7, we'll map Stripe's Subscription state back to Contactly's profile tier using these three keys. The names chosen here (`contactly_monthly`, etc.) are the API surface between our app and Stripe, and we're going to pick them carefully.
 
@@ -308,7 +308,7 @@ Lookup keys allow alphanumeric, underscore, and a few special characters. Hyphen
 
 You copy the $97/$997/$4,997 values because this lesson uses them. For Contactly-the-course, that's fine. For your own SaaS, think about it. Run a few competitive-research Google searches: what do competitors charge? What's the price-to-value ratio? Are you priced to compete on cost (below market) or value (above market)?
 
-Pricing research is a full discipline. Books like *Monetizing Innovation* (Madhavan Ramanujam) are good starting points. Don't treat your price as an afterthought; it's the single biggest lever on your business.
+Pricing research is a full discipline. Books like _Monetizing Innovation_ (Madhavan Ramanujam) are good starting points. Don't treat your price as an afterthought; it's the single biggest lever on your business.
 
 ---
 
@@ -351,7 +351,7 @@ The muscle memory: "archive" is the default button; "delete" is a last-resort bu
 
 In many teams, I've seen engineers hand-type `prod_xxx` and `price_xxx` IDs into README files, runbooks, and comments. Every price change obsoletes these docs, and nobody remembers to update them. The anti-pattern self-perpetuates.
 
-A better practice: **commit the *intent*** — the product name, the lookup keys, the tier slugs. Those are stable. If you later need to find the current `price_xxx`, you query Stripe by lookup key. Your docs and code never go stale.
+A better practice: **commit the _intent_** — the product name, the lookup keys, the tier slugs. Those are stable. If you later need to find the current `price_xxx`, you query Stripe by lookup key. Your docs and code never go stale.
 
 ---
 

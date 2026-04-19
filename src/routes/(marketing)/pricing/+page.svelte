@@ -44,7 +44,7 @@
 		},
 		{
 			q: 'Does lifetime mean lifetime?',
-			a: "Yes — a one-time payment grants access to every current and future lesson, plus all bonus material. Plain and simple."
+			a: 'Yes — a one-time payment grants access to every current and future lesson, plus all bonus material. Plain and simple.'
 		},
 		{
 			q: 'Can I get an invoice / company purchase?',
@@ -72,15 +72,20 @@
 </svelte:head>
 
 <section class="relative overflow-hidden">
-	<div class="pointer-events-none absolute inset-0 bg-grid mask-radial-fade" aria-hidden="true"></div>
-	<div class="pointer-events-none absolute inset-0 bg-mesh opacity-50" aria-hidden="true"></div>
+	<div
+		class="bg-grid mask-radial-fade pointer-events-none absolute inset-0"
+		aria-hidden="true"
+	></div>
+	<div class="bg-mesh pointer-events-none absolute inset-0 opacity-50" aria-hidden="true"></div>
 
-	<div class="relative mx-auto max-w-6xl px-6 pb-16 pt-20">
+	<div class="relative mx-auto max-w-6xl px-6 pt-20 pb-16">
 		<header class="text-center">
-			<p class="text-sm font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">
+			<p class="text-sm font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-400">
 				Pricing
 			</p>
-			<h1 class="font-display mt-3 text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl dark:text-white">
+			<h1
+				class="font-display mt-3 text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl dark:text-white"
+			>
 				Simple, straight-forward pricing.
 			</h1>
 			<p class="mx-auto mt-4 max-w-xl text-lg text-slate-600 dark:text-slate-400">
@@ -144,7 +149,9 @@
 			{/each}
 		</div>
 
-		<ul class="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-slate-600 dark:text-slate-400">
+		<ul
+			class="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-slate-600 dark:text-slate-400"
+		>
 			{#each trustBadges as badge (badge)}
 				<li class="inline-flex items-center gap-1.5">
 					<Check size="sm" class="text-emerald-500" />
@@ -158,7 +165,9 @@
 <!-- FAQ below pricing keeps the conversion surface single-viewport on laptops. -->
 <section id="faq" class="mx-auto max-w-3xl px-6 py-20">
 	<div class="text-center">
-		<h2 class="font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+		<h2
+			class="font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl dark:text-white"
+		>
 			Pricing FAQ
 		</h2>
 	</div>

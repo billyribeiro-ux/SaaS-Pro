@@ -1,10 +1,10 @@
 ---
-title: "6.3 - Create Webhook Endpoint"
+title: '6.3 - Create Webhook Endpoint'
 module: 6
 lesson: 3
-moduleSlug: "module-06-stripe-sveltekit"
-lessonSlug: "03-create-webhook-endpoint"
-description: "Build the Stripe webhook endpoint in SvelteKit with signature verification and event handlers."
+moduleSlug: 'module-06-stripe-sveltekit'
+lessonSlug: '03-create-webhook-endpoint'
+description: 'Build the Stripe webhook endpoint in SvelteKit with signature verification and event handlers.'
 duration: 18
 preview: false
 ---
@@ -64,67 +64,67 @@ Open `src/routes/api/webhooks/stripe/+server.ts`. It's empty. Here's the full fi
 
 ```typescript
 // src/routes/api/webhooks/stripe/+server.ts
-import { json, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
-import { STRIPE_WEBHOOK_SECRET } from '$env/static/private'
-import type { RequestHandler } from './$types'
+import { json, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
+import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
-  const body = await request.text()
-  const signature = request.headers.get('stripe-signature')
+	const body = await request.text();
+	const signature = request.headers.get('stripe-signature');
 
-  if (!signature) {
-    return json({ error: 'No signature' }, { status: 400 })
-  }
+	if (!signature) {
+		return json({ error: 'No signature' }, { status: 400 });
+	}
 
-  let event: ReturnType<typeof stripe.webhooks.constructEvent>
+	let event: ReturnType<typeof stripe.webhooks.constructEvent>;
 
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err)
-    return json({ error: 'Invalid signature' }, { status: 400 })
-  }
+	try {
+		event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+	} catch (err) {
+		console.error('Webhook signature verification failed:', err);
+		return json({ error: 'Invalid signature' }, { status: 400 });
+	}
 
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object
-        console.log('Checkout completed:', session.id)
-        break
-      }
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object
-        console.log('Subscription changed:', subscription.id, subscription.status)
-        break
-      }
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object
-        console.log('Subscription deleted:', subscription.id)
-        break
-      }
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object
-        console.log('Invoice paid:', invoice.id)
-        break
-      }
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object
-        console.log('Invoice failed:', invoice.id)
-        break
-      }
-      default:
-        console.log('Unhandled event type:', event.type)
-    }
-  } catch (err) {
-    console.error('Webhook handler error:', err)
-    return json({ error: 'Webhook handler failed' }, { status: 500 })
-  }
+	try {
+		switch (event.type) {
+			case 'checkout.session.completed': {
+				const session = event.data.object;
+				console.log('Checkout completed:', session.id);
+				break;
+			}
+			case 'customer.subscription.created':
+			case 'customer.subscription.updated': {
+				const subscription = event.data.object;
+				console.log('Subscription changed:', subscription.id, subscription.status);
+				break;
+			}
+			case 'customer.subscription.deleted': {
+				const subscription = event.data.object;
+				console.log('Subscription deleted:', subscription.id);
+				break;
+			}
+			case 'invoice.payment_succeeded': {
+				const invoice = event.data.object;
+				console.log('Invoice paid:', invoice.id);
+				break;
+			}
+			case 'invoice.payment_failed': {
+				const invoice = event.data.object;
+				console.log('Invoice failed:', invoice.id);
+				break;
+			}
+			default:
+				console.log('Unhandled event type:', event.type);
+		}
+	} catch (err) {
+		console.error('Webhook handler error:', err);
+		return json({ error: 'Webhook handler failed' }, { status: 500 });
+	}
 
-  return json({ received: true })
-}
+	return json({ received: true });
+};
 ```
 
 That's the whole file. Let's walk through it line by line.
@@ -134,11 +134,11 @@ That's the whole file. Let's walk through it line by line.
 ## Step 3: Walking Through the Imports
 
 ```typescript
-import { json, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { supabaseAdmin } from '$server/supabase'
-import { STRIPE_WEBHOOK_SECRET } from '$env/static/private'
-import type { RequestHandler } from './$types'
+import { json, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
+import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import type { RequestHandler } from './$types';
 ```
 
 - **`json, error` from `@sveltejs/kit`** — SvelteKit's helpers for returning typed HTTP responses. `json(payload, { status })` builds a JSON Response with a given status code. `error(status, message)` throws a typed error; we're not using it here because we want to return structured error bodies to the client.
@@ -202,7 +202,7 @@ Two parts: `t=` (timestamp) and `v1=` (signature). The Stripe SDK parses both.
 
 ```typescript
 if (!signature) {
-  return json({ error: 'No signature' }, { status: 400 })
+	return json({ error: 'No signature' }, { status: 400 });
 }
 ```
 
@@ -217,20 +217,20 @@ If the request has no signature header, it can't be from Stripe. Return 400 Bad 
 ## Step 6: Signature Verification
 
 ```typescript
-let event: ReturnType<typeof stripe.webhooks.constructEvent>
+let event: ReturnType<typeof stripe.webhooks.constructEvent>;
 
 try {
-  event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)
+	event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
 } catch (err) {
-  console.error('Webhook signature verification failed:', err)
-  return json({ error: 'Invalid signature' }, { status: 400 })
+	console.error('Webhook signature verification failed:', err);
+	return json({ error: 'Invalid signature' }, { status: 400 });
 }
 ```
 
 ### The type declaration
 
 ```typescript
-let event: ReturnType<typeof stripe.webhooks.constructEvent>
+let event: ReturnType<typeof stripe.webhooks.constructEvent>;
 ```
 
 This is a TypeScript trick. `ReturnType<T>` extracts the return type of a function type. `typeof stripe.webhooks.constructEvent` gets us the type of the `constructEvent` method. Combined, we're asking TypeScript: "what does `constructEvent` return? Make `event` that type."
@@ -260,42 +260,42 @@ On success, `event` is now a fully-typed `Stripe.Event`. TypeScript knows exactl
 
 ```typescript
 try {
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object
-      // TypeScript knows: session is Stripe.Checkout.Session
-      console.log('Checkout completed:', session.id)
-      break
-    }
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object
-      // TypeScript knows: subscription is Stripe.Subscription
-      console.log('Subscription changed:', subscription.id, subscription.status)
-      break
-    }
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object
-      console.log('Subscription deleted:', subscription.id)
-      break
-    }
-    case 'invoice.payment_succeeded': {
-      const invoice = event.data.object
-      // TypeScript knows: invoice is Stripe.Invoice
-      console.log('Invoice paid:', invoice.id)
-      break
-    }
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object
-      console.log('Invoice failed:', invoice.id)
-      break
-    }
-    default:
-      console.log('Unhandled event type:', event.type)
-  }
+	switch (event.type) {
+		case 'checkout.session.completed': {
+			const session = event.data.object;
+			// TypeScript knows: session is Stripe.Checkout.Session
+			console.log('Checkout completed:', session.id);
+			break;
+		}
+		case 'customer.subscription.created':
+		case 'customer.subscription.updated': {
+			const subscription = event.data.object;
+			// TypeScript knows: subscription is Stripe.Subscription
+			console.log('Subscription changed:', subscription.id, subscription.status);
+			break;
+		}
+		case 'customer.subscription.deleted': {
+			const subscription = event.data.object;
+			console.log('Subscription deleted:', subscription.id);
+			break;
+		}
+		case 'invoice.payment_succeeded': {
+			const invoice = event.data.object;
+			// TypeScript knows: invoice is Stripe.Invoice
+			console.log('Invoice paid:', invoice.id);
+			break;
+		}
+		case 'invoice.payment_failed': {
+			const invoice = event.data.object;
+			console.log('Invoice failed:', invoice.id);
+			break;
+		}
+		default:
+			console.log('Unhandled event type:', event.type);
+	}
 } catch (err) {
-  console.error('Webhook handler error:', err)
-  return json({ error: 'Webhook handler failed' }, { status: 500 })
+	console.error('Webhook handler error:', err);
+	return json({ error: 'Webhook handler failed' }, { status: 500 });
 }
 ```
 
@@ -382,7 +382,7 @@ Why 500 and not 400? 400 implies bad input — Stripe would interpret it as "my 
 ## Step 8: The Success Response
 
 ```typescript
-return json({ received: true })
+return json({ received: true });
 ```
 
 Default status is 200 when you omit the `{ status }` option. The body is a minimal `{ received: true }` — Stripe doesn't read the body on success, it only checks the status. We include the body for our own convenience (when debugging with curl, getting `{ received: true }` back is reassuring).
@@ -475,9 +475,9 @@ Stripe will retry this event for 72 hours. Every retry reruns your handler. Retu
 ### Mistake 3: Reading the body before signature verification
 
 ```typescript
-const body = await request.text()
-const parsed = JSON.parse(body)
-console.log('Event:', parsed.type)  // BAD: logging unverified event
+const body = await request.text();
+const parsed = JSON.parse(body);
+console.log('Event:', parsed.type); // BAD: logging unverified event
 // ... later: signature verification
 ```
 

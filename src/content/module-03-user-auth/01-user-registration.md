@@ -1,10 +1,10 @@
 ---
-title: "3.1 - User Registration"
+title: '3.1 - User Registration'
 module: 3
 lesson: 1
-moduleSlug: "module-03-user-auth"
-lessonSlug: "01-user-registration"
-description: "Build a user registration form using SvelteKit form actions and Supabase Auth signUp."
+moduleSlug: 'module-03-user-auth'
+lessonSlug: '01-user-registration'
+description: 'Build a user registration form using SvelteKit form actions and Supabase Auth signUp.'
 duration: 15
 preview: false
 ---
@@ -65,13 +65,13 @@ Create `src/routes/(auth)/+layout.svelte`:
 ```svelte
 <!-- src/routes/(auth)/+layout.svelte -->
 <script lang="ts">
-  let { children } = $props()
+	let { children } = $props();
 </script>
 
-<main class="min-h-screen flex items-center justify-center bg-gray-50">
-  <div class="w-full max-w-md px-4">
-    {@render children()}
-  </div>
+<main class="flex min-h-screen items-center justify-center bg-gray-50">
+	<div class="w-full max-w-md px-4">
+		{@render children()}
+	</div>
 </main>
 ```
 
@@ -109,83 +109,81 @@ Create `src/routes/(auth)/register/+page.svelte`:
 ```svelte
 <!-- src/routes/(auth)/register/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import type { ActionData } from './$types'
+	import { enhance } from '$app/forms';
+	import type { ActionData } from './$types';
 
-  let { form }: { form: ActionData } = $props()
+	let { form }: { form: ActionData } = $props();
 </script>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-  <h1 class="text-2xl font-bold text-gray-900 mb-2">Create your account</h1>
-  <p class="text-gray-500 mb-6">Start managing your contacts today</p>
+<div class="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+	<h1 class="mb-2 text-2xl font-bold text-gray-900">Create your account</h1>
+	<p class="mb-6 text-gray-500">Start managing your contacts today</p>
 
-  <form method="POST" use:enhance>
-    {#if form?.error}
-      <div
-        class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm"
-      >
-        {form.error}
-      </div>
-    {/if}
+	<form method="POST" use:enhance>
+		{#if form?.error}
+			<div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+				{form.error}
+			</div>
+		{/if}
 
-    <div class="space-y-4">
-      <div>
-        <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">
-          Full name
-        </label>
-        <input
-          id="full_name"
-          name="full_name"
-          type="text"
-          required
-          value={form?.data?.full_name ?? ''}
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="John Doe"
-        />
-      </div>
+		<div class="space-y-4">
+			<div>
+				<label for="full_name" class="mb-1 block text-sm font-medium text-gray-700">
+					Full name
+				</label>
+				<input
+					id="full_name"
+					name="full_name"
+					type="text"
+					required
+					value={form?.data?.full_name ?? ''}
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					placeholder="John Doe"
+				/>
+			</div>
 
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-          Email address
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          value={form?.data?.email ?? ''}
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="john@example.com"
-        />
-      </div>
+			<div>
+				<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
+					Email address
+				</label>
+				<input
+					id="email"
+					name="email"
+					type="email"
+					required
+					value={form?.data?.email ?? ''}
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					placeholder="john@example.com"
+				/>
+			</div>
 
-      <div>
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="At least 8 characters"
-        />
-      </div>
+			<div>
+				<label for="password" class="mb-1 block text-sm font-medium text-gray-700">
+					Password
+				</label>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					required
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					placeholder="At least 8 characters"
+				/>
+			</div>
 
-      <button
-        type="submit"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-      >
-        Create account
-      </button>
-    </div>
-  </form>
+			<button
+				type="submit"
+				class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+			>
+				Create account
+			</button>
+		</div>
+	</form>
 
-  <p class="text-center text-sm text-gray-500 mt-6">
-    Already have an account?
-    <a href="/login" class="text-blue-600 hover:underline font-medium">Log in</a>
-  </p>
+	<p class="mt-6 text-center text-sm text-gray-500">
+		Already have an account?
+		<a href="/login" class="font-medium text-blue-600 hover:underline">Log in</a>
+	</p>
 </div>
 ```
 
@@ -194,10 +192,10 @@ Create `src/routes/(auth)/register/+page.svelte`:
 #### The script block
 
 ```typescript
-import { enhance } from '$app/forms'
-import type { ActionData } from './$types'
+import { enhance } from '$app/forms';
+import type { ActionData } from './$types';
 
-let { form }: { form: ActionData } = $props()
+let { form }: { form: ActionData } = $props();
 ```
 
 - **`enhance` from `$app/forms`** — the progressive enhancement helper. Applied to a form with `use:enhance`, it intercepts submission and handles it with `fetch()` — no full page reload, smoother experience, still works if JS is disabled.
@@ -208,9 +206,9 @@ let { form }: { form: ActionData } = $props()
 
 ```svelte
 {#if form?.error}
-  <div class="bg-red-50 ...">
-    {form.error}
-  </div>
+	<div class="bg-red-50 ...">
+		{form.error}
+	</div>
 {/if}
 ```
 
@@ -244,66 +242,66 @@ Create `src/routes/(auth)/register/+page.server.ts`:
 
 ```typescript
 // src/routes/(auth)/register/+page.server.ts
-import { fail, redirect } from '@sveltejs/kit'
-import * as z from 'zod'
-import type { Actions } from './$types'
+import { fail, redirect } from '@sveltejs/kit';
+import * as z from 'zod';
+import type { Actions } from './$types';
 
 // Zod v4 schema describing the shape and rules for valid registration input.
 const registerSchema = z.object({
-  full_name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters')
-})
+	full_name: z.string().min(2, 'Name must be at least 2 characters'),
+	email: z.string().email('Please enter a valid email address'),
+	password: z.string().min(8, 'Password must be at least 8 characters')
+});
 
 export const actions: Actions = {
-  default: async ({ request, locals }) => {
-    const formData = await request.formData()
+	default: async ({ request, locals }) => {
+		const formData = await request.formData();
 
-    const raw = {
-      full_name: formData.get('full_name'),
-      email: formData.get('email'),
-      password: formData.get('password')
-    }
+		const raw = {
+			full_name: formData.get('full_name'),
+			email: formData.get('email'),
+			password: formData.get('password')
+		};
 
-    // Validate the raw form fields against the schema.
-    const result = registerSchema.safeParse(raw)
+		// Validate the raw form fields against the schema.
+		const result = registerSchema.safeParse(raw);
 
-    if (!result.success) {
-      // `fail(400, ...)` returns a 400 Bad Request. The returned object
-      // becomes `form` on the page — we include the first error message and
-      // the user's typed values (minus password) so the form can repopulate.
-      return fail(400, {
-        error: result.error.issues[0]?.message ?? 'Invalid input',
-        data: { full_name: raw.full_name, email: raw.email }
-      })
-    }
+		if (!result.success) {
+			// `fail(400, ...)` returns a 400 Bad Request. The returned object
+			// becomes `form` on the page — we include the first error message and
+			// the user's typed values (minus password) so the form can repopulate.
+			return fail(400, {
+				error: result.error.issues[0]?.message ?? 'Invalid input',
+				data: { full_name: raw.full_name, email: raw.email }
+			});
+		}
 
-    const { full_name, email, password } = result.data
+		const { full_name, email, password } = result.data;
 
-    // Call Supabase Auth. The handle_new_user() trigger you wrote in Lesson 1.4
-    // will fire on the auth.users insert and auto-create the matching
-    // public.profiles row with full_name populated from raw_user_meta_data.
-    const { error } = await locals.supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name }
-      }
-    })
+		// Call Supabase Auth. The handle_new_user() trigger you wrote in Lesson 1.4
+		// will fire on the auth.users insert and auto-create the matching
+		// public.profiles row with full_name populated from raw_user_meta_data.
+		const { error } = await locals.supabase.auth.signUp({
+			email,
+			password,
+			options: {
+				data: { full_name }
+			}
+		});
 
-    if (error) {
-      return fail(400, {
-        error: error.message,
-        data: { full_name, email }
-      })
-    }
+		if (error) {
+			return fail(400, {
+				error: error.message,
+				data: { full_name, email }
+			});
+		}
 
-    // Redirect to the dashboard using the POST/Redirect/GET pattern.
-    // 303 See Other ensures the browser navigates with a GET, so a refresh
-    // won't resubmit the form.
-    redirect(303, '/dashboard')
-  }
-}
+		// Redirect to the dashboard using the POST/Redirect/GET pattern.
+		// 303 See Other ensures the browser navigates with a GET, so a refresh
+		// won't resubmit the form.
+		redirect(303, '/dashboard');
+	}
+};
 ```
 
 ### Breaking Down Each Decision
@@ -312,10 +310,10 @@ export const actions: Actions = {
 
 ```typescript
 const registerSchema = z.object({
-  full_name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters')
-})
+	full_name: z.string().min(2, 'Name must be at least 2 characters'),
+	email: z.string().email('Please enter a valid email address'),
+	password: z.string().min(8, 'Password must be at least 8 characters')
+});
 ```
 
 [Zod](https://zod.dev) is a TypeScript-first schema validation library. We use it everywhere in Contactly to validate input at the server boundary. Two features we rely on:
@@ -328,11 +326,14 @@ const registerSchema = z.object({
 #### `safeParse` vs `parse`
 
 ```typescript
-const result = registerSchema.safeParse(raw)
-if (!result.success) { /* handle errors */ }
+const result = registerSchema.safeParse(raw);
+if (!result.success) {
+	/* handle errors */
+}
 ```
 
 Zod offers two validation methods:
+
 - `.parse(value)` — returns the validated value on success, **throws** on failure.
 - `.safeParse(value)` — returns `{ success: true, data }` or `{ success: false, error }` — never throws.
 
@@ -342,12 +343,13 @@ We use `safeParse` in form actions because we want to hand the user a friendly e
 
 ```typescript
 return fail(400, {
-  error: result.error.issues[0]?.message ?? 'Invalid input',
-  data: { full_name: raw.full_name, email: raw.email }
-})
+	error: result.error.issues[0]?.message ?? 'Invalid input',
+	data: { full_name: raw.full_name, email: raw.email }
+});
 ```
 
 `fail(status, payload)` is SvelteKit's way to return a **user-handling** error from an action. It:
+
 - Sets the HTTP status to the provided code (400 for bad input, 403 for forbidden, etc.).
 - Serializes the payload to the page as `form`.
 - Tells the browser to re-render the same page, not navigate away.
@@ -360,12 +362,12 @@ Unlike `redirect()` or `error()`, `fail()` doesn't throw — it's a normal retur
 
 ```typescript
 const { error } = await locals.supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { full_name }
-  }
-})
+	email,
+	password,
+	options: {
+		data: { full_name }
+	}
+});
 ```
 
 - `locals.supabase` is the per-request Supabase client wired up in `hooks.server.ts`.
@@ -377,7 +379,7 @@ If signup fails — email already taken, weak password, anything — the functio
 #### `redirect(303, '/dashboard')`
 
 ```typescript
-redirect(303, '/dashboard')
+redirect(303, '/dashboard');
 ```
 
 - `303 See Other` is the HTTP status for **POST/Redirect/GET**. The browser responds with GET to the new URL. If the user hits refresh on `/dashboard` later, they just reload it — they don't accidentally resubmit the registration.
@@ -396,26 +398,31 @@ pnpm dev
 Visit `http://localhost:5173/register`. You should see the centered registration form.
 
 **Happy path:**
+
 1. Enter a name, email, and password (≥8 chars).
 2. Click **Create account**.
 3. You're redirected to `/dashboard`. (It doesn't exist yet — that's a 404. We'll build it in the next lesson's scope.)
 
 **Validation error (client):**
+
 1. Leave the password field blank.
 2. Click **Create account**.
 3. The browser's native `required` attribute stops submission with a tooltip. Client-side validation, for free.
 
 **Validation error (server):**
+
 1. Enter a name, email, and a 3-character password (the browser allows anything non-empty).
 2. Click **Create account**.
 3. The page re-renders with "Password must be at least 8 characters" in a red banner. Name and email are still in the fields.
 
 **Supabase error:**
+
 1. Register once with `test@example.com`.
 2. Try to register again with the same email.
 3. The page re-renders with Supabase's error message (e.g., "User already registered").
 
 **Verify in Studio:**
+
 1. Open `http://localhost:54323`.
 2. Authentication → Users. Your new user is there.
 3. Table Editor → profiles. A matching profile row is there with `full_name` populated.

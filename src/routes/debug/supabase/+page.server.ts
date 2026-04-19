@@ -17,8 +17,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		dbOk: !productsRes.error,
 		dbError: productsRes.error?.message ?? null,
 		products: productsRes.data ?? [],
-		user: locals.user
-			? { id: locals.user.id, email: locals.user.email ?? null }
-			: null
+		user: locals.user ? { id: locals.user.id, email: locals.user.email ?? null } : null
 	};
 };

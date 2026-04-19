@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Card from '$components/ui/Card.svelte';
 	import Button from '$components/ui/Button.svelte';
 	import Badge from '$components/ui/Badge.svelte';
@@ -17,9 +18,7 @@
 	let { data }: Props = $props();
 
 	let percent = $derived(
-		data.totalLessons > 0
-			? Math.round((data.completedCount / data.totalLessons) * 100)
-			: 0
+		data.totalLessons > 0 ? Math.round((data.completedCount / data.totalLessons) * 100) : 0
 	);
 
 	/*
@@ -47,7 +46,7 @@
 <section class="mx-auto max-w-5xl px-6 py-10">
 	<header class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 		<div>
-			<p class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+			<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400">
 				Dashboard
 			</p>
 			<h1 class="font-display mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -80,11 +79,15 @@
 	</header>
 
 	{#if data.checkoutStatus === 'success'}
-		<div class="mb-6 flex items-start gap-3 rounded-lg border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+		<div
+			class="mb-6 flex items-start gap-3 rounded-lg border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+		>
 			<Check size="md" class="mt-0.5 text-emerald-600 dark:text-emerald-400" />
 			<div>
 				<p class="font-medium">Payment successful.</p>
-				<p class="mt-0.5">Your access is being provisioned — refresh in a moment if the badge above doesn't update.</p>
+				<p class="mt-0.5">
+					Your access is being provisioned — refresh in a moment if the badge above doesn't update.
+				</p>
 			</div>
 		</div>
 	{/if}
@@ -94,7 +97,9 @@
 		<Card class="md:col-span-2">
 			{#snippet header()}
 				<div class="flex items-center justify-between">
-					<h2 class="text-sm font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+					<h2
+						class="text-sm font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+					>
 						{data.nextLesson ? 'Resume learning' : 'Start learning'}
 					</h2>
 					<Zap size="sm" class="text-brand-500" />
@@ -102,7 +107,7 @@
 			{/snippet}
 			{#if data.nextLesson}
 				<p class="text-xs text-slate-500 dark:text-slate-400">{data.nextLesson.moduleTitle}</p>
-				<h3 class="mt-1 font-display text-xl font-semibold tracking-tight">
+				<h3 class="font-display mt-1 text-xl font-semibold tracking-tight">
 					{data.nextLesson.lessonTitle}
 				</h3>
 				<p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -137,18 +142,14 @@
 
 		<Card>
 			{#snippet header()}
-				<h2 class="text-sm font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+				<h2
+					class="text-sm font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+				>
 					Overall progress
 				</h2>
 			{/snippet}
 			<div class="flex items-center gap-5">
-				<svg
-					width="84"
-					height="84"
-					viewBox="0 0 84 84"
-					class="-rotate-90"
-					aria-hidden="true"
-				>
+				<svg width="84" height="84" viewBox="0 0 84 84" class="-rotate-90" aria-hidden="true">
 					<circle
 						cx="42"
 						cy="42"
@@ -183,7 +184,9 @@
 	<div class="mt-4 grid gap-4 sm:grid-cols-3">
 		<Card>
 			<div class="flex items-baseline justify-between">
-				<span class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+				<span
+					class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+				>
 					Lessons done
 				</span>
 				<Check size="sm" class="text-emerald-500" />
@@ -193,18 +196,24 @@
 		</Card>
 		<Card>
 			<div class="flex items-baseline justify-between">
-				<span class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+				<span
+					class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+				>
 					Time invested
 				</span>
 			</div>
 			<p class="font-display mt-2 text-2xl font-semibold tracking-tight">
 				{hoursInvested}h
 			</p>
-			<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Estimated, based on completions.</p>
+			<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+				Estimated, based on completions.
+			</p>
 		</Card>
 		<Card>
 			<div class="flex items-baseline justify-between">
-				<span class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+				<span
+					class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+				>
 					Current streak
 				</span>
 			</div>
@@ -221,7 +230,9 @@
 	<div class="mt-4 grid gap-4 md:grid-cols-3">
 		<Card class="md:col-span-2">
 			{#snippet header()}
-				<h2 class="text-sm font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+				<h2
+					class="text-sm font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+				>
 					Recent activity
 				</h2>
 			{/snippet}
@@ -234,7 +245,7 @@
 					{#each data.recent as item (`${item.moduleSlug}/${item.lessonSlug}`)}
 						<li class="flex items-center justify-between gap-3 py-3 text-sm">
 							<a
-								href={`/learn/${item.moduleSlug}/${item.lessonSlug}`}
+								href={resolve(`/learn/${item.moduleSlug}/${item.lessonSlug}`)}
 								class="group flex min-w-0 items-center gap-3"
 							>
 								<span
@@ -244,7 +255,9 @@
 									<Check size={12} />
 								</span>
 								<span class="min-w-0">
-									<span class="block truncate font-medium text-slate-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">
+									<span
+										class="block truncate font-medium text-slate-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300"
+									>
 										{item.lessonTitle}
 									</span>
 									<span class="block truncate text-xs text-slate-500 dark:text-slate-400">
@@ -263,13 +276,16 @@
 
 		<Card>
 			{#snippet header()}
-				<h2 class="text-sm font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+				<h2
+					class="text-sm font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+				>
 					Subscription
 				</h2>
 			{/snippet}
 			<p class="text-sm text-slate-600 dark:text-slate-400">
 				{#if data.tier}
-					You're on the <strong class="text-slate-900 dark:text-white">{data.tier}</strong> plan. Manage billing from the account page.
+					You're on the <strong class="text-slate-900 dark:text-white">{data.tier}</strong> plan. Manage
+					billing from the account page.
 				{:else}
 					Subscribe to unlock the full curriculum. Free preview lessons remain open.
 				{/if}

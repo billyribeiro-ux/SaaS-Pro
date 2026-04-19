@@ -1,26 +1,27 @@
 ---
-title: "3.6 - Account Actions (Update Profile + Password)"
+title: '3.6 - Account Actions (Update Profile + Password)'
 module: 3
 lesson: 6
-moduleSlug: "module-03-user-auth"
-lessonSlug: "06-account-actions"
-description: "Add updateProfile and updatePassword named actions to the account page, with Zod v4 validation and a clean pattern for multiple forms on one page."
+moduleSlug: 'module-03-user-auth'
+lessonSlug: '06-account-actions'
+description: 'Add updateProfile and updatePassword named actions to the account page, with Zod v4 validation and a clean pattern for multiple forms on one page.'
 duration: 25
 preview: false
 ---
 
 ## Overview
 
-The account page *shows* the user's data. Now it needs to **let them change it**. A complete profile page has to let users:
+The account page _shows_ the user's data. Now it needs to **let them change it**. A complete profile page has to let users:
 
 1. Update their display name.
 2. Change their password.
 
-These sound like the same problem — "update a user field" — but they are actually *two very different problems* at the system level. One touches a row in `public.profiles`; the other touches `auth.users.encrypted_password`, a field you can't even SELECT, let alone UPDATE, directly. One uses your RLS-protected `profiles` table; the other uses the Supabase Auth API. One is a regular data write; the other is a security-sensitive credential change.
+These sound like the same problem — "update a user field" — but they are actually _two very different problems_ at the system level. One touches a row in `public.profiles`; the other touches `auth.users.encrypted_password`, a field you can't even SELECT, let alone UPDATE, directly. One uses your RLS-protected `profiles` table; the other uses the Supabase Auth API. One is a regular data write; the other is a security-sensitive credential change.
 
 This lesson teaches you the difference, the right tool for each, and a clean pattern for having **multiple forms on one page** without their error messages bleeding into each other.
 
 By the end you will have:
+
 - A `updateProfile` named action that validates input with Zod v4 and writes to `public.profiles`.
 - A `updatePassword` named action that validates input with Zod v4 and writes through `supabase.auth.updateUser()`.
 - A single `+page.svelte` that renders two forms, each with its own error messaging, using a `form` discriminator so messages target the right form.
@@ -100,23 +101,23 @@ import * as z from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 
 const updateProfileSchema = z.object({
-  full_name: z
-    .string()
-    .min(1, 'Name is required')
-    .max(100, 'Name must be 100 characters or fewer')
-    .trim()
+	full_name: z
+		.string()
+		.min(1, 'Name is required')
+		.max(100, 'Name must be 100 characters or fewer')
+		.trim()
 });
 
 const updatePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
-    confirmPassword: z.string()
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords must match',
-    path: ['confirmPassword']
-  });
+	.object({
+		currentPassword: z.string().min(1, 'Current password is required'),
+		newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+		confirmPassword: z.string()
+	})
+	.refine((data) => data.newPassword === data.confirmPassword, {
+		message: 'Passwords must match',
+		path: ['confirmPassword']
+	});
 ```
 
 ### Walkthrough
@@ -131,11 +132,11 @@ The Zod v4 namespace import style. Stick to this across every new schema in Cont
 
 ```typescript
 const updateProfileSchema = z.object({
-  full_name: z
-    .string()
-    .min(1, 'Name is required')
-    .max(100, 'Name must be 100 characters or fewer')
-    .trim()
+	full_name: z
+		.string()
+		.min(1, 'Name is required')
+		.max(100, 'Name must be 100 characters or fewer')
+		.trim()
 });
 ```
 
@@ -145,28 +146,28 @@ const updateProfileSchema = z.object({
   - Database column sanity — even though Postgres `text` has no hard cap, absurdly long values bloat indexes, slow replication, and usually indicate an attack.
   - UI sanity — a 10,000-character "name" wrecks your layout.
   - Choose a number that's generous (enough for the longest real names: "Pablo Diego José Francisco de Paula Juan Nepomuceno María de los Remedios Cipriano de la Santísima Trinidad Ruiz y Picasso" — if you're curious, that's 94 characters) but finite.
-- **`.trim()`** — Zod v4 strings support `.trim()` as a *transformation*. It strips leading/trailing whitespace *before* validation. Users who accidentally pasted a trailing space get saved from an ugly profile; malicious users can't pad input to bypass length checks.
+- **`.trim()`** — Zod v4 strings support `.trim()` as a _transformation_. It strips leading/trailing whitespace _before_ validation. Users who accidentally pasted a trailing space get saved from an ugly profile; malicious users can't pad input to bypass length checks.
 
 #### `updatePasswordSchema` — and `.refine()`
 
 ```typescript
 const updatePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
-    confirmPassword: z.string()
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords must match',
-    path: ['confirmPassword']
-  });
+	.object({
+		currentPassword: z.string().min(1, 'Current password is required'),
+		newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+		confirmPassword: z.string()
+	})
+	.refine((data) => data.newPassword === data.confirmPassword, {
+		message: 'Passwords must match',
+		path: ['confirmPassword']
+	});
 ```
 
 The first three fields are plain `z.string()` rules — familiar. The interesting piece is `.refine()`.
 
-- **`.refine(fn, opts)`** — a custom validation rule that runs *after* per-field checks. It receives the parsed object and returns a boolean. `true` means "this passes"; `false` means "fail with the provided message."
+- **`.refine(fn, opts)`** — a custom validation rule that runs _after_ per-field checks. It receives the parsed object and returns a boolean. `true` means "this passes"; `false` means "fail with the provided message."
 - **`(data) => data.newPassword === data.confirmPassword`** — require that the confirmation matches the new password.
-- **`path: ['confirmPassword']`** — this is the part beginners miss. Without `path`, Zod reports the error at the *root* of the object, which makes it awkward to display next to the right form field. With `path: ['confirmPassword']`, the error is attached to `confirmPassword` — so if you ever rendered field-level errors, you'd put the "Passwords must match" message under the confirm input, which is where users expect it.
+- **`path: ['confirmPassword']`** — this is the part beginners miss. Without `path`, Zod reports the error at the _root_ of the object, which makes it awkward to display next to the right form field. With `path: ['confirmPassword']`, the error is attached to `confirmPassword` — so if you ever rendered field-level errors, you'd put the "Passwords must match" message under the confirm input, which is where users expect it.
 
 #### A note on password policy
 
@@ -182,48 +183,48 @@ Now we add the action. We append to the `actions` object you already have from L
 // Continuing src/routes/(app)/account/+page.server.ts
 
 export const actions: Actions = {
-  signout: async ({ locals }) => {
-    await locals.supabase.auth.signOut();
-    redirect(303, '/');
-  },
+	signout: async ({ locals }) => {
+		await locals.supabase.auth.signOut();
+		redirect(303, '/');
+	},
 
-  updateProfile: async ({ request, locals }) => {
-    const user = await locals.getUser();
-    if (!user) redirect(303, '/login');
+	updateProfile: async ({ request, locals }) => {
+		const user = await locals.getUser();
+		if (!user) redirect(303, '/login');
 
-    const formData = await request.formData();
-    const raw = { full_name: formData.get('full_name') };
+		const formData = await request.formData();
+		const raw = { full_name: formData.get('full_name') };
 
-    const result = updateProfileSchema.safeParse(raw);
-    if (!result.success) {
-      return fail(400, {
-        form: 'updateProfile' as const,
-        error: result.error.issues[0]?.message ?? 'Invalid input',
-        data: { full_name: raw.full_name }
-      });
-    }
+		const result = updateProfileSchema.safeParse(raw);
+		if (!result.success) {
+			return fail(400, {
+				form: 'updateProfile' as const,
+				error: result.error.issues[0]?.message ?? 'Invalid input',
+				data: { full_name: raw.full_name }
+			});
+		}
 
-    const { full_name } = result.data;
+		const { full_name } = result.data;
 
-    const { error: dbError } = await locals.supabase
-      .from('profiles')
-      .update({ full_name })
-      .eq('id', user.id);
+		const { error: dbError } = await locals.supabase
+			.from('profiles')
+			.update({ full_name })
+			.eq('id', user.id);
 
-    if (dbError) {
-      return fail(400, {
-        form: 'updateProfile' as const,
-        error: 'Could not update your profile. Please try again.',
-        data: { full_name }
-      });
-    }
+		if (dbError) {
+			return fail(400, {
+				form: 'updateProfile' as const,
+				error: 'Could not update your profile. Please try again.',
+				data: { full_name }
+			});
+		}
 
-    return {
-      form: 'updateProfile' as const,
-      success: true,
-      message: 'Profile updated.'
-    };
-  }
+		return {
+			form: 'updateProfile' as const,
+			success: true,
+			message: 'Profile updated.'
+		};
+	}
 };
 ```
 
@@ -254,9 +255,9 @@ const result = updateProfileSchema.safeParse(raw);
 
 ```typescript
 return fail(400, {
-  form: 'updateProfile' as const,
-  error: result.error.issues[0]?.message ?? 'Invalid input',
-  data: { full_name: raw.full_name }
+	form: 'updateProfile' as const,
+	error: result.error.issues[0]?.message ?? 'Invalid input',
+	data: { full_name: raw.full_name }
 });
 ```
 
@@ -272,28 +273,28 @@ Note the `as const`. Without it, TypeScript widens `'updateProfile'` to `string`
 
 ```typescript
 const { error: dbError } = await locals.supabase
-  .from('profiles')
-  .update({ full_name })
-  .eq('id', user.id);
+	.from('profiles')
+	.update({ full_name })
+	.eq('id', user.id);
 ```
 
 - **`.update({ full_name })`** — updates only the `full_name` column. Other columns are untouched. If you wrote `.update({ full_name, avatar_url: null })`, you'd nullify the avatar too. Only include fields you actually want to change.
-- **`.eq('id', user.id)`** — filter to the current user's row. The RLS policy from Module 1 ("Users can update own profile") *also* enforces this at the database level. Two barriers, one goal.
+- **`.eq('id', user.id)`** — filter to the current user's row. The RLS policy from Module 1 ("Users can update own profile") _also_ enforces this at the database level. Two barriers, one goal.
 - We don't need `.select()` after the update because we don't use the returned row. If we wanted to, we could chain `.select().single()` to get the updated profile back.
 
 #### The success return
 
 ```typescript
 return {
-  form: 'updateProfile' as const,
-  success: true,
-  message: 'Profile updated.'
+	form: 'updateProfile' as const,
+	success: true,
+	message: 'Profile updated.'
 };
 ```
 
 A plain return (not wrapped in `fail()`) with status 200. The page sees this on the `form` prop with `form.success === true` and can show a success toast/banner.
 
-**Important:** we *do not* call `redirect(...)` here. Why not? Because we want the user to stay on the page and see their updated data. The load function re-runs after a successful action (SvelteKit calls `invalidateAll()` by default when `use:enhance` is active), so the new `full_name` is reflected.
+**Important:** we _do not_ call `redirect(...)` here. Why not? Because we want the user to stay on the page and see their updated data. The load function re-runs after a successful action (SvelteKit calls `invalidateAll()` by default when `use:enhance` is active), so the new `full_name` is reflected.
 
 ---
 
@@ -305,43 +306,43 @@ Append to the same `actions` object:
 // Continuing src/routes/(app)/account/+page.server.ts
 
 updatePassword: async ({ request, locals }) => {
-  const user = await locals.getUser();
-  if (!user) redirect(303, '/login');
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
 
-  const formData = await request.formData();
-  const raw = {
-    currentPassword: formData.get('currentPassword'),
-    newPassword: formData.get('newPassword'),
-    confirmPassword: formData.get('confirmPassword')
-  };
+	const formData = await request.formData();
+	const raw = {
+		currentPassword: formData.get('currentPassword'),
+		newPassword: formData.get('newPassword'),
+		confirmPassword: formData.get('confirmPassword')
+	};
 
-  const result = updatePasswordSchema.safeParse(raw);
-  if (!result.success) {
-    return fail(400, {
-      form: 'updatePassword' as const,
-      error: result.error.issues[0]?.message ?? 'Invalid input'
-    });
-  }
+	const result = updatePasswordSchema.safeParse(raw);
+	if (!result.success) {
+		return fail(400, {
+			form: 'updatePassword' as const,
+			error: result.error.issues[0]?.message ?? 'Invalid input'
+		});
+	}
 
-  const { newPassword } = result.data;
+	const { newPassword } = result.data;
 
-  const { error: authError } = await locals.supabase.auth.updateUser({
-    password: newPassword
-  });
+	const { error: authError } = await locals.supabase.auth.updateUser({
+		password: newPassword
+	});
 
-  if (authError) {
-    return fail(400, {
-      form: 'updatePassword' as const,
-      error: authError.message
-    });
-  }
+	if (authError) {
+		return fail(400, {
+			form: 'updatePassword' as const,
+			error: authError.message
+		});
+	}
 
-  return {
-    form: 'updatePassword' as const,
-    success: true,
-    message: 'Password updated. You may need to sign in again on other devices.'
-  };
-}
+	return {
+		form: 'updatePassword' as const,
+		success: true,
+		message: 'Password updated. You may need to sign in again on other devices.'
+	};
+};
 ```
 
 ### Walkthrough
@@ -352,7 +353,7 @@ Much of the structure is the same. The two parts worth exploring:
 
 ```typescript
 const { error: authError } = await locals.supabase.auth.updateUser({
-  password: newPassword
+	password: newPassword
 });
 ```
 
@@ -371,7 +372,7 @@ This surprises many people. Look at what we passed: just `{ password: newPasswor
 
 **Supabase's reasoning:** the session cookie is already proof of identity. If a request can reach this action, the requester has proven — via a valid session — that they are the user. Requiring the current password on top is a form of re-authentication, and Supabase treats that as an app-level decision, not a platform-level one.
 
-This is a defensible stance but has a nuance: **if an attacker gets a short window of access to your session** (you left your laptop open, a cross-site vulnerability leaked your token, etc.), they can change your password *without knowing your current one*. That locks you out of your own account.
+This is a defensible stance but has a nuance: **if an attacker gets a short window of access to your session** (you left your laptop open, a cross-site vulnerability leaked your token, etc.), they can change your password _without knowing your current one_. That locks you out of your own account.
 
 ### Adding a current-password check (optional hardening)
 
@@ -380,14 +381,14 @@ For a more hardened version, you'd verify `currentPassword` before calling `upda
 ```typescript
 // Verify current password by attempting a sign-in
 const { error: verifyError } = await locals.supabase.auth.signInWithPassword({
-  email: user.email!,
-  password: currentPassword
+	email: user.email!,
+	password: currentPassword
 });
 if (verifyError) {
-  return fail(400, {
-    form: 'updatePassword' as const,
-    error: 'Current password is incorrect.'
-  });
+	return fail(400, {
+		form: 'updatePassword' as const,
+		error: 'Current password is incorrect.'
+	});
 }
 ```
 
@@ -395,14 +396,14 @@ Tradeoffs:
 
 - **Pro**: an attacker with only a session token can't change the password; a full take-over needs the real password.
 - **Con**: it hits Supabase's auth endpoint twice per request (sign-in + update), which uses rate-limit budget and slows the action.
-- **Con**: calling `signInWithPassword` creates a *new* session token. You'd need to handle that (ignore it, or swap the new session in cleanly).
+- **Con**: calling `signInWithPassword` creates a _new_ session token. You'd need to handle that (ignore it, or swap the new session in cleanly).
 
-For this course, we keep the simpler version — the Zod schema still requires `currentPassword` as a form field, which prevents *accidental* password changes (say, a kid at a keyboard mashing buttons). If you were building Contactly for a Fortune 500, you'd turn on the hardened check. For a course SaaS, simpler is fine.
+For this course, we keep the simpler version — the Zod schema still requires `currentPassword` as a form field, which prevents _accidental_ password changes (say, a kid at a keyboard mashing buttons). If you were building Contactly for a Fortune 500, you'd turn on the hardened check. For a course SaaS, simpler is fine.
 
 #### The success message
 
 ```typescript
-message: 'Password updated. You may need to sign in again on other devices.'
+message: 'Password updated. You may need to sign in again on other devices.';
 ```
 
 We telegraph a real consequence: changing your password typically invalidates refresh tokens on other devices (the default behavior for most auth providers, including Supabase). Users may find they get logged out of their phone or a second laptop. Telling them upfront is kinder than leaving them confused.
@@ -418,172 +419,185 @@ Refactor `src/routes/(app)/account/+page.svelte`:
 ```svelte
 <!-- src/routes/(app)/account/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import type { ActionData, PageData } from './$types';
+	import { enhance } from '$app/forms';
+	import type { ActionData, PageData } from './$types';
 
-  type Props = {
-    data: PageData;
-    form: ActionData;
-  };
+	type Props = {
+		data: PageData;
+		form: ActionData;
+	};
 
-  let { data, form }: Props = $props();
+	let { data, form }: Props = $props();
 
-  const profile = $derived(data.profile);
+	const profile = $derived(data.profile);
 
-  const joinedOn = $derived(
-    profile?.created_at
-      ? new Date(profile.created_at).toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })
-      : '—'
-  );
+	const joinedOn = $derived(
+		profile?.created_at
+			? new Date(profile.created_at).toLocaleDateString(undefined, {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric'
+				})
+			: '—'
+	);
 </script>
 
 <svelte:head>
-  <title>Account — Contactly</title>
+	<title>Account — Contactly</title>
 </svelte:head>
 
 <section class="mx-auto max-w-2xl px-4 py-10">
-  <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-    Your account
-  </h1>
-  <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-    Manage your profile and credentials.
-  </p>
+	<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Your account</h1>
+	<p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+		Manage your profile and credentials.
+	</p>
 
-  <!-- PROFILE DISPLAY + UPDATE FORM -->
-  <div
-    class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-  >
-    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50">Profile</h2>
+	<!-- PROFILE DISPLAY + UPDATE FORM -->
+	<div
+		class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+	>
+		<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50">Profile</h2>
 
-    <dl class="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-      <div>
-        <dt class="text-slate-500 dark:text-slate-400">Email</dt>
-        <dd class="mt-1 font-medium text-slate-900 dark:text-slate-100">
-          {profile?.email ?? '—'}
-        </dd>
-      </div>
-      <div>
-        <dt class="text-slate-500 dark:text-slate-400">Joined</dt>
-        <dd class="mt-1 font-medium text-slate-900 dark:text-slate-100">{joinedOn}</dd>
-      </div>
-    </dl>
+		<dl class="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+			<div>
+				<dt class="text-slate-500 dark:text-slate-400">Email</dt>
+				<dd class="mt-1 font-medium text-slate-900 dark:text-slate-100">
+					{profile?.email ?? '—'}
+				</dd>
+			</div>
+			<div>
+				<dt class="text-slate-500 dark:text-slate-400">Joined</dt>
+				<dd class="mt-1 font-medium text-slate-900 dark:text-slate-100">{joinedOn}</dd>
+			</div>
+		</dl>
 
-    <form method="POST" action="?/updateProfile" use:enhance class="mt-6">
-      <label for="full_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-        Full name
-      </label>
-      <input
-        id="full_name"
-        name="full_name"
-        type="text"
-        required
-        maxlength="100"
-        value={
-          form?.form === 'updateProfile' && 'data' in form
-            ? (form.data?.full_name ?? '')
-            : (profile?.full_name ?? '')
-        }
-        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-      />
+		<form method="POST" action="?/updateProfile" use:enhance class="mt-6">
+			<label for="full_name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+				Full name
+			</label>
+			<input
+				id="full_name"
+				name="full_name"
+				type="text"
+				required
+				maxlength="100"
+				value={form?.form === 'updateProfile' && 'data' in form
+					? (form.data?.full_name ?? '')
+					: (profile?.full_name ?? '')}
+				class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+			/>
 
-      {#if form?.form === 'updateProfile'}
-        {#if 'error' in form && form.error}
-          <p class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-            {form.error}
-          </p>
-        {:else if 'success' in form && form.success}
-          <p class="mt-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
-            {form.message}
-          </p>
-        {/if}
-      {/if}
+			{#if form?.form === 'updateProfile'}
+				{#if 'error' in form && form.error}
+					<p
+						class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
+					>
+						{form.error}
+					</p>
+				{:else if 'success' in form && form.success}
+					<p
+						class="mt-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300"
+					>
+						{form.message}
+					</p>
+				{/if}
+			{/if}
 
-      <button
-        type="submit"
-        class="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        Save profile
-      </button>
-    </form>
-  </div>
+			<button
+				type="submit"
+				class="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+			>
+				Save profile
+			</button>
+		</form>
+	</div>
 
-  <!-- PASSWORD FORM -->
-  <div
-    class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-  >
-    <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50">Change password</h2>
-    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-      Use at least 8 characters. You'll stay signed in on this device.
-    </p>
+	<!-- PASSWORD FORM -->
+	<div
+		class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+	>
+		<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50">Change password</h2>
+		<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+			Use at least 8 characters. You'll stay signed in on this device.
+		</p>
 
-    <form method="POST" action="?/updatePassword" use:enhance class="mt-4 space-y-3">
-      <div>
-        <label for="currentPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-          Current password
-        </label>
-        <input
-          id="currentPassword"
-          name="currentPassword"
-          type="password"
-          required
-          autocomplete="current-password"
-          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-        />
-      </div>
+		<form method="POST" action="?/updatePassword" use:enhance class="mt-4 space-y-3">
+			<div>
+				<label
+					for="currentPassword"
+					class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+				>
+					Current password
+				</label>
+				<input
+					id="currentPassword"
+					name="currentPassword"
+					type="password"
+					required
+					autocomplete="current-password"
+					class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+				/>
+			</div>
 
-      <div>
-        <label for="newPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-          New password
-        </label>
-        <input
-          id="newPassword"
-          name="newPassword"
-          type="password"
-          required
-          minlength="8"
-          autocomplete="new-password"
-          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-        />
-      </div>
+			<div>
+				<label
+					for="newPassword"
+					class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+				>
+					New password
+				</label>
+				<input
+					id="newPassword"
+					name="newPassword"
+					type="password"
+					required
+					minlength="8"
+					autocomplete="new-password"
+					class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+				/>
+			</div>
 
-      <div>
-        <label for="confirmPassword" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-          Confirm new password
-        </label>
-        <input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          required
-          autocomplete="new-password"
-          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-        />
-      </div>
+			<div>
+				<label
+					for="confirmPassword"
+					class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+				>
+					Confirm new password
+				</label>
+				<input
+					id="confirmPassword"
+					name="confirmPassword"
+					type="password"
+					required
+					autocomplete="new-password"
+					class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+				/>
+			</div>
 
-      {#if form?.form === 'updatePassword'}
-        {#if 'error' in form && form.error}
-          <p class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-            {form.error}
-          </p>
-        {:else if 'success' in form && form.success}
-          <p class="mt-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
-            {form.message}
-          </p>
-        {/if}
-      {/if}
+			{#if form?.form === 'updatePassword'}
+				{#if 'error' in form && form.error}
+					<p
+						class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
+					>
+						{form.error}
+					</p>
+				{:else if 'success' in form && form.success}
+					<p
+						class="mt-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300"
+					>
+						{form.message}
+					</p>
+				{/if}
+			{/if}
 
-      <button
-        type="submit"
-        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        Change password
-      </button>
-    </form>
-  </div>
+			<button
+				type="submit"
+				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+			>
+				Change password
+			</button>
+		</form>
+	</div>
 </section>
 ```
 
@@ -595,8 +609,8 @@ Refactor `src/routes/(app)/account/+page.svelte`:
 import type { ActionData, PageData } from './$types';
 
 type Props = {
-  data: PageData;
-  form: ActionData;
+	data: PageData;
+	form: ActionData;
 };
 
 let { data, form }: Props = $props();
@@ -606,11 +620,11 @@ let { data, form }: Props = $props();
 
 ```typescript
 type ActionData =
-  | null
-  | { form: 'updateProfile'; error: string; data: { full_name: FormDataEntryValue | null } }
-  | { form: 'updateProfile'; success: true; message: string }
-  | { form: 'updatePassword'; error: string }
-  | { form: 'updatePassword'; success: true; message: string };
+	| null
+	| { form: 'updateProfile'; error: string; data: { full_name: FormDataEntryValue | null } }
+	| { form: 'updateProfile'; success: true; message: string }
+	| { form: 'updatePassword'; error: string }
+	| { form: 'updatePassword'; success: true; message: string };
 ```
 
 TypeScript uses the `form` property as a **discriminant**. When you write `if (form?.form === 'updateProfile')`, inside that block TypeScript narrows the type to only the variants with that literal. That's why the `'data' in form` and `'error' in form` checks inside the branches work without extra casts.
@@ -618,11 +632,9 @@ TypeScript uses the `form` property as a **discriminant**. When you write `if (f
 #### Repopulating the profile input
 
 ```svelte
-value={
-  form?.form === 'updateProfile' && 'data' in form
-    ? (form.data?.full_name ?? '')
-    : (profile?.full_name ?? '')
-}
+value={form?.form === 'updateProfile' && 'data' in form
+	? (form.data?.full_name ?? '')
+	: (profile?.full_name ?? '')}
 ```
 
 Three cases:
@@ -637,11 +649,11 @@ This is the whole reason for the `form` discriminator. Without it, cross-form le
 
 ```svelte
 {#if form?.form === 'updateProfile'}
-  {#if 'error' in form && form.error}
-    <p class="...red">{form.error}</p>
-  {:else if 'success' in form && form.success}
-    <p class="...green">{form.message}</p>
-  {/if}
+	{#if 'error' in form && form.error}
+		<p class="...red">{form.error}</p>
+	{:else if 'success' in form && form.success}
+		<p class="...green">{form.message}</p>
+	{/if}
 {/if}
 ```
 
@@ -659,7 +671,7 @@ The `'error' in form` and `'success' in form` checks are TypeScript narrowing id
 The browser uses these hints for password managers:
 
 - `current-password` on the verify field — password managers autofill the saved password.
-- `new-password` on the new/confirm fields — password managers offer to *generate* a strong password and save it.
+- `new-password` on the new/confirm fields — password managers offer to _generate_ a strong password and save it.
 
 Without these hints, password managers either guess wrong (autofilling the current password into the new-password field, which the user then mistakes for a saved suggestion) or fail to offer generation. Always set `autocomplete` correctly on password inputs.
 
@@ -693,13 +705,13 @@ Start the dev server and verify each path.
 ### Validation failure — non-matching passwords
 
 1. In the password form, enter your current password, then `newpass123` and `newpass124`. Click **Change password**.
-2. A red "Passwords must match" appears under the *password* form. The profile form is untouched.
+2. A red "Passwords must match" appears under the _password_ form. The profile form is untouched.
 
 ### Happy path — change password
 
 1. Enter the real current password, a new password (≥8 chars), and its confirmation. Click **Change password**.
 2. Green banner: "Password updated. You may need to sign in again on other devices."
-3. Sign out. Try signing back in with the *old* password → fails. Try the *new* password → works.
+3. Sign out. Try signing back in with the _old_ password → fails. Try the _new_ password → works.
 
 ### RLS defense-in-depth demo
 
@@ -708,9 +720,9 @@ Start the dev server and verify each path.
 
    ```js
    const { error } = await window.supabase
-     .from('profiles')
-     .update({ full_name: 'Hacked' })
-     .eq('id', 'some-other-user-uuid');
+   	.from('profiles')
+   	.update({ full_name: 'Hacked' })
+   	.eq('id', 'some-other-user-uuid');
    console.log(error);
    ```
 
@@ -724,10 +736,10 @@ Start the dev server and verify each path.
 - **Trying to update the password via `.from('auth.users').update(...)` or writing to `public.profiles.password`.** Auth credentials only update through `supabase.auth.updateUser()`. Never bypass.
 - **Forgetting the `form` discriminator.** Error messages from the profile form appear under the password form, or vice versa. Always tag every `fail()` / return with `form: '<actionName>' as const`.
 - **Letting `form.action` target a wrong action.** `<form action="?/updateProfile">` posts to `updateProfile`. If you accidentally write `action="?updateProfile"` (missing the slash) or `action="/updateProfile"` (treating it like a URL), SvelteKit routes it elsewhere and your action never runs.
-- **Returning `redirect(303, '/account')` after a successful update.** Works, but it's redundant — `use:enhance` already re-runs the load function and re-renders the page. Redirecting triggers a *third* load. Only redirect when you're sending the user to a different route.
+- **Returning `redirect(303, '/account')` after a successful update.** Works, but it's redundant — `use:enhance` already re-runs the load function and re-renders the page. Redirecting triggers a _third_ load. Only redirect when you're sending the user to a different route.
 - **Skipping `autocomplete="new-password"` and `current-password`**. Breaks password managers. Set them.
 - **Sharing one Zod schema for two operations.** Tempting but wrong. Each action has its own valid input shape; combining them into `z.object({ full_name: z.string().optional(), password: z.string().optional() })` and inferring "which action" at runtime is messier and harder to type than two schemas.
-- **Not handling the case where `form.data` is missing on a success return.** We *only* include `data` in the failure branch (to re-populate). On success, there's no `data`. That's why we check `'data' in form` before reading `form.data?.full_name`.
+- **Not handling the case where `form.data` is missing on a success return.** We _only_ include `data` in the failure branch (to re-populate). On success, there's no `data`. That's why we check `'data' in form` before reading `form.data?.full_name`.
 
 ---
 
@@ -741,7 +753,7 @@ Start the dev server and verify each path.
 
 4. **Rate limiting matters on auth endpoints.** An attacker with a stolen session could call `updatePassword` rapidly to lock out the real user. Supabase has basic rate limiting on its auth endpoints, but at the Contactly level you'd also want a middleware-level limit on `POST /account?/updatePassword` (say, 3/minute per IP + user). You'll wire this in Module 11 using Upstash or a hook-based in-memory limiter.
 
-5. **Never let users change their email without verification.** Supabase's `updateUser({ email })` *does* send a confirmation email to the new address before applying the change. That's correct behavior. If you ever implement your own email-change flow, replicate this: require the user to click a link sent to the *new* email before the change takes effect. Otherwise, a stolen session → email change → password reset is a total account takeover. This is why we don't expose an email-change form in this lesson — it deserves its own careful treatment.
+5. **Never let users change their email without verification.** Supabase's `updateUser({ email })` _does_ send a confirmation email to the new address before applying the change. That's correct behavior. If you ever implement your own email-change flow, replicate this: require the user to click a link sent to the _new_ email before the change takes effect. Otherwise, a stolen session → email change → password reset is a total account takeover. This is why we don't expose an email-change form in this lesson — it deserves its own careful treatment.
 
 6. **Why two separate actions, not one `updateAccount`?** You might be tempted to make a single form with optional fields (`full_name?`, `newPassword?`) and a single `update` action that handles whichever fields were submitted. Don't. Reasons:
    - **Separation of concerns.** Profile updates are cheap data writes; password updates are security-sensitive. Mixing them means one form's failure modes affect the other.
@@ -761,7 +773,7 @@ Start the dev server and verify each path.
 - Learned the **`form` discriminator** pattern: each action returns `form: 'name' as const` so the UI can scope banners and input repopulation to the right form.
 - Refactored `+page.svelte` with two independent forms, each with targeted error/success banners using `{#if form?.form === '...'}`.
 - Covered password manager hints (`autocomplete="current-password"` / `"new-password"`) and the subtle reason Supabase doesn't require a current-password on `updateUser`.
-- Reasoned through defense-in-depth for writes: `.eq('id', user.id)` *plus* RLS, both enforcing "users can only update their own row."
+- Reasoned through defense-in-depth for writes: `.eq('id', user.id)` _plus_ RLS, both enforcing "users can only update their own row."
 
 ## Next Lesson
 

@@ -1,10 +1,10 @@
 ---
-title: "12.3 - Creating Vercel Project"
+title: '12.3 - Creating Vercel Project'
 module: 12
 lesson: 3
-moduleSlug: "module-12-cicd"
-lessonSlug: "03-creating-vercel-project"
-description: "Deploy Contactly to Vercel by importing your GitHub repo and configuring environment variables."
+moduleSlug: 'module-12-cicd'
+lessonSlug: '03-creating-vercel-project'
+description: 'Deploy Contactly to Vercel by importing your GitHub repo and configuring environment variables.'
 duration: 10
 preview: false
 ---
@@ -16,6 +16,7 @@ Your production database is live. Now we need an application server — somethin
 This lesson turns the Contactly repository into a Vercel project. By the end, you'll visit an `https://contactly-*.vercel.app` URL and see your working app — register, log in, the whole flow — running against the production Supabase you built in 12.2. The deploy is manual for now; lesson 12.4 will automate it.
 
 Three concrete things happen:
+
 1. We install `@sveltejs/adapter-vercel` and update `svelte.config.js` to use it.
 2. We import the Contactly GitHub repo into Vercel and configure build settings.
 3. We paste every production environment variable into Vercel's dashboard and trigger the first deploy.
@@ -59,39 +60,39 @@ Open `svelte.config.js` at the repo root. You'll see something like this:
 
 ```javascript
 // svelte.config.js (before)
-import adapter from '@sveltejs/adapter-auto'
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
+import adapter from '@sveltejs/adapter-auto';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
-  kit: {
-    adapter: adapter()
-  }
-}
+	preprocess: vitePreprocess(),
+	kit: {
+		adapter: adapter()
+	}
+};
 
-export default config
+export default config;
 ```
 
 Replace the import and the adapter options:
 
 ```javascript
 // svelte.config.js (after)
-import adapter from '@sveltejs/adapter-vercel'
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
+import adapter from '@sveltejs/adapter-vercel';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
-  kit: {
-    adapter: adapter({
-      runtime: 'nodejs22.x',
-      regions: ['iad1']
-    })
-  }
-}
+	preprocess: vitePreprocess(),
+	kit: {
+		adapter: adapter({
+			runtime: 'nodejs22.x',
+			regions: ['iad1']
+		})
+	}
+};
 
-export default config
+export default config;
 ```
 
 ### Walking through the changes
@@ -103,6 +104,7 @@ export default config
 **`regions: ['iad1']`** — which Vercel data center runs your functions. `iad1` is Washington DC (us-east-1). **Pick the region closest to your Supabase project.** Cross-region DB round-trips — Vercel in iad1 talking to Supabase in eu-central-1 — add 80-100ms per query, and a dashboard load might do 3-4 queries. That's half a second of UX loss for nothing.
 
 If your production Supabase is in:
+
 - US East (N. Virginia) → Vercel `iad1`
 - US West (Oregon) → Vercel `pdx1`
 - West Europe (Ireland) → Vercel `dub1`
@@ -125,11 +127,11 @@ Create `vercel.json` at the repo root:
 
 ```json
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "sveltekit",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm build",
-  "regions": ["iad1"]
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"framework": "sveltekit",
+	"installCommand": "pnpm install --frozen-lockfile",
+	"buildCommand": "pnpm build",
+	"regions": ["iad1"]
 }
 ```
 
@@ -186,6 +188,7 @@ Should be `./` (the repo root). Only change this if your SvelteKit app lives in 
 ### Build and Output Settings
 
 Click to expand. You'll see defaults:
+
 - Install Command: `pnpm install` — **change to `pnpm install --frozen-lockfile`** (or leave default and rely on `vercel.json`'s value — they'll reconcile).
 - Build Command: `pnpm run build` — good.
 - Output Directory: auto-detected — leave.
@@ -200,15 +203,15 @@ Vercel reconciles `vercel.json` with dashboard settings; when both exist, `verce
 
 The variables Contactly needs in production (from earlier modules):
 
-| Key | Value | Scope |
-|---|---|---|
-| `PUBLIC_SUPABASE_URL` | `https://xyzabcdefgh.supabase.co` | Production, Preview, Development |
-| `PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` (anon key) | Production, Preview, Development |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` (service role key) | **Production only** |
-| `PUBLIC_APP_URL` | `https://contactly-xyz.vercel.app` | Production |
-| `STRIPE_SECRET_KEY` | `sk_test_...` (for now, test key) | Production |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Production |
-| `PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` (for now) | Production |
+| Key                             | Value                              | Scope                            |
+| ------------------------------- | ---------------------------------- | -------------------------------- |
+| `PUBLIC_SUPABASE_URL`           | `https://xyzabcdefgh.supabase.co`  | Production, Preview, Development |
+| `PUBLIC_SUPABASE_ANON_KEY`      | `eyJ...` (anon key)                | Production, Preview, Development |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `eyJ...` (service role key)        | **Production only**              |
+| `PUBLIC_APP_URL`                | `https://contactly-xyz.vercel.app` | Production                       |
+| `STRIPE_SECRET_KEY`             | `sk_test_...` (for now, test key)  | Production                       |
+| `STRIPE_WEBHOOK_SECRET`         | `whsec_...`                        | Production                       |
+| `PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` (for now)            | Production                       |
 
 Rules of thumb for each variable:
 
@@ -223,6 +226,7 @@ Rules of thumb for each variable:
 ### How to add each variable
 
 For each row in the table:
+
 1. Click **Add Another**.
 2. Key: paste the variable name (case-sensitive; `PUBLIC_SUPABASE_URL`, not `Public_Supabase_URL`).
 3. Value: paste the value.
@@ -235,6 +239,7 @@ There's also a CSV import option ("Paste .env file") at the top of the section �
 A **preview deploy** is a URL generated for a pull request. Every PR gets its own live URL, which is a huge UX for reviewers. But preview URLs shouldn't necessarily talk to prod Supabase — you don't want a reviewer clicking around a preview to accidentally create fake customer data in your real DB.
 
 Options:
+
 1. Preview uses the same Supabase as prod, but reviewers only click through. (Fine for low-risk apps.)
 2. Preview uses a **second** Supabase project dedicated to ephemeral test data. (More correct.)
 3. Preview uses a branch-scoped Supabase clone. (Advanced — Supabase supports database branching on paid plans.)
@@ -257,6 +262,7 @@ Click the big **Deploy** button. Vercel starts the first build. You'll watch a s
 Total: ~2-3 minutes for a first deploy. Subsequent deploys are faster because Vercel caches `node_modules`.
 
 If the build fails:
+
 - **`pnpm: command not found`** → Vercel isn't using pnpm. Check that `installCommand` in `vercel.json` specifies pnpm; Vercel should also auto-detect pnpm from the presence of `pnpm-lock.yaml`.
 - **`Error: Missing environment variable PUBLIC_SUPABASE_URL`** → you forgot to add it in Step 6. Settings → Environment Variables, add it, redeploy.
 - **Type errors** → your local build passed but prod build fails. Probably you have `.env` values that are typed loosely in one environment but strict in another. Fix the types.
@@ -305,6 +311,7 @@ Contactly uses Node runtime by default (`runtime: 'nodejs22.x'` in `svelte.confi
 Every pull request gets a unique preview URL: `https://contactly-git-pr-42-yourname.vercel.app`. This is possibly the single best feature Vercel offers. Reviewers don't `git checkout the-branch && pnpm dev` — they click a link.
 
 Wire this into your team workflow:
+
 - Put the preview URL in the PR description.
 - Include a QA checklist in the PR template ("test X, Y, Z on preview").
 - Block merging on reviewers confirming they've clicked the preview URL.

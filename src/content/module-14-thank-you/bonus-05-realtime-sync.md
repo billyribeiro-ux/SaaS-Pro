@@ -54,33 +54,33 @@ Our existing `src/routes/+layout.ts` (the **universal** layout load; note `.ts` 
 ### `src/routes/+layout.ts`
 
 ```ts
-import { createBrowserClient, createServerClient, isBrowser } from '@supabase/ssr'
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
-import type { LayoutLoad } from './$types'
+import { createBrowserClient, createServerClient, isBrowser } from '@supabase/ssr';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ data, depends, fetch }) => {
-  /**
-   * Declare a dependency so the layout can be invalidated, for example after
-   * a successful sign-in or via realtime events.
-   */
-  depends('supabase:auth')
-  depends('app:contacts')
+	/**
+	 * Declare a dependency so the layout can be invalidated, for example after
+	 * a successful sign-in or via realtime events.
+	 */
+	depends('supabase:auth');
+	depends('app:contacts');
 
-  const supabase = isBrowser()
-    ? createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-        global: { fetch }
-      })
-    : createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-        global: { fetch },
-        cookies: { getAll: () => data.cookies }
-      })
+	const supabase = isBrowser()
+		? createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+				global: { fetch }
+			})
+		: createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+				global: { fetch },
+				cookies: { getAll: () => data.cookies }
+			});
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+	const {
+		data: { user }
+	} = await supabase.auth.getUser();
 
-  return { supabase, user }
-}
+	return { supabase, user };
+};
 ```
 
 Key points:
@@ -93,15 +93,15 @@ Match this in the server layout so cookies flow correctly. Most of you have this
 ### `src/routes/+layout.server.ts`
 
 ```ts
-import type { LayoutServerLoad } from './$types'
+import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals: { getUser }, cookies }) => {
-  const user = await getUser()
-  return {
-    user,
-    cookies: cookies.getAll()
-  }
-}
+	const user = await getUser();
+	return {
+		user,
+		cookies: cookies.getAll()
+	};
+};
 ```
 
 ## Step 3: Subscribe in the contacts list page
@@ -112,84 +112,85 @@ Now the fun part. We will open a Realtime subscription when the contacts list mo
 
 ```svelte
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
-  import { invalidate } from '$app/navigation'
-  import type { RealtimeChannel } from '@supabase/supabase-js'
+	import { onMount, onDestroy } from 'svelte';
+	import { invalidate } from '$app/navigation';
+	import type { RealtimeChannel } from '@supabase/supabase-js';
 
-  let { data } = $props()
+	let { data } = $props();
 
-  let channel: RealtimeChannel | null = null
-  let connectionStatus = $state<'connecting' | 'connected' | 'error' | 'closed'>('connecting')
+	let channel: RealtimeChannel | null = null;
+	let connectionStatus = $state<'connecting' | 'connected' | 'error' | 'closed'>('connecting');
 
-  onMount(() => {
-    // Build a channel name scoped to the user so a user's tabs share the
-    // same channel but other users are on separate channels. Name is
-    // arbitrary; it just has to be unique per subscription.
-    const channelName = `contacts:${data.user.id}`
+	onMount(() => {
+		// Build a channel name scoped to the user so a user's tabs share the
+		// same channel but other users are on separate channels. Name is
+		// arbitrary; it just has to be unique per subscription.
+		const channelName = `contacts:${data.user.id}`;
 
-    channel = data.supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // INSERT | UPDATE | DELETE
-          schema: 'public',
-          table: 'contacts',
-          filter: `user_id=eq.${data.user.id}`
-        },
-        (payload) => {
-          // `payload` has { eventType, new, old, ... } if you ever want
-          // to splice the changes in manually. For simplicity we just
-          // re-run the load function.
-          console.debug('[realtime] contacts event', payload.eventType)
-          invalidate('app:contacts')
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') connectionStatus = 'connected'
-        else if (status === 'CHANNEL_ERROR') connectionStatus = 'error'
-        else if (status === 'CLOSED') connectionStatus = 'closed'
-      })
-  })
+		channel = data.supabase
+			.channel(channelName)
+			.on(
+				'postgres_changes',
+				{
+					event: '*', // INSERT | UPDATE | DELETE
+					schema: 'public',
+					table: 'contacts',
+					filter: `user_id=eq.${data.user.id}`
+				},
+				(payload) => {
+					// `payload` has { eventType, new, old, ... } if you ever want
+					// to splice the changes in manually. For simplicity we just
+					// re-run the load function.
+					console.debug('[realtime] contacts event', payload.eventType);
+					invalidate('app:contacts');
+				}
+			)
+			.subscribe((status) => {
+				if (status === 'SUBSCRIBED') connectionStatus = 'connected';
+				else if (status === 'CHANNEL_ERROR') connectionStatus = 'error';
+				else if (status === 'CLOSED') connectionStatus = 'closed';
+			});
+	});
 
-  onDestroy(() => {
-    if (channel) {
-      data.supabase.removeChannel(channel)
-      channel = null
-    }
-  })
+	onDestroy(() => {
+		if (channel) {
+			data.supabase.removeChannel(channel);
+			channel = null;
+		}
+	});
 </script>
 
 <div class="mb-2 flex items-center justify-between">
-  <h1 class="text-2xl font-semibold">Contacts</h1>
-  <span
-    class="text-xs"
-    class:text-green-600={connectionStatus === 'connected'}
-    class:text-yellow-600={connectionStatus === 'connecting'}
-    class:text-red-600={connectionStatus === 'error'}
-    class:text-gray-400={connectionStatus === 'closed'}
-  >
-    {#if connectionStatus === 'connected'}
-      Live
-    {:else if connectionStatus === 'connecting'}
-      Connecting…
-    {:else if connectionStatus === 'error'}
-      Live unavailable
-    {:else}
-      Offline
-    {/if}
-  </span>
+	<h1 class="text-2xl font-semibold">Contacts</h1>
+	<span
+		class="text-xs"
+		class:text-green-600={connectionStatus === 'connected'}
+		class:text-yellow-600={connectionStatus === 'connecting'}
+		class:text-red-600={connectionStatus === 'error'}
+		class:text-gray-400={connectionStatus === 'closed'}
+	>
+		{#if connectionStatus === 'connected'}
+			Live
+		{:else if connectionStatus === 'connecting'}
+			Connecting…
+		{:else if connectionStatus === 'error'}
+			Live unavailable
+		{:else}
+			Offline
+		{/if}
+	</span>
 </div>
 
 <ul class="divide-y divide-gray-100">
-  {#each data.contacts as c (c.id)}
-    <li class="flex items-center gap-3 py-3">
-      <a href="/contacts/{c.id}" class="font-medium hover:underline">
-        {c.first_name ?? ''} {c.last_name ?? ''}
-      </a>
-      <span class="ml-auto text-sm text-gray-500">{c.email ?? ''}</span>
-    </li>
-  {/each}
+	{#each data.contacts as c (c.id)}
+		<li class="flex items-center gap-3 py-3">
+			<a href="/contacts/{c.id}" class="font-medium hover:underline">
+				{c.first_name ?? ''}
+				{c.last_name ?? ''}
+			</a>
+			<span class="ml-auto text-sm text-gray-500">{c.email ?? ''}</span>
+		</li>
+	{/each}
 </ul>
 ```
 
@@ -200,6 +201,7 @@ Now the fun part. We will open a Realtime subscription when the contacts list mo
 **`.on('postgres_changes', config, handler)`** — registers a handler for Postgres change events.
 
 Config object:
+
 - **`event: '*'`** — subscribe to INSERT, UPDATE, and DELETE. You can set it to any one specifically.
 - **`schema: 'public'`** — schema name. Supabase uses `public` by default for your tables.
 - **`table: 'contacts'`** — the table to watch.
@@ -225,33 +227,33 @@ Add to the existing component:
 
 ```svelte
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
-  import { invalidate } from '$app/navigation'
-  import type { RealtimeChannel } from '@supabase/supabase-js'
+	import { onMount, onDestroy } from 'svelte';
+	import { invalidate } from '$app/navigation';
+	import type { RealtimeChannel } from '@supabase/supabase-js';
 
-  let { data } = $props()
+	let { data } = $props();
 
-  let channel: RealtimeChannel | null = null
+	let channel: RealtimeChannel | null = null;
 
-  onMount(() => {
-    channel = data.supabase
-      .channel(`contact:${data.contact.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contacts',
-          filter: `id=eq.${data.contact.id}`
-        },
-        () => invalidate('app:contact')
-      )
-      .subscribe()
-  })
+	onMount(() => {
+		channel = data.supabase
+			.channel(`contact:${data.contact.id}`)
+			.on(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'contacts',
+					filter: `id=eq.${data.contact.id}`
+				},
+				() => invalidate('app:contact')
+			)
+			.subscribe();
+	});
 
-  onDestroy(() => {
-    if (channel) data.supabase.removeChannel(channel)
-  })
+	onDestroy(() => {
+		if (channel) data.supabase.removeChannel(channel);
+	});
 </script>
 ```
 
@@ -261,10 +263,10 @@ And in the detail load function, declare `depends('app:contact')`:
 
 ```ts
 export const load: PageServerLoad = async ({ params, locals: { supabase, getUser }, depends }) => {
-  depends('app:contact')
-  const user = await getUser()
-  // ... rest
-}
+	depends('app:contact');
+	const user = await getUser();
+	// ... rest
+};
 ```
 
 Now the detail page live-updates too.
@@ -342,7 +344,7 @@ If you need optimistic-concurrency control (reject the second write), add a `ver
 
 ### 8. Don't subscribe to tables with PII you should not leak
 
-Your RLS policies protect you at read-time. But think: do I want my frontend to even *know* that some row exists with a sensitive name, before RLS filters it out? For Contactly the answer is fine because contacts are owned 1:1 by users. If you have a multi-tenant table where rows might be visible to some users but not others, double-check your RLS policies cover Realtime too by looking at Supabase logs for REALTIME events.
+Your RLS policies protect you at read-time. But think: do I want my frontend to even _know_ that some row exists with a sensitive name, before RLS filters it out? For Contactly the answer is fine because contacts are owned 1:1 by users. If you have a multi-tenant table where rows might be visible to some users but not others, double-check your RLS policies cover Realtime too by looking at Supabase logs for REALTIME events.
 
 ## What you built
 

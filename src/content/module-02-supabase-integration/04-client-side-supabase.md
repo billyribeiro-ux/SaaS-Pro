@@ -1,10 +1,10 @@
 ---
-title: "2.4 - Client Side Supabase"
+title: '2.4 - Client Side Supabase'
 module: 2
 lesson: 4
-moduleSlug: "module-02-supabase-integration"
-lessonSlug: "04-client-side-supabase"
-description: "Set up the Supabase browser client in the root layout and make the user session available to all pages via PageData."
+moduleSlug: 'module-02-supabase-integration'
+lessonSlug: '04-client-side-supabase'
+description: 'Set up the Supabase browser client in the root layout and make the user session available to all pages via PageData.'
 duration: 10
 preview: false
 ---
@@ -60,19 +60,19 @@ Create `src/routes/+layout.server.ts`:
 
 ```typescript
 // src/routes/+layout.server.ts
-import type { LayoutServerLoad } from './$types'
+import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, depends }) => {
-  // Tag this load with a dependency name. Calling `invalidate('supabase:auth')`
-  // anywhere in the app re-runs every load function tagged with this dep.
-  depends('supabase:auth')
+	// Tag this load with a dependency name. Calling `invalidate('supabase:auth')`
+	// anywhere in the app re-runs every load function tagged with this dep.
+	depends('supabase:auth');
 
-  const user = await locals.getUser()
+	const user = await locals.getUser();
 
-  return {
-    user
-  }
-}
+	return {
+		user
+	};
+};
 ```
 
 ### Walking through this
@@ -85,7 +85,7 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 
 ### Why put this in the root layout?
 
-Layout load functions are a feature of SvelteKit's nested loading model. Pages and child layouts inherit data from their parent layouts. The root `+layout.server.ts` runs for *every* request, and its returned data merges into every page's `data`. So when we load `user` here, every `+page.svelte` in the app gets it for free.
+Layout load functions are a feature of SvelteKit's nested loading model. Pages and child layouts inherit data from their parent layouts. The root `+layout.server.ts` runs for _every_ request, and its returned data merges into every page's `data`. So when we load `user` here, every `+page.svelte` in the app gets it for free.
 
 An alternative would be to load `user` in each specific page's `+page.server.ts`. Bad idea — error-prone (forget one page and it breaks) and wasteful (same fetch repeated everywhere).
 
@@ -102,38 +102,31 @@ Create `src/routes/+layout.svelte`:
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
-  import { invalidate } from '$app/navigation'
-  import { onMount } from 'svelte'
-  import { createBrowserClient } from '@supabase/ssr'
-  import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
-  import type { Database } from '$lib/types/database.types'
+	import { invalidate } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { createBrowserClient } from '@supabase/ssr';
+	import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+	import type { Database } from '$lib/types/database.types';
 
-  let { data, children } = $props()
+	let { data, children } = $props();
 
-  const supabase = createBrowserClient<Database>(
-    PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_ANON_KEY
-  )
+	const supabase = createBrowserClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
-  onMount(() => {
-    // Listen for auth state changes in the browser. When the user signs in,
-    // signs out, or the access token is refreshed, re-run any load function
-    // tagged with 'supabase:auth' so UI state catches up.
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (
-        event === 'SIGNED_IN' ||
-        event === 'SIGNED_OUT' ||
-        event === 'TOKEN_REFRESHED'
-      ) {
-        invalidate('supabase:auth')
-      }
-    })
+	onMount(() => {
+		// Listen for auth state changes in the browser. When the user signs in,
+		// signs out, or the access token is refreshed, re-run any load function
+		// tagged with 'supabase:auth' so UI state catches up.
+		const {
+			data: { subscription }
+		} = supabase.auth.onAuthStateChange((event) => {
+			if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+				invalidate('supabase:auth');
+			}
+		});
 
-    // Cleanup when the layout unmounts (e.g., full page reload, navigation away).
-    return () => subscription.unsubscribe()
-  })
+		// Cleanup when the layout unmounts (e.g., full page reload, navigation away).
+		return () => subscription.unsubscribe();
+	});
 </script>
 
 {@render children()}
@@ -163,13 +156,10 @@ If you've used React: `children` is conceptually the same; `{@render children()}
 ### Creating the browser client
 
 ```typescript
-const supabase = createBrowserClient<Database>(
-  PUBLIC_SUPABASE_URL,
-  PUBLIC_SUPABASE_ANON_KEY
-)
+const supabase = createBrowserClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 ```
 
-On the server, this line still runs during SSR (SvelteKit invokes `<script>` on both server and client). But `createBrowserClient` is written to be server-safe — it produces a benign stub on the server that never makes real calls. Only once the component is hydrated in the browser does the client become truly active. We'll rely on `onMount` — which *never* runs on the server — for the subscription.
+On the server, this line still runs during SSR (SvelteKit invokes `<script>` on both server and client). But `createBrowserClient` is written to be server-safe — it produces a benign stub on the server that never makes real calls. Only once the component is hydrated in the browser does the client become truly active. We'll rely on `onMount` — which _never_ runs on the server — for the subscription.
 
 ### `onMount(() => { ... return () => subscription.unsubscribe() })`
 
@@ -184,14 +174,10 @@ This is the standard pattern for anything that needs teardown in Svelte — even
 
 ```typescript
 supabase.auth.onAuthStateChange((event) => {
-  if (
-    event === 'SIGNED_IN' ||
-    event === 'SIGNED_OUT' ||
-    event === 'TOKEN_REFRESHED'
-  ) {
-    invalidate('supabase:auth')
-  }
-})
+	if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+		invalidate('supabase:auth');
+	}
+});
 ```
 
 Supabase's auth client emits events for every change in the user's session state. We care about three:
@@ -219,16 +205,16 @@ Now for the payoff. With the root layout set up, any page or component in Contac
 ```svelte
 <!-- In any +page.svelte or component -->
 <script lang="ts">
-  import { page } from '$app/state'
+	import { page } from '$app/state';
 
-  // user is reactive — updates automatically when page.data changes.
-  const user = $derived(page.data.user)
+	// user is reactive — updates automatically when page.data changes.
+	const user = $derived(page.data.user);
 </script>
 
 {#if user}
-  <p>Welcome, {user.email}</p>
+	<p>Welcome, {user.email}</p>
 {:else}
-  <p>Please log in</p>
+	<p>Please log in</p>
 {/if}
 ```
 

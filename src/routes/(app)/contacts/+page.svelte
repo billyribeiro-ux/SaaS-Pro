@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import DeleteConfirmModal from '$components/ui/DeleteConfirmModal.svelte';
 	import Card from '$components/ui/Card.svelte';
 	import Button from '$components/ui/Button.svelte';
@@ -44,7 +45,7 @@
 <section class="mx-auto max-w-5xl px-6 py-10">
 	<header class="mb-6 flex flex-wrap items-end justify-between gap-4">
 		<div>
-			<p class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+			<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400">
 				Contacts
 			</p>
 			<h1 class="font-display mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">People</h1>
@@ -56,7 +57,9 @@
 	</header>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+		<div
+			class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
+		>
 			{form.error}
 		</div>
 	{/if}
@@ -79,15 +82,17 @@
 				type="search"
 				bind:value={search}
 				placeholder="Search contacts..."
-				class="h-10 w-full max-w-md rounded-md border border-slate-300 bg-white px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 dark:border-slate-800 dark:bg-slate-950"
+				class="h-10 w-full max-w-md rounded-md border border-slate-300 bg-white px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:outline-none dark:border-slate-800 dark:bg-slate-950"
 			/>
 		</div>
 
 		<Card class="overflow-hidden p-0">
 			<div class="overflow-x-auto">
 				<table class="w-full text-sm">
-					<thead class="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
-						<tr class="text-left text-xs uppercase tracking-wider text-slate-500">
+					<thead
+						class="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40"
+					>
+						<tr class="text-left text-xs tracking-wider text-slate-500 uppercase">
 							<th class="px-4 py-3 font-medium">Name</th>
 							<th class="px-4 py-3 font-medium">Email</th>
 							<th class="px-4 py-3 font-medium">Phone</th>
@@ -99,14 +104,20 @@
 						{#each filteredContacts as contact (contact.id)}
 							<tr class="hover:bg-slate-50/60 dark:hover:bg-slate-900/30">
 								<td class="px-4 py-3 font-medium text-slate-900 dark:text-white">
-									{contact.first_name} {contact.last_name}
+									{contact.first_name}
+									{contact.last_name}
 								</td>
 								<td class="px-4 py-3 text-slate-600 dark:text-slate-300">{contact.email ?? '—'}</td>
 								<td class="px-4 py-3 text-slate-600 dark:text-slate-300">{contact.phone ?? '—'}</td>
-								<td class="px-4 py-3 text-slate-600 dark:text-slate-300">{contact.company ?? '—'}</td>
+								<td class="px-4 py-3 text-slate-600 dark:text-slate-300"
+									>{contact.company ?? '—'}</td
+								>
 								<td class="px-4 py-3 text-right">
 									<div class="inline-flex items-center gap-3">
-										<a href={`/contacts/${contact.id}/edit`} class="text-brand-600 hover:underline">
+										<a
+											href={resolve(`/contacts/${contact.id}/edit`)}
+											class="text-brand-600 hover:underline"
+										>
 											Edit
 										</a>
 										<button

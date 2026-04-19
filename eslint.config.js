@@ -26,13 +26,25 @@ export default defineConfig(
 		}
 	},
 	{
+		// In a pnpm workspace with multiple tsconfig.json files (root + course/contactly),
+		// typescript-eslint cannot auto-detect which one applies to a given file. Pin the
+		// root explicitly so projectService scopes to this package only — contactly has its
+		// own eslint config that does the same for its tree.
+		languageOptions: {
+			parserOptions: {
+				tsconfigRootDir: import.meta.dirname
+			}
+		}
+	},
+	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
 		languageOptions: {
 			parserOptions: {
 				projectService: true,
 				extraFileExtensions: ['.svelte'],
 				parser: ts.parser,
-				svelteConfig
+				svelteConfig,
+				tsconfigRootDir: import.meta.dirname
 			}
 		}
 	},

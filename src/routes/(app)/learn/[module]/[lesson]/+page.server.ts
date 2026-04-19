@@ -1,10 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { adjacentLessons, findLesson, findModule } from '$config/curriculum.config';
-import {
-	getLessonContent,
-	markLessonCompleted
-} from '$server/lessons/content.service';
+import { getLessonContent, markLessonCompleted } from '$server/lessons/content.service';
 import { renderMarkdown } from '$server/lessons/markdown';
 import { canAccessLesson } from '$utils/access';
 import { supabaseAdmin } from '$server/supabase';

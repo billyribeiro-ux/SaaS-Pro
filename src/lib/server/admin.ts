@@ -149,9 +149,7 @@ export async function revokeEntitlement(input: {
 }
 
 // Active-entitlement read used by the access layer.
-export async function getActiveEntitlementTier(
-	userId: string
-): Promise<PricingTier | null> {
+export async function getActiveEntitlementTier(userId: string): Promise<PricingTier | null> {
 	const nowIso = new Date().toISOString();
 	const { data, error: dbError } = await supabaseAdmin
 		.from('entitlements')

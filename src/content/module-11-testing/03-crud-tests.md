@@ -1,10 +1,10 @@
 ---
-title: "11.3 - CRUD Tests"
+title: '11.3 - CRUD Tests'
 module: 11
 lesson: 3
-moduleSlug: "module-11-testing"
-lessonSlug: "03-crud-tests"
-description: "Write end-to-end tests for creating, reading, updating, and deleting contacts."
+moduleSlug: 'module-11-testing'
+lessonSlug: '03-crud-tests'
+description: 'Write end-to-end tests for creating, reading, updating, and deleting contacts.'
 duration: 15
 preview: false
 ---
@@ -37,12 +37,12 @@ The simplest way to get an authenticated context is to log in inside each test:
 
 ```typescript
 test.beforeEach(async ({ page }) => {
-  await page.goto('/login')
-  await page.fill('input[name="email"]', 'test@example.com')
-  await page.fill('input[name="password"]', 'password123')
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL('/dashboard')
-})
+	await page.goto('/login');
+	await page.fill('input[name="email"]', 'test@example.com');
+	await page.fill('input[name="password"]', 'password123');
+	await page.click('button[type="submit"]');
+	await expect(page).toHaveURL('/dashboard');
+});
 ```
 
 This works. It's also slow and wasteful. Each test:
@@ -82,20 +82,20 @@ Now create `tests/global.setup.ts`:
 
 ```typescript
 // tests/global.setup.ts
-import { test as setup, expect } from '@playwright/test'
+import { test as setup, expect } from '@playwright/test';
 
-const authFile = 'tests/.auth/user.json'
+const authFile = 'tests/.auth/user.json';
 
 setup('authenticate', async ({ page }) => {
-  await page.goto('/login')
-  await page.fill('input[name="email"]', 'test@example.com')
-  await page.fill('input[name="password"]', 'password123')
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL('/dashboard')
+	await page.goto('/login');
+	await page.fill('input[name="email"]', 'test@example.com');
+	await page.fill('input[name="password"]', 'password123');
+	await page.click('button[type="submit"]');
+	await expect(page).toHaveURL('/dashboard');
 
-  // Persist the post-login cookies + localStorage to a file.
-  await page.context().storageState({ path: authFile })
-})
+	// Persist the post-login cookies + localStorage to a file.
+	await page.context().storageState({ path: authFile });
+});
 ```
 
 The idiom `import { test as setup }` is a Playwright convention — it reads like English when you declare `setup('authenticate', ...)`. Under the hood it's just a regular test; the only reason to rename is readability.
@@ -103,7 +103,7 @@ The idiom `import { test as setup }` is a Playwright convention — it reads lik
 The body is almost identical to the `user can log in` test from lesson 11.2 — click through the login form, confirm we landed on `/dashboard` — with one added line:
 
 ```typescript
-await page.context().storageState({ path: authFile })
+await page.context().storageState({ path: authFile });
 ```
 
 `page.context()` returns the **browser context** (a sort of ephemeral user profile). `storageState({ path })` asks the context to serialize all its cookies and `localStorage` to the given file. The JSON looks roughly like:
@@ -129,39 +129,39 @@ Edit `playwright.config.ts` to add a **setup project** and configure the main pr
 
 ```typescript
 // playwright.config.ts
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
-  use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry'
-  },
-  projects: [
-    {
-      name: 'setup',
-      testMatch: /global\.setup\.ts/
-    },
-    {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'tests/.auth/user.json'
-      },
-      dependencies: ['setup']
-    }
-  ],
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI
-  }
-})
+	testDir: './tests',
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	retries: process.env.CI ? 2 : 0,
+	workers: process.env.CI ? 1 : undefined,
+	reporter: 'html',
+	use: {
+		baseURL: 'http://localhost:5173',
+		trace: 'on-first-retry'
+	},
+	projects: [
+		{
+			name: 'setup',
+			testMatch: /global\.setup\.ts/
+		},
+		{
+			name: 'chromium',
+			use: {
+				...devices['Desktop Chrome'],
+				storageState: 'tests/.auth/user.json'
+			},
+			dependencies: ['setup']
+		}
+	],
+	webServer: {
+		command: 'pnpm dev',
+		url: 'http://localhost:5173',
+		reuseExistingServer: !process.env.CI
+	}
+});
 ```
 
 The `projects` array grew from one to two:
@@ -180,7 +180,7 @@ One extra login per full suite run. The savings compound with every new auth-gat
 **Note on the auth test file from 11.2:** its `user can log in`, `user can register`, `protected routes redirect to login`, and `user can log out` tests all need a **logged-out** starting state. With `storageState` preloaded, they'd start already logged in and fail. Fix that by explicitly clearing storage at the top of those tests:
 
 ```typescript
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: { cookies: [], origins: [] } });
 ```
 
 Put that line immediately inside `test.describe('Authentication', () => { ... })`. It overrides the preloaded state for that describe block only. We're not rewriting 11.2 here; just know the one-line knob exists.
@@ -193,45 +193,45 @@ Create `tests/contacts.test.ts`:
 
 ```typescript
 // tests/contacts.test.ts
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
-const CONTACT_NAME = `Ada Lovelace ${Date.now()}`
-const CONTACT_EMAIL = `ada-${Date.now()}@example.com`
-const UPDATED_NAME = `${CONTACT_NAME} (Updated)`
+const CONTACT_NAME = `Ada Lovelace ${Date.now()}`;
+const CONTACT_EMAIL = `ada-${Date.now()}@example.com`;
+const UPDATED_NAME = `${CONTACT_NAME} (Updated)`;
 
 test.describe('Contacts CRUD', () => {
-  test('user can create a contact', async ({ page }) => {
-    await page.goto('/app/contacts/new')
-    await page.fill('input[name="full_name"]', CONTACT_NAME)
-    await page.fill('input[name="email"]', CONTACT_EMAIL)
-    await page.click('button[type="submit"]')
+	test('user can create a contact', async ({ page }) => {
+		await page.goto('/app/contacts/new');
+		await page.fill('input[name="full_name"]', CONTACT_NAME);
+		await page.fill('input[name="email"]', CONTACT_EMAIL);
+		await page.click('button[type="submit"]');
 
-    await expect(page).toHaveURL('/app/contacts')
-    await expect(page.getByRole('link', { name: CONTACT_NAME })).toBeVisible()
-  })
+		await expect(page).toHaveURL('/app/contacts');
+		await expect(page.getByRole('link', { name: CONTACT_NAME })).toBeVisible();
+	});
 
-  test('user can edit a contact', async ({ page }) => {
-    await page.goto('/app/contacts')
-    await page.getByRole('link', { name: CONTACT_NAME }).click()
-    await page.getByRole('link', { name: 'Edit' }).click()
+	test('user can edit a contact', async ({ page }) => {
+		await page.goto('/app/contacts');
+		await page.getByRole('link', { name: CONTACT_NAME }).click();
+		await page.getByRole('link', { name: 'Edit' }).click();
 
-    await page.fill('input[name="full_name"]', UPDATED_NAME)
-    await page.click('button[type="submit"]')
+		await page.fill('input[name="full_name"]', UPDATED_NAME);
+		await page.click('button[type="submit"]');
 
-    await expect(page.getByRole('heading', { name: UPDATED_NAME })).toBeVisible()
-  })
+		await expect(page.getByRole('heading', { name: UPDATED_NAME })).toBeVisible();
+	});
 
-  test('user can delete a contact', async ({ page }) => {
-    await page.goto('/app/contacts')
-    await page.getByRole('link', { name: UPDATED_NAME }).click()
+	test('user can delete a contact', async ({ page }) => {
+		await page.goto('/app/contacts');
+		await page.getByRole('link', { name: UPDATED_NAME }).click();
 
-    await page.getByRole('button', { name: 'Delete' }).click()
-    await page.getByRole('button', { name: 'Confirm delete' }).click()
+		await page.getByRole('button', { name: 'Delete' }).click();
+		await page.getByRole('button', { name: 'Confirm delete' }).click();
 
-    await expect(page).toHaveURL('/app/contacts')
-    await expect(page.getByRole('link', { name: UPDATED_NAME })).not.toBeVisible()
-  })
-})
+		await expect(page).toHaveURL('/app/contacts');
+		await expect(page.getByRole('link', { name: UPDATED_NAME })).not.toBeVisible();
+	});
+});
 ```
 
 Three tests, ordered so each builds on the previous one's data: create produces the contact the edit test modifies, which produces the name the delete test removes.
@@ -243,9 +243,9 @@ Three tests, ordered so each builds on the previous one's data: create produces 
 ### Constants and uniqueness
 
 ```typescript
-const CONTACT_NAME = `Ada Lovelace ${Date.now()}`
-const CONTACT_EMAIL = `ada-${Date.now()}@example.com`
-const UPDATED_NAME = `${CONTACT_NAME} (Updated)`
+const CONTACT_NAME = `Ada Lovelace ${Date.now()}`;
+const CONTACT_EMAIL = `ada-${Date.now()}@example.com`;
+const UPDATED_NAME = `${CONTACT_NAME} (Updated)`;
 ```
 
 Same logic as the email timestamping in 11.2. If two test runs execute back-to-back (or two workers on the same Supabase instance), a hardcoded name "Ada Lovelace" would appear twice in the contacts list, and the `getByRole('link', { name: 'Ada Lovelace' })` locator would match two elements and throw a strict-mode violation. Timestamping every run keeps locators unambiguous.
@@ -254,14 +254,14 @@ Same logic as the email timestamping in 11.2. If two test runs execute back-to-b
 
 ```typescript
 test('user can create a contact', async ({ page }) => {
-  await page.goto('/app/contacts/new')
-  await page.fill('input[name="full_name"]', CONTACT_NAME)
-  await page.fill('input[name="email"]', CONTACT_EMAIL)
-  await page.click('button[type="submit"]')
+	await page.goto('/app/contacts/new');
+	await page.fill('input[name="full_name"]', CONTACT_NAME);
+	await page.fill('input[name="email"]', CONTACT_EMAIL);
+	await page.click('button[type="submit"]');
 
-  await expect(page).toHaveURL('/app/contacts')
-  await expect(page.getByRole('link', { name: CONTACT_NAME })).toBeVisible()
-})
+	await expect(page).toHaveURL('/app/contacts');
+	await expect(page.getByRole('link', { name: CONTACT_NAME })).toBeVisible();
+});
 ```
 
 Walk through:
@@ -278,15 +278,15 @@ The locator `page.getByRole('link', { name: CONTACT_NAME })` is **role-based** a
 
 ```typescript
 test('user can edit a contact', async ({ page }) => {
-  await page.goto('/app/contacts')
-  await page.getByRole('link', { name: CONTACT_NAME }).click()
-  await page.getByRole('link', { name: 'Edit' }).click()
+	await page.goto('/app/contacts');
+	await page.getByRole('link', { name: CONTACT_NAME }).click();
+	await page.getByRole('link', { name: 'Edit' }).click();
 
-  await page.fill('input[name="full_name"]', UPDATED_NAME)
-  await page.click('button[type="submit"]')
+	await page.fill('input[name="full_name"]', UPDATED_NAME);
+	await page.click('button[type="submit"]');
 
-  await expect(page.getByRole('heading', { name: UPDATED_NAME })).toBeVisible()
-})
+	await expect(page.getByRole('heading', { name: UPDATED_NAME })).toBeVisible();
+});
 ```
 
 - Visit the list, click the contact we just created, click "Edit."
@@ -299,15 +299,15 @@ Asserting on `getByRole('heading', { name: UPDATED_NAME })` rather than a URL or
 
 ```typescript
 test('user can delete a contact', async ({ page }) => {
-  await page.goto('/app/contacts')
-  await page.getByRole('link', { name: UPDATED_NAME }).click()
+	await page.goto('/app/contacts');
+	await page.getByRole('link', { name: UPDATED_NAME }).click();
 
-  await page.getByRole('button', { name: 'Delete' }).click()
-  await page.getByRole('button', { name: 'Confirm delete' }).click()
+	await page.getByRole('button', { name: 'Delete' }).click();
+	await page.getByRole('button', { name: 'Confirm delete' }).click();
 
-  await expect(page).toHaveURL('/app/contacts')
-  await expect(page.getByRole('link', { name: UPDATED_NAME })).not.toBeVisible()
-})
+	await expect(page).toHaveURL('/app/contacts');
+	await expect(page.getByRole('link', { name: UPDATED_NAME })).not.toBeVisible();
+});
 ```
 
 This test exercises the confirmation modal. The flow is:
@@ -352,12 +352,12 @@ The first line is the setup running. Every subsequent test in chromium reuses it
 
 A quick reference comparing locator strategies for Contactly's contact-list link:
 
-| Strategy | Example | Resilience |
-|---|---|---|
-| CSS selector | `.contact-list > li > a` | Breaks on any class rename or markup change. |
-| Text content | `page.getByText('Ada Lovelace')` | Breaks if the name appears elsewhere (header, breadcrumb). |
-| Test ID | `page.getByTestId('contact-link')` | Robust but pollutes markup with `data-testid` attributes. |
-| Role | `page.getByRole('link', { name: 'Ada Lovelace' })` | Most robust for interactive elements; doubles as an a11y check. |
+| Strategy     | Example                                            | Resilience                                                      |
+| ------------ | -------------------------------------------------- | --------------------------------------------------------------- |
+| CSS selector | `.contact-list > li > a`                           | Breaks on any class rename or markup change.                    |
+| Text content | `page.getByText('Ada Lovelace')`                   | Breaks if the name appears elsewhere (header, breadcrumb).      |
+| Test ID      | `page.getByTestId('contact-link')`                 | Robust but pollutes markup with `data-testid` attributes.       |
+| Role         | `page.getByRole('link', { name: 'Ada Lovelace' })` | Most robust for interactive elements; doubles as an a11y check. |
 
 **Rule of thumb:** start with `getByRole`. Reach for `getByTestId` only when role-based locators are genuinely ambiguous (repeated labels, complex UI widgets). Avoid CSS locators in tests you want to keep for a year.
 

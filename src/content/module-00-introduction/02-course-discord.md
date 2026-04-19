@@ -1,10 +1,10 @@
 ---
-title: "Course Discord Access"
+title: 'Course Discord Access'
 module: 0
 lesson: 2
-moduleSlug: "module-00-introduction"
-lessonSlug: "02-course-discord"
-description: "How to join the course Discord and what to expect once inside."
+moduleSlug: 'module-00-introduction'
+lessonSlug: '02-course-discord'
+description: 'How to join the course Discord and what to expect once inside.'
 duration: 2
 preview: true
 ---

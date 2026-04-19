@@ -1,10 +1,10 @@
 ---
-title: "7.1 - Define Billing Tables"
+title: '7.1 - Define Billing Tables'
 module: 7
 lesson: 1
-moduleSlug: "module-07-billing-services"
-lessonSlug: "01-define-billing-tables"
-description: "Create the four billing tables that will mirror your Stripe data in Supabase."
+moduleSlug: 'module-07-billing-services'
+lessonSlug: '01-define-billing-tables'
+description: 'Create the four billing tables that will mirror your Stripe data in Supabase.'
 duration: 15
 preview: false
 ---
@@ -99,7 +99,7 @@ Because **Stripe's product ID is the primary key**. When Stripe creates a produc
 
 Instead, we let Stripe's ID be our primary key. It's already globally unique (Stripe guarantees that). It's already an immutable reference. Storing it as our PK means the natural foreign key — `prices.product_id` pointing at `products.id` — is literally Stripe's identifier, no translation layer.
 
-This is the **"mirrored table" pattern**: for data owned by an external system, use the external system's ID as your primary key. For data owned by *your* app (profiles, contacts, app-specific stuff) use UUIDs.
+This is the **"mirrored table" pattern**: for data owned by an external system, use the external system's ID as your primary key. For data owned by _your_ app (profiles, contacts, app-specific stuff) use UUIDs.
 
 ### `name text not null, description text`
 
@@ -217,7 +217,7 @@ create policy "Users can view own customer record"
 
 Three decisions in one line:
 
-1. **`id uuid`** — not `text` this time, because this row's primary identifier is the *Supabase user*, not a Stripe entity.
+1. **`id uuid`** — not `text` this time, because this row's primary identifier is the _Supabase user_, not a Stripe entity.
 2. **`references public.profiles(id)`** — foreign key into `profiles`. The user must exist in our system before we create their Stripe customer record.
 3. **`on delete cascade`** — when the user deletes their account and `profiles` gets cascaded away, the customer row disappears automatically. (The matching Stripe customer lives on in Stripe's records for billing history, which is correct; GDPR lets you anonymize but you still keep ledger history.)
 4. **`primary key`** — meaning `customers.id` IS `profiles.id`. One customer row per profile; you can't have two customer rows for the same user. This is the strict one-to-one we want.
@@ -239,7 +239,7 @@ create policy "Users can view own customer record"
 
 `auth.uid()` returns the currently authenticated user's UUID. `auth.uid() = id` means "this row's `id` — which IS `profiles.id` — matches me." So a user can read their own `customers` row and no one else's. They cannot read anyone else's Stripe customer ID (which could otherwise enable phishing or impersonation attempts via Stripe Dashboard support tickets).
 
-Notice there's **no INSERT, UPDATE, or DELETE policy**. That's deliberate: the customers table is written *only* by server code using `supabaseAdmin` (the service-role client, which bypasses RLS). A user cannot create or modify their own customer record from the browser — the `getOrCreateCustomer` service does it on their behalf when they first hit checkout. No policy means no write path for the regular user role, which is exactly the security posture we want: writes only happen via trusted server code.
+Notice there's **no INSERT, UPDATE, or DELETE policy**. That's deliberate: the customers table is written _only_ by server code using `supabaseAdmin` (the service-role client, which bypasses RLS). A user cannot create or modify their own customer record from the browser — the `getOrCreateCustomer` service does it on their behalf when they first hit checkout. No policy means no write path for the regular user role, which is exactly the security posture we want: writes only happen via trusted server code.
 
 ---
 
@@ -299,7 +299,7 @@ Stripe's cancellation flow: when a user clicks "cancel subscription," Stripe fla
 ### `cancel_at timestamptz, canceled_at timestamptz`
 
 - `cancel_at` — when the scheduled cancellation will take effect (usually equals `current_period_end` when `cancel_at_period_end = true`).
-- `canceled_at` — when cancellation was *requested*. Could be earlier than `cancel_at`.
+- `canceled_at` — when cancellation was _requested_. Could be earlier than `cancel_at`.
 
 Both nullable because unscheduled subscriptions have neither.
 
@@ -466,7 +466,7 @@ Same as every other table in this course: RLS off means the table is wide open. 
 
 ### Mistake 4: Writing an INSERT/UPDATE policy for `customers` or `subscriptions`
 
-Tempting: "Users should be able to insert their own customer record." **No.** The customer record is created by the billing service on the server, using the admin client, in response to a checkout flow. The user never inserts it from the browser — there's nothing about the Stripe customer that should be user-controlled. Omitting write policies is a *feature*; it means the table is read-only to everyone except the trusted service code.
+Tempting: "Users should be able to insert their own customer record." **No.** The customer record is created by the billing service on the server, using the admin client, in response to a checkout flow. The user never inserts it from the browser — there's nothing about the Stripe customer that should be user-controlled. Omitting write policies is a _feature_; it means the table is read-only to everyone except the trusted service code.
 
 ### Mistake 5: Dropping the `UNIQUE` on `lookup_key`
 
@@ -501,7 +501,7 @@ You now have two distinct categories of tables in Contactly's schema:
 - **Native tables** — `profiles`, `contacts`. Owned by Contactly. UUID primary keys. User-writable via RLS policies that scope by `user_id`. Source of truth lives in Postgres.
 - **Mirrored tables** — `products`, `prices`, `customers`, `subscriptions`. Owned by an external system (Stripe). External IDs as primary keys. Never user-writable directly; only the webhook service layer writes via `supabaseAdmin`. Source of truth lives in Stripe; Postgres is a cache.
 
-These categories have *different rules*. Different RLS shape. Different write paths. Different indexing priorities. When someone says "just add a table," the first question is which category it belongs to — because the answer changes the whole design.
+These categories have _different rules_. Different RLS shape. Different write paths. Different indexing priorities. When someone says "just add a table," the first question is which category it belongs to — because the answer changes the whole design.
 
 ### `UNIQUE` as a business invariant
 
@@ -541,7 +541,7 @@ The broader principle: **don't index preemptively**. Measure first. Over-indexin
 
 You might wonder: shouldn't we also mirror invoices? Stripe sends `invoice.paid`, `invoice.payment_failed`, etc. webhooks. If the user asks "show me my billing history," wouldn't we need an `invoices` table?
 
-You *could* mirror it. But for Contactly's needs today:
+You _could_ mirror it. But for Contactly's needs today:
 
 1. **"Show me my billing history"** — solved by redirecting the user to the Stripe Customer Portal, which Stripe hosts and maintains. Zero code on our side.
 2. **"Has this invoice been paid?"** — relevant only for `past_due` subscription flows, which we handle via `subscription.status` directly.

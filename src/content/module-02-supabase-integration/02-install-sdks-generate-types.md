@@ -1,10 +1,10 @@
 ---
-title: "2.2 - Install Supabase SDKs & Generate Types"
+title: '2.2 - Install Supabase SDKs & Generate Types'
 module: 2
 lesson: 2
-moduleSlug: "module-02-supabase-integration"
-lessonSlug: "02-install-sdks-generate-types"
-description: "Install the Supabase JavaScript SDK and SSR helper, then generate fully-typed TypeScript definitions from your database schema."
+moduleSlug: 'module-02-supabase-integration'
+lessonSlug: '02-install-sdks-generate-types'
+description: 'Install the Supabase JavaScript SDK and SSR helper, then generate fully-typed TypeScript definitions from your database schema.'
 duration: 10
 preview: false
 ---
@@ -50,7 +50,7 @@ Every Supabase application uses this package. It's the foundation.
 `@supabase/supabase-js` on its own isn't enough for SvelteKit. The issue is **session storage**:
 
 - In a single-page React app, sessions live in `localStorage`. The server never sees them.
-- In SvelteKit, the server *has to* see the session, because SvelteKit renders pages on the server using the logged-in user's data. That means auth state must travel in **cookies**, which both server and browser can read.
+- In SvelteKit, the server _has to_ see the session, because SvelteKit renders pages on the server using the logged-in user's data. That means auth state must travel in **cookies**, which both server and browser can read.
 
 `@supabase/ssr` wraps `@supabase/supabase-js` with cookie-based session management. It provides two client constructors:
 
@@ -83,11 +83,13 @@ pnpm add @supabase/supabase-js @supabase/ssr
 ```
 
 **Reading this command:**
+
 - `pnpm add` — install a new dependency.
 - No `-D` flag — these are **runtime** dependencies (the app needs them to run in production), not dev-only tools.
 - Two package names — install both in one command.
 
 **Expected output:**
+
 ```
 Packages: +30 -0
 Progress: resolved X, reused X, downloaded 2, added 2
@@ -97,10 +99,10 @@ Verify they're listed in `package.json`:
 
 ```json
 {
-  "dependencies": {
-    "@supabase/ssr": "^0.x.x",
-    "@supabase/supabase-js": "^2.x.x"
-  }
+	"dependencies": {
+		"@supabase/ssr": "^0.x.x",
+		"@supabase/supabase-js": "^2.x.x"
+	}
 }
 ```
 
@@ -143,6 +145,7 @@ This is the script you added in lesson 1.2:
 ```
 
 **Reading the command:**
+
 - `supabase gen types typescript` — generate TypeScript type definitions.
 - `--local` — introspect the **local** database. (You can also aim at a remote project with `--project-id`.)
 - `> src/lib/types/database.types.ts` — the `>` operator redirects the command's output to a file. If the file doesn't exist, it's created. If it does, it's overwritten.
@@ -156,60 +159,62 @@ Open `src/lib/types/database.types.ts`. You should see a large, auto-generated f
 Scroll through and you'll see a structure like:
 
 ```typescript
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string
-          email: string
-          full_name: string | null
-          avatar_url: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          email: string
-          full_name?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          full_name?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-    }
-    Views: { /* ... */ }
-    Functions: { /* ... */ }
-    Enums: { /* ... */ }
-    CompositeTypes: { /* ... */ }
-  }
-}
+	public: {
+		Tables: {
+			profiles: {
+				Row: {
+					id: string;
+					email: string;
+					full_name: string | null;
+					avatar_url: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id: string;
+					email: string;
+					full_name?: string | null;
+					avatar_url?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					email?: string;
+					full_name?: string | null;
+					avatar_url?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+		};
+		Views: {
+			/* ... */
+		};
+		Functions: {
+			/* ... */
+		};
+		Enums: {
+			/* ... */
+		};
+		CompositeTypes: {
+			/* ... */
+		};
+	};
+};
 ```
 
 Three type shapes per table:
 
-| Type | Purpose | When you use it |
-|---|---|---|
-| **`Row`** | The shape of a row when you SELECT. All columns present, nullable ones typed as `T \| null`. | Reading data. |
-| **`Insert`** | The shape of an object you pass to `insert()`. Required columns required; columns with defaults optional. | Creating new rows. |
-| **`Update`** | The shape of an object you pass to `update()`. All columns optional. | Modifying existing rows. |
+| Type         | Purpose                                                                                                   | When you use it          |
+| ------------ | --------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **`Row`**    | The shape of a row when you SELECT. All columns present, nullable ones typed as `T \| null`.              | Reading data.            |
+| **`Insert`** | The shape of an object you pass to `insert()`. Required columns required; columns with defaults optional. | Creating new rows.       |
+| **`Update`** | The shape of an object you pass to `update()`. All columns optional.                                      | Modifying existing rows. |
 
 ---
 
@@ -218,16 +223,16 @@ Three type shapes per table:
 In the next lesson we'll set up the Supabase client and pass `Database` as a type parameter. Here's a preview to make the connection concrete:
 
 ```typescript
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '$lib/types/database.types'
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '$lib/types/database.types';
 
-const supabase = createClient<Database>(url, anonKey)
+const supabase = createClient<Database>(url, anonKey);
 
 // Fully typed. Hover over `data` in VSCode and you'll see its shape.
 const { data, error } = await supabase
-  .from('profiles')
-  .select('id, email, full_name')
-  .eq('id', userId)
+	.from('profiles')
+	.select('id, email, full_name')
+	.eq('id', userId);
 ```
 
 Two things to notice:
@@ -261,25 +266,25 @@ export type TablesUpdate<
 **How to use them:**
 
 ```typescript
-import type { Tables, TablesInsert, TablesUpdate } from '$lib/types/database.types'
+import type { Tables, TablesInsert, TablesUpdate } from '$lib/types/database.types';
 
 // The shape of a profiles row
-type Profile = Tables<'profiles'>
+type Profile = Tables<'profiles'>;
 
 // The shape you pass to insert()
-type NewProfile = TablesInsert<'profiles'>
+type NewProfile = TablesInsert<'profiles'>;
 
 // The shape you pass to update()
-type ProfileUpdate = TablesUpdate<'profiles'>
+type ProfileUpdate = TablesUpdate<'profiles'>;
 ```
 
 This is the idiomatic pattern. In your own app code, write:
 
 ```typescript
-import type { Tables } from '$lib/types/database.types'
+import type { Tables } from '$lib/types/database.types';
 
 function formatName(profile: Tables<'profiles'>): string {
-  return profile.full_name ?? profile.email
+	return profile.full_name ?? profile.email;
 }
 ```
 
@@ -290,14 +295,11 @@ Clean, typed, schema-aware.
 For queries that JOIN or select nested relations, the generated types can get hairy. Supabase provides a utility type `QueryData<Q>` for inferring the exact return shape of a specific query:
 
 ```typescript
-import type { QueryData } from '@supabase/supabase-js'
+import type { QueryData } from '@supabase/supabase-js';
 
-const profileQuery = supabase
-  .from('profiles')
-  .select('id, email, full_name')
-  .eq('id', userId)
+const profileQuery = supabase.from('profiles').select('id, email, full_name').eq('id', userId);
 
-type ProfileResult = QueryData<typeof profileQuery>
+type ProfileResult = QueryData<typeof profileQuery>;
 ```
 
 You won't need this until you're writing complex queries in Module 4, but remember it's there.

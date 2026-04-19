@@ -29,7 +29,9 @@
 	<div class="overflow-x-auto">
 		<table class="w-full text-sm">
 			<thead>
-				<tr class="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800">
+				<tr
+					class="border-b border-slate-200 text-left text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800"
+				>
 					<th class="py-2 pr-4">Event ID</th>
 					<th class="py-2 pr-4">Type</th>
 					<th class="py-2 pr-4">Received at</th>
@@ -60,6 +62,8 @@
 <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
 	<span>Page {data.page} of {lastPage}</span>
 	<div class="flex gap-2">
+		<!-- Same-page query mutation; resolve() unnecessary across this block. -->
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		{#if data.page > 1}
 			<a
 				href={`?type=${encodeURIComponent(data.type)}&page=${data.page - 1}`}
@@ -76,5 +80,6 @@
 				Next
 			</a>
 		{/if}
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	</div>
 </div>

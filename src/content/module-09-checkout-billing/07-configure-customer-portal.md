@@ -1,9 +1,9 @@
 ---
-title: "9.7 - Configure Customer Portal"
+title: '9.7 - Configure Customer Portal'
 module: 9
 lesson: 7
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "07-configure-customer-portal"
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '07-configure-customer-portal'
 description: "Configure Stripe's hosted Customer Portal so users can manage their own subscriptions."
 duration: 12
 preview: false
@@ -93,6 +93,7 @@ The cancellation toggle has a critical sub-setting:
 - The "paid through April 30" buffer gives the user a chance to reconsider. Some % of cancellations get reversed (via the portal or by support).
 
 Only use "cancel immediately" if:
+
 - Your product is usage-based and users are paying for compute they're not using.
 - You have a strong no-refund policy and want the user to know access ends now.
 - Regulatory reasons require immediate termination.
@@ -106,7 +107,7 @@ When a user upgrades mid-period ($9 Starter → $29 Pro), Stripe can handle the 
 - **Pro-rate** — charge the difference immediately, pro-rated for the remaining period. User sees an invoice for ~($29 - $9) × (days remaining / 30).
 - **No proration** — switch the price, next bill is at the new rate, no mid-cycle charge.
 
-For upgrades, pro-ration is conventional (and enabled by default). For downgrades ($29 Pro → $9 Starter), pro-ration would *credit* the user — also fine, but some SaaS choose "downgrade takes effect next period" (no proration) to avoid credit balances.
+For upgrades, pro-ration is conventional (and enabled by default). For downgrades ($29 Pro → $9 Starter), pro-ration would _credit_ the user — also fine, but some SaaS choose "downgrade takes effect next period" (no proration) to avoid credit balances.
 
 Stripe portal respects the settings you configured at the price level. In most SaaS, pro-rate on upgrade, no-proration on downgrade is a fine combination. We'll leave Stripe's default (proration on both) for SaaS-Pro and adjust only if we see real usage patterns suggesting otherwise.
 
@@ -190,7 +191,7 @@ For SaaS-Pro we'll do it manually — one configuration, done once for live mode
 
 4. **Hosted is the correct default; custom only when you have a reason.** You can build a custom UI for subscription management by calling Stripe's APIs directly. I've seen teams do this for design reasons and regret it — the portal's behavior handles 40+ edge cases (pro-ration math, tax, invoice generation, 3DS on payment updates) that are all your responsibility in a custom build. Unless you have a very specific reason, stay hosted.
 
-5. **Instrument portal usage.** You won't have page-view analytics on Stripe's pages, but you can track the *entry* to the portal (when your endpoint creates a session) and listen for webhook events that follow. If 2% of monthly active users touch the portal, that's a healthy signal. If it's 0.1%, your "Manage subscription" button is probably hidden or broken.
+5. **Instrument portal usage.** You won't have page-view analytics on Stripe's pages, but you can track the _entry_ to the portal (when your endpoint creates a session) and listen for webhook events that follow. If 2% of monthly active users touch the portal, that's a healthy signal. If it's 0.1%, your "Manage subscription" button is probably hidden or broken.
 
 6. **Pause is a churn-softener worth considering later.** Users who are busy, traveling, or temporarily unable to pay often choose "cancel" when they really mean "pause." Enabling pause converts some cancellations into 30-day delays, and a meaningful portion of paused users resume. Add it after you have churn data — not as a day-1 default.
 

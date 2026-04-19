@@ -1,10 +1,10 @@
 ---
-title: "4.6 - Updating Contacts"
+title: '4.6 - Updating Contacts'
 module: 4
 lesson: 6
-moduleSlug: "module-04-crud"
-lessonSlug: "06-updating-contacts"
-description: "Build the edit contact page — loading a single contact, pre-populating the form, and updating it."
+moduleSlug: 'module-04-crud'
+lessonSlug: '06-updating-contacts'
+description: 'Build the edit contact page — loading a single contact, pre-populating the form, and updating it.'
 duration: 12
 preview: false
 ---
@@ -13,9 +13,9 @@ preview: false
 
 A CRUD app without **Update** is a notepad with extra steps. Last lesson you built Create; now you'll build **Edit** — the other half of data entry. Three new problems appear:
 
-1. **Identify the row.** The URL must say *which* contact. We use a **dynamic route parameter** — `/contacts/[id]/edit`.
+1. **Identify the row.** The URL must say _which_ contact. We use a **dynamic route parameter** — `/contacts/[id]/edit`.
 2. **Load existing data.** A `load` function fetches the row and pre-fills the form.
-3. **Authorize the edit.** The URL is a string; anyone can hand-craft `/contacts/bob-id/edit`. We rely on RLS from Lesson 4.1 *and* add a redundant `.eq('user_id', user.id)` — a **defense-in-depth** pattern every serious backend uses.
+3. **Authorize the edit.** The URL is a string; anyone can hand-craft `/contacts/bob-id/edit`. We rely on RLS from Lesson 4.1 _and_ add a redundant `.eq('user_id', user.id)` — a **defense-in-depth** pattern every serious backend uses.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ A CRUD app without **Update** is a notepad with extra steps. Last lesson you bui
 
 Every route you've built so far has a fixed URL: `/login`, `/register`, `/contacts/new`. Those are **static routes** — one folder, one URL.
 
-Edit is different. The URL has to encode *which* record. You could use a query string (`/contacts/edit?id=42`), but SvelteKit prefers **dynamic route segments** baked into the file system.
+Edit is different. The URL has to encode _which_ record. You could use a query string (`/contacts/edit?id=42`), but SvelteKit prefers **dynamic route segments** baked into the file system.
 
 The rule: **a folder name wrapped in square brackets becomes a URL parameter.** A folder named `[id]` matches any single path segment and exposes it as `params.id` on the server.
 
@@ -84,24 +84,24 @@ Create `src/routes/(app)/contacts/[id]/edit/+page.server.ts` and start with the 
 
 ```typescript
 // src/routes/(app)/contacts/[id]/edit/+page.server.ts
-import { fail, redirect, error } from '@sveltejs/kit'
-import * as z from 'zod'
-import type { Actions, PageServerLoad } from './$types'
+import { fail, redirect, error } from '@sveltejs/kit';
+import * as z from 'zod';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-  const user = await locals.getUser()
-  if (!user) error(401, 'Unauthorized')
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { data: contact, error: contactError } = await locals.supabase
-    .from('contacts')
-    .select('*')
-    .eq('id', params.id)
-    .single()
+	const { data: contact, error: contactError } = await locals.supabase
+		.from('contacts')
+		.select('*')
+		.eq('id', params.id)
+		.single();
 
-  if (contactError || !contact) error(404, 'Contact not found')
+	if (contactError || !contact) error(404, 'Contact not found');
 
-  return { contact }
-}
+	return { contact };
+};
 ```
 
 Every character here is load-bearing — let's walk through it.
@@ -115,8 +115,8 @@ Every character here is load-bearing — let's walk through it.
 ### The auth check
 
 ```typescript
-const user = await locals.getUser()
-if (!user) error(401, 'Unauthorized')
+const user = await locals.getUser();
+if (!user) error(401, 'Unauthorized');
 ```
 
 The `(app)` layout probably already redirects anonymous visitors, but we repeat the check here as **defense in depth**. Load functions can be hit directly via data endpoints (`/contacts/42/edit/__data.json`) without going through the layout, so trusting only the layout is a subtle way to leak data. Two lines, zero cost, existential downside if skipped.
@@ -125,10 +125,10 @@ The `(app)` layout probably already redirects anonymous visitors, but we repeat 
 
 ```typescript
 const { data: contact, error: contactError } = await locals.supabase
-  .from('contacts')
-  .select('*')
-  .eq('id', params.id)
-  .single()
+	.from('contacts')
+	.select('*')
+	.eq('id', params.id)
+	.single();
 ```
 
 The star of the lesson. Three things to notice:
@@ -139,24 +139,24 @@ The star of the lesson. Three things to notice:
 
 ### `.single()` vs `.maybeSingle()`
 
-| Method | 0 rows | 1 row | 2+ rows |
-| --- | --- | --- | --- |
-| `.single()` | Error | Returns the row | Error |
-| `.maybeSingle()` | Returns `null` | Returns the row | Error |
+| Method           | 0 rows         | 1 row           | 2+ rows |
+| ---------------- | -------------- | --------------- | ------- |
+| `.single()`      | Error          | Returns the row | Error   |
+| `.maybeSingle()` | Returns `null` | Returns the row | Error   |
 
 `.single()` treats "zero" as a bug; `.maybeSingle()` treats "zero" as a legitimate answer. For identifying a specific resource by id, always use `.single()` — the right UX for "no row" is a 404, not a form pre-populated with nulls. Save `.maybeSingle()` for optional lookups like "does this user have a profile picture?" where `null` is a normal answer.
 
 ### The 404 and the RLS insight
 
 ```typescript
-if (contactError || !contact) error(404, 'Contact not found')
+if (contactError || !contact) error(404, 'Contact not found');
 ```
 
-The error branch triggers when `.single()` saw zero rows (id doesn't exist, *or* RLS filtered out a row that belongs to another user) or — defensively — multiple rows.
+The error branch triggers when `.single()` saw zero rows (id doesn't exist, _or_ RLS filtered out a row that belongs to another user) or — defensively — multiple rows.
 
 Here's the key insight, echoing the "opaque login error" from Module 3: **RLS makes "not yours" indistinguishable from "doesn't exist."**
 
-If Alice visits `/contacts/bob-id/edit`, her query runs as Alice. The SELECT policy `auth.uid() = user_id` filters Bob's row out *inside the database*. Alice's client sees zero rows, `.single()` errors, we return 404. Alice can't tell whether Bob's id exists or whether any guessed id exists. That's correct — and a UX bonus, because the same error page handles "doesn't exist" and "not yours."
+If Alice visits `/contacts/bob-id/edit`, her query runs as Alice. The SELECT policy `auth.uid() = user_id` filters Bob's row out _inside the database_. Alice's client sees zero rows, `.single()` errors, we return 404. Alice can't tell whether Bob's id exists or whether any guessed id exists. That's correct — and a UX bonus, because the same error page handles "doesn't exist" and "not yours."
 
 Whatever you return from `load` is available in the page as `data`. We'll destructure it as `data.contact` in `+page.svelte`.
 
@@ -168,48 +168,48 @@ Append the schema and action to `+page.server.ts`:
 
 ```typescript
 const updateContactSchema = z.object({
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().min(1, 'Last name is required').max(100),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().max(50).optional().or(z.literal('')),
-  company: z.string().max(200).optional().or(z.literal(''))
-})
+	first_name: z.string().min(1, 'First name is required').max(100),
+	last_name: z.string().min(1, 'Last name is required').max(100),
+	email: z.string().email('Invalid email').optional().or(z.literal('')),
+	phone: z.string().max(50).optional().or(z.literal('')),
+	company: z.string().max(200).optional().or(z.literal(''))
+});
 
 export const actions: Actions = {
-  default: async ({ request, locals, params }) => {
-    const user = await locals.getUser()
-    if (!user) error(401, 'Unauthorized')
+	default: async ({ request, locals, params }) => {
+		const user = await locals.getUser();
+		if (!user) error(401, 'Unauthorized');
 
-    const formData = await request.formData()
-    const result = updateContactSchema.safeParse({
-      first_name: formData.get('first_name'),
-      last_name: formData.get('last_name'),
-      email: formData.get('email') || '',
-      phone: formData.get('phone') || '',
-      company: formData.get('company') || ''
-    })
+		const formData = await request.formData();
+		const result = updateContactSchema.safeParse({
+			first_name: formData.get('first_name'),
+			last_name: formData.get('last_name'),
+			email: formData.get('email') || '',
+			phone: formData.get('phone') || '',
+			company: formData.get('company') || ''
+		});
 
-    if (!result.success) {
-      return fail(400, { error: result.error.issues[0]?.message })
-    }
+		if (!result.success) {
+			return fail(400, { error: result.error.issues[0]?.message });
+		}
 
-    const { error: updateError } = await locals.supabase
-      .from('contacts')
-      .update({
-        ...result.data,
-        email: result.data.email || null,
-        phone: result.data.phone || null,
-        company: result.data.company || null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
-      .eq('user_id', user.id)
+		const { error: updateError } = await locals.supabase
+			.from('contacts')
+			.update({
+				...result.data,
+				email: result.data.email || null,
+				phone: result.data.phone || null,
+				company: result.data.company || null,
+				updated_at: new Date().toISOString()
+			})
+			.eq('id', params.id)
+			.eq('user_id', user.id);
 
-    if (updateError) return fail(500, { error: 'Failed to update contact' })
+		if (updateError) return fail(500, { error: 'Failed to update contact' });
 
-    redirect(303, '/contacts')
-  }
-}
+		redirect(303, '/contacts');
+	}
+};
 ```
 
 Most of this should feel familiar from 4.5. The interesting bits are the two `.eq()` calls and the `updated_at` assignment.
@@ -231,11 +231,11 @@ HTML form inputs always submit strings, never `null`. Clearing the email field p
 .eq('user_id', user.id)
 ```
 
-You don't *need* both to identify the row — `id` is a primary key, and RLS would stop Alice from updating Bob's row anyway. So why add `.eq('user_id', user.id)`? Four reasons, in order of importance:
+You don't _need_ both to identify the row — `id` is a primary key, and RLS would stop Alice from updating Bob's row anyway. So why add `.eq('user_id', user.id)`? Four reasons, in order of importance:
 
 1. **Defense against client-swap regressions.** Six months from now, a teammate swaps `locals.supabase` for `supabaseAdmin` to run a quick migration (Lesson 4.4). `supabaseAdmin` **bypasses RLS**. Without this explicit filter, Alice's request could now update Bob's row. With it, the query still self-limits to the owner. The code is **correct no matter which client runs it.** Load-bearing line.
 2. **Documents intent.** Readers see "this mutation is scoped to the owner" without having to cross-reference the RLS migration file.
-3. **Query-plan performance.** The `user_id` index (from Lesson 4.1) gets used *before* the RLS policy's implicit check. Milliseconds today; index-scan vs. seq-scan at millions of rows.
+3. **Query-plan performance.** The `user_id` index (from Lesson 4.1) gets used _before_ the RLS policy's implicit check. Milliseconds today; index-scan vs. seq-scan at millions of rows.
 4. **Explain-plan clarity.** Filters in the query appear directly; RLS-injected filters show up as harder-to-read subquery expressions during incident triage.
 
 Every layer assumes the layer above might fail. RLS assumes the app has bugs; the app assumes RLS might get dropped; the `load` auth check assumes the layout's guard might get refactored. Each layer independently enforces the rule. You sleep better.
@@ -257,124 +257,110 @@ Create `src/routes/(app)/contacts/[id]/edit/+page.svelte`:
 ```svelte
 <!-- src/routes/(app)/contacts/[id]/edit/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import type { PageData, ActionData } from './$types'
+	import { enhance } from '$app/forms';
+	import type { PageData, ActionData } from './$types';
 
-  let { data, form }: { data: PageData; form: ActionData } = $props()
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
-<div class="max-w-2xl mx-auto p-6">
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit contact</h1>
-    <p class="text-gray-500 mb-6">
-      Update the details for {data.contact.first_name} {data.contact.last_name}.
-    </p>
+<div class="mx-auto max-w-2xl p-6">
+	<div class="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+		<h1 class="mb-2 text-2xl font-bold text-gray-900">Edit contact</h1>
+		<p class="mb-6 text-gray-500">
+			Update the details for {data.contact.first_name}
+			{data.contact.last_name}.
+		</p>
 
-    <form method="POST" use:enhance>
-      {#if form?.error}
-        <div
-          class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm"
-        >
-          {form.error}
-        </div>
-      {/if}
+		<form method="POST" use:enhance>
+			{#if form?.error}
+				<div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+					{form.error}
+				</div>
+			{/if}
 
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              for="first_name"
-              class="block text-sm font-medium text-gray-700 mb-1"
-            >
-              First name
-            </label>
-            <input
-              id="first_name"
-              name="first_name"
-              type="text"
-              required
-              value={data.contact.first_name}
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+			<div class="space-y-4">
+				<div class="grid grid-cols-2 gap-4">
+					<div>
+						<label for="first_name" class="mb-1 block text-sm font-medium text-gray-700">
+							First name
+						</label>
+						<input
+							id="first_name"
+							name="first_name"
+							type="text"
+							required
+							value={data.contact.first_name}
+							class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						/>
+					</div>
 
-          <div>
-            <label
-              for="last_name"
-              class="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Last name
-            </label>
-            <input
-              id="last_name"
-              name="last_name"
-              type="text"
-              required
-              value={data.contact.last_name}
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
+					<div>
+						<label for="last_name" class="mb-1 block text-sm font-medium text-gray-700">
+							Last name
+						</label>
+						<input
+							id="last_name"
+							name="last_name"
+							type="text"
+							required
+							value={data.contact.last_name}
+							class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						/>
+					</div>
+				</div>
 
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value={data.contact.email ?? ''}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="ada@example.com"
-          />
-        </div>
+				<div>
+					<label for="email" class="mb-1 block text-sm font-medium text-gray-700"> Email </label>
+					<input
+						id="email"
+						name="email"
+						type="email"
+						value={data.contact.email ?? ''}
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						placeholder="ada@example.com"
+					/>
+				</div>
 
-        <div>
-          <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-            Phone
-          </label>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            value={data.contact.phone ?? ''}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="+1 555 555 5555"
-          />
-        </div>
+				<div>
+					<label for="phone" class="mb-1 block text-sm font-medium text-gray-700"> Phone </label>
+					<input
+						id="phone"
+						name="phone"
+						type="tel"
+						value={data.contact.phone ?? ''}
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						placeholder="+1 555 555 5555"
+					/>
+				</div>
 
-        <div>
-          <label for="company" class="block text-sm font-medium text-gray-700 mb-1">
-            Company
-          </label>
-          <input
-            id="company"
-            name="company"
-            type="text"
-            value={data.contact.company ?? ''}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Analytical Engines Inc."
-          />
-        </div>
+				<div>
+					<label for="company" class="mb-1 block text-sm font-medium text-gray-700">
+						Company
+					</label>
+					<input
+						id="company"
+						name="company"
+						type="text"
+						value={data.contact.company ?? ''}
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						placeholder="Analytical Engines Inc."
+					/>
+				</div>
 
-        <div class="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-          >
-            Save changes
-          </button>
-          <a
-            href="/contacts"
-            class="text-gray-600 hover:text-gray-900 font-medium text-sm"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
-    </form>
-  </div>
+				<div class="flex items-center gap-3 pt-2">
+					<button
+						type="submit"
+						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+					>
+						Save changes
+					</button>
+					<a href="/contacts" class="text-sm font-medium text-gray-600 hover:text-gray-900">
+						Cancel
+					</a>
+				</div>
+			</div>
+		</form>
+	</div>
 </div>
 ```
 
@@ -397,9 +383,7 @@ Create `src/routes/(app)/contacts/[id]/edit/+page.svelte`:
 For users to reach this page, the contacts list needs an Edit link per row. Open `src/routes/(app)/contacts/+page.svelte` and add:
 
 ```svelte
-<a href="/contacts/{contact.id}/edit" class="text-blue-600 hover:underline text-sm">
-  Edit
-</a>
+<a href="/contacts/{contact.id}/edit" class="text-sm text-blue-600 hover:underline"> Edit </a>
 ```
 
 The curly braces inside the `href` are Svelte's attribute interpolation — the expression evaluates and drops into the string. No backticks needed.
@@ -424,7 +408,7 @@ Boot the dev server (`pnpm dev`) and click **Edit** on any contact. The URL beco
 - **Treating `params.id` as a number.** It's always a `string`. `params.id === 42` is always false. Supabase handles string-to-int/UUID coercion in `.eq()` automatically. If you need a number, wrap with `Number(params.id)` and `Number.isInteger()`.
 - **Using `.maybeSingle()` when you meant `.single()`.** `maybeSingle()` returns `null` for zero rows with no error, so your not-found check won't trigger. Use `.single()` for primary-key lookups where missing is a 404.
 - **Forgetting to convert empty strings to null.** Without `|| null`, the database stores `""`. Later queries like `WHERE email IS NULL` miss those rows and reporting silently breaks. Empty string from the form → null in the database. Always.
-- **Omitting `.eq('user_id', user.id)` because "RLS has got me."** It does — today. Six months from now someone swaps in `supabaseAdmin` and the invariant quietly breaks. Make the rule a property of *your code*, not of the policy migration.
+- **Omitting `.eq('user_id', user.id)` because "RLS has got me."** It does — today. Six months from now someone swaps in `supabaseAdmin` and the invariant quietly breaks. Make the rule a property of _your code_, not of the policy migration.
 - **Forgetting `updated_at`.** You lose audit-log precision. Bump it on every update, whether via app code or a trigger.
 - **Putting the id in a hidden form field instead of the URL.** You'd then have to re-validate the hidden id server-side (it's tamperable), and the URL no longer tells you which contact is being edited — breaking history and bookmarking.
 - **Writing `<button>Cancel</button>` without `type="button"`.** Defaults to `type="submit"`, so Cancel would submit the form. Use `<a href="/contacts">` for navigation.

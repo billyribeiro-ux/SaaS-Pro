@@ -1,10 +1,10 @@
 ---
-title: "6.4 - What Data to Store"
+title: '6.4 - What Data to Store'
 module: 6
 lesson: 5
-moduleSlug: "module-06-stripe-sveltekit"
-lessonSlug: "04-what-data-to-store"
-description: "Decide what Stripe data to store in Supabase — avoiding rate limits and enabling fast server-side rendering."
+moduleSlug: 'module-06-stripe-sveltekit'
+lessonSlug: '04-what-data-to-store'
+description: 'Decide what Stripe data to store in Supabase — avoiding rate limits and enabling fast server-side rendering.'
 duration: 12
 preview: false
 ---
@@ -44,10 +44,10 @@ If we fetch from Stripe on every request:
 ```typescript
 // Naive approach — DO NOT DO THIS
 export const load = async ({ locals }) => {
-  const user = await locals.getUser()
-  const subscriptions = await stripe.subscriptions.list({ customer: user.stripeCustomerId })
-  return { subscription: subscriptions.data[0] }
-}
+	const user = await locals.getUser();
+	const subscriptions = await stripe.subscriptions.list({ customer: user.stripeCustomerId });
+	return { subscription: subscriptions.data[0] };
+};
 ```
 
 Four problems hit you immediately:
@@ -69,6 +69,7 @@ That's an inexcusable coupling. Your contacts feature has **nothing** to do with
 ### Problem 4: Impossible to query
 
 Stripe's API lets you filter customers and subscriptions — to a point. But try to answer:
+
 - "How many Pro users signed up in the last 30 days, grouped by day?"
 - "Give me every user whose subscription renews this week so I can send a reminder email."
 - "Show me a list of all users who canceled but are still in their paid grace period."
@@ -83,14 +84,14 @@ Let's flip the model. We'll store a **denormalized copy** of the Stripe data we 
 
 ```
   Write path:
-  
+
      User action        Stripe                    Webhook       Supabase
      (checkout,         (authoritative            (real-time    (our cache)
       cancel, etc.)     state changes)            sync)
      ──────────────▶   ──────────────▶           ──────────▶   ─────────▶
-  
+
   Read path:
-  
+
      User loads a page   Our +page.server.ts    Supabase
                          queries our DB         returns cached
                          ──────────────────▶    subscription ──▶  render
@@ -127,6 +128,7 @@ Module 7 writes the actual migration. Here's the shape so you know what we're bu
 Represents the **what** — the distinct things you sell. In Contactly, we'll have two products: "Basic" and "Pro."
 
 Key columns:
+
 - `id` (matches Stripe's `prod_...` ID — this is also our primary key)
 - `name` — "Basic", "Pro"
 - `description`
@@ -140,6 +142,7 @@ Why store products in Supabase? Because the `/pricing` page — a public, high-t
 A **price** is how a product is sold. One product can have multiple prices (monthly vs annual, USD vs EUR, with-trial vs without-trial). Stripe models this explicitly.
 
 Key columns:
+
 - `id` (matches Stripe's `price_...` ID)
 - `product_id` → references `products.id`
 - `currency` — "usd", "eur", etc.
@@ -157,6 +160,7 @@ Stripe's "customer" concept is separate from your app's "user." A Stripe Custome
 For Contactly it's 1:1: every user who starts a subscription gets a Stripe Customer. We need to remember which Stripe Customer ID belongs to which user, so the webhook can look up "event.customer = cus_abc, which of our users is that?"
 
 Key columns:
+
 - `user_id` → references `auth.users(id)` (or `profiles(id)`, following our indirection rule)
 - `stripe_customer_id` — the `cus_...` ID
 - `email` — denormalized for convenience; could just join auth.users
@@ -168,6 +172,7 @@ This is the mapping table. It's small, changes rarely, and is the glue between S
 The big one — this is the table your app reads **most often**. On every authenticated page, we'll look up the current user's subscription row to decide what features they have access to.
 
 Key columns:
+
 - `id` (matches Stripe's `sub_...` ID)
 - `user_id` → references user (via profiles)
 - `status` — `active`, `trialing`, `past_due`, `canceled`, `unpaid`, `incomplete`
@@ -180,12 +185,12 @@ Writing a query like "does this user have access to Pro features?" becomes:
 
 ```typescript
 const { data: subscription } = await locals.supabase
-  .from('subscriptions')
-  .select('status, price_id')
-  .eq('user_id', user.id)
-  .single()
+	.from('subscriptions')
+	.select('status, price_id')
+	.eq('user_id', user.id)
+	.single();
 
-const hasPro = subscription?.status === 'active' || subscription?.status === 'trialing'
+const hasPro = subscription?.status === 'active' || subscription?.status === 'trialing';
 ```
 
 Fast. One query. Always correct (because webhooks keep it fresh). No Stripe round-trip.
@@ -211,6 +216,7 @@ Rule: **card data never enters your codebase, logs, database, or analytics.** If
 Stripe stores every invoice — monthly billing statements with line items, tax calculations, amounts in each currency, payment attempts. All of it.
 
 We **could** cache invoices in Supabase — but we don't, because:
+
 - We don't display invoice data frequently (most users never look at billing history).
 - When they do, they go to the Stripe Customer Portal, which Stripe hosts and keeps current.
 - Caching invoices means building UI to render them, handling tax complexity, dealing with currencies, managing credits and refunds. Enormous scope for little user value.
@@ -236,40 +242,40 @@ Here's the data flow in full. Commit this to memory — it's the shape of every 
 ```
   User action                    Stripe                Webhook endpoint             Supabase
   ─────────────                  ──────                ────────────────             ──────────
-                                                                                     
-  1. Clicks "Upgrade"                                                                
-     on /pricing                                                                     
-          │                                                                          
-          ▼                                                                          
-  2. Form action calls                                                               
-     stripe.checkout.sessions                                                        
-     .create(...)                                                                    
-          │                                                                          
-          ├────────── POST ──────▶                                                    
-                                  │                                                  
-                                  │ Creates session                                  
-                                  │ Returns URL                                      
-          ◀──────── URL ──────────┤                                                  
-          │                                                                          
-  3. Redirect user to                                                                
-     Stripe-hosted checkout                                                          
-          │                                                                          
-          │  (user enters card,                                                      
-          │   Stripe charges,                                                        
-          │   redirects back)                                                        
-                                  │                                                  
-  4. Stripe fires events:                                                            
-                                  ├── checkout.session.completed ──▶                 
-                                  ├── customer.subscription.created ──▶              
-                                  ├── invoice.payment_succeeded ──▶                  
-                                                                    │                
-                                                              5. Handler:            
-                                                                 - upsertCustomer    
+
+  1. Clicks "Upgrade"
+     on /pricing
+          │
+          ▼
+  2. Form action calls
+     stripe.checkout.sessions
+     .create(...)
+          │
+          ├────────── POST ──────▶
+                                  │
+                                  │ Creates session
+                                  │ Returns URL
+          ◀──────── URL ──────────┤
+          │
+  3. Redirect user to
+     Stripe-hosted checkout
+          │
+          │  (user enters card,
+          │   Stripe charges,
+          │   redirects back)
+                                  │
+  4. Stripe fires events:
+                                  ├── checkout.session.completed ──▶
+                                  ├── customer.subscription.created ──▶
+                                  ├── invoice.payment_succeeded ──▶
+                                                                    │
+                                                              5. Handler:
+                                                                 - upsertCustomer
                                                                  - upsertSubscription
-                                                                 - log invoice       
+                                                                 - log invoice
                                                                  ──────────────▶    stripe_customer_id in customers
                                                                                     subscription row in subscriptions
-                                                                                    
+
 ```
 
 ### Read flow (app queries subscription state)
@@ -277,25 +283,25 @@ Here's the data flow in full. Commit this to memory — it's the shape of every 
 ```
   User visits /dashboard       SvelteKit load()         Supabase
   ─────────────────────        ──────────────           ─────────
-                                                        
-  1. GET /dashboard                                     
-          │                                             
-          ▼                                             
-  2. locals.getUser()                                   
-          │                                             
-  3. supabase.from('subscriptions')                     
-     .select(...)                                       
-     .eq('user_id', user.id)                            
-     .single()                                          
-          │                                             
-          ├────────────────── SQL ──────────────────▶   
-                                                        
-  4. Returns subscription row                           
-     (status, price_id, etc.)                           
+
+  1. GET /dashboard
+          │
+          ▼
+  2. locals.getUser()
+          │
+  3. supabase.from('subscriptions')
+     .select(...)
+     .eq('user_id', user.id)
+     .single()
+          │
+          ├────────────────── SQL ──────────────────▶
+
+  4. Returns subscription row
+     (status, price_id, etc.)
           ◀──────── result ────────────────────────────┤
-                                                        
-  5. Render dashboard with                              
-     subscription-aware features                        
+
+  5. Render dashboard with
+     subscription-aware features
 ```
 
 Notice the asymmetry: **writes involve Stripe**, **reads stay local**. Stripe is always the source of truth, but the app avoids the API call on every request.
@@ -317,6 +323,7 @@ Enforce this with code review. If someone adds a `supabase.from('subscriptions')
 You create a subscription via the Stripe API. The API returns `{ id: 'sub_abc', status: 'active', ... }`. You think "I already have the data — let me insert into my subscriptions table right now."
 
 Two problems:
+
 1. You'd duplicate logic the webhook handler will also run (on the `customer.subscription.created` event that fires minutes later).
 2. If the initial insert succeeds but the webhook then fails or differs, your table has two representations of truth.
 
@@ -373,6 +380,7 @@ What happens if our webhook endpoint is down for 4 hours? Stripe retries with ex
 What if the endpoint is up but buggy — the handler errors silently for a specific event type? Stripe retries for 72 hours, then gives up. The event is permanently missed unless we notice. Our cache diverges from Stripe.
 
 Mitigation:
+
 - **Log every event.** When cache drift is suspected, logs tell you which events arrived.
 - **Monitor error rates.** If your webhook handler's error rate spikes, alert on it.
 - **Implement a reconciliation job.** Once a day, a background script compares Supabase subscriptions with Stripe's `subscriptions.list` and flags any discrepancies. We'll build this in Module 11 as a scheduled job.
@@ -386,16 +394,16 @@ A simple reconciliation script:
 ```typescript
 // Run daily
 for await (const stripeSub of stripe.subscriptions.list({ status: 'all' })) {
-  const { data: ourSub } = await supabaseAdmin
-    .from('subscriptions')
-    .select('*')
-    .eq('id', stripeSub.id)
-    .single()
-  
-  if (!ourSub || ourSub.status !== stripeSub.status) {
-    await upsertSubscription(stripeSub)  // correct the drift
-    console.warn('Drift detected:', stripeSub.id)
-  }
+	const { data: ourSub } = await supabaseAdmin
+		.from('subscriptions')
+		.select('*')
+		.eq('id', stripeSub.id)
+		.single();
+
+	if (!ourSub || ourSub.status !== stripeSub.status) {
+		await upsertSubscription(stripeSub); // correct the drift
+		console.warn('Drift detected:', stripeSub.id);
+	}
 }
 ```
 

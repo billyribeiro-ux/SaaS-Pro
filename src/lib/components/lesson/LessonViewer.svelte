@@ -108,7 +108,9 @@
 				<Badge variant="preview">Free preview</Badge>
 			{/if}
 		</div>
-		<h1 class="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl dark:text-white">
+		<h1
+			class="font-display text-4xl leading-[1.1] font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white"
+		>
 			{lesson.meta.title}
 		</h1>
 		<p class="mt-3 text-lg leading-relaxed text-slate-600 dark:text-slate-400">
@@ -116,16 +118,26 @@
 		</p>
 	</header>
 
-	<!-- Rendered server-side from the markdown body. Content is authored by us, so {@html} is safe. -->
+	<!--
+	  Rendered server-side from the lesson markdown via `marked`. The markdown
+	  source is authored by us and committed to the repo (`src/content/`),
+	  not user-supplied — therefore {@html} carries no XSS risk on this
+	  surface and the lint rule is suppressed intentionally.
+	-->
 	<div
-		class="prose prose-slate max-w-none prose-headings:font-display prose-headings:tracking-tight prose-a:text-brand-700 prose-a:no-underline hover:prose-a:underline dark:prose-invert dark:prose-a:text-brand-400"
+		class="prose-headings:font-display prose max-w-none prose-slate dark:prose-invert prose-headings:tracking-tight prose-a:text-brand-700 prose-a:no-underline hover:prose-a:underline dark:prose-a:text-brand-400"
 		{@attach enhanceCodeBlocks}
 	>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html renderedHtml}
 	</div>
 
 	<div class="mt-12 border-t border-slate-200/80 pt-8 dark:border-slate-800">
-		<LessonComplete {completed} moduleSlug={lesson.meta.moduleSlug} lessonSlug={lesson.meta.lessonSlug} />
+		<LessonComplete
+			{completed}
+			moduleSlug={lesson.meta.moduleSlug}
+			lessonSlug={lesson.meta.lessonSlug}
+		/>
 	</div>
 
 	<div class="mt-8">

@@ -1,10 +1,10 @@
 ---
-title: "6.3.1 - Webhook Script"
+title: '6.3.1 - Webhook Script'
 module: 6
 lesson: 4
-moduleSlug: "module-06-stripe-sveltekit"
-lessonSlug: "03-1-webhook-script"
-description: "Add a pnpm script so you never have to remember the full stripe listen command."
+moduleSlug: 'module-06-stripe-sveltekit'
+lessonSlug: '03-1-webhook-script'
+description: 'Add a pnpm script so you never have to remember the full stripe listen command.'
 duration: 8
 preview: false
 ---
@@ -93,14 +93,14 @@ Full block after the addition:
 
 ```json
 {
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test": "vitest",
-    "stripe:listen": "stripe listen --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_succeeded,invoice.payment_failed --forward-to localhost:5173/api/webhooks/stripe"
-  }
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "vitest",
+		"stripe:listen": "stripe listen --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.payment_succeeded,invoice.payment_failed --forward-to localhost:5173/api/webhooks/stripe"
+	}
 }
 ```
 
@@ -251,13 +251,13 @@ Your `package.json` scripts are the canonical "how to run this codebase" referen
 
 ```json
 {
-  "scripts": {
-    "dev": "...",
-    "build": "...",
-    "check": "...",
-    "test": "...",
-    "stripe:listen": "..."
-  }
+	"scripts": {
+		"dev": "...",
+		"build": "...",
+		"check": "...",
+		"test": "...",
+		"stripe:listen": "..."
+	}
 }
 ```
 

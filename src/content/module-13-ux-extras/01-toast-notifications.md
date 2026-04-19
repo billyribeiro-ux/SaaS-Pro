@@ -1,10 +1,10 @@
 ---
-title: "13.1 - Toast Notifications"
+title: '13.1 - Toast Notifications'
 module: 13
 lesson: 1
-moduleSlug: "module-13-ux-extras"
-lessonSlug: "01-toast-notifications"
-description: "Build a toast notification system using Svelte 5 reactive class pattern."
+moduleSlug: 'module-13-ux-extras'
+lessonSlug: '01-toast-notifications'
+description: 'Build a toast notification system using Svelte 5 reactive class pattern.'
 duration: 12
 preview: false
 ---
@@ -73,30 +73,30 @@ Create the file `src/lib/stores/toast.svelte.ts`:
 
 ```typescript
 // src/lib/stores/toast.svelte.ts
-type ToastType = 'success' | 'error' | 'info'
+type ToastType = 'success' | 'error' | 'info';
 
 interface Toast {
-  id: string
-  message: string
-  type: ToastType
+	id: string;
+	message: string;
+	type: ToastType;
 }
 
 class ToastStore {
-  toasts = $state<Toast[]>([])
+	toasts = $state<Toast[]>([]);
 
-  add(message: string, type: ToastType = 'info') {
-    const id = crypto.randomUUID()
-    this.toasts = [...this.toasts, { id, message, type }]
+	add(message: string, type: ToastType = 'info') {
+		const id = crypto.randomUUID();
+		this.toasts = [...this.toasts, { id, message, type }];
 
-    setTimeout(() => this.dismiss(id), 3000)
-  }
+		setTimeout(() => this.dismiss(id), 3000);
+	}
 
-  dismiss(id: string) {
-    this.toasts = this.toasts.filter((t) => t.id !== id)
-  }
+	dismiss(id: string) {
+		this.toasts = this.toasts.filter((t) => t.id !== id);
+	}
 }
 
-export const toast = new ToastStore()
+export const toast = new ToastStore();
 ```
 
 That's the whole store. Let's walk through it line by line.
@@ -125,9 +125,13 @@ The `<Toast[]>` generic parameter tells TypeScript the array holds `Toast` objec
 
 ```typescript
 // NOT what we do
-export const toasts = $state<Toast[]>([])
-export function add(message: string, type: ToastType = 'info') { /* ... */ }
-export function dismiss(id: string) { /* ... */ }
+export const toasts = $state<Toast[]>([]);
+export function add(message: string, type: ToastType = 'info') {
+	/* ... */
+}
+export function dismiss(id: string) {
+	/* ... */
+}
 ```
 
 And that would work. But a class gives us three things that module-level globals don't:
@@ -141,9 +145,9 @@ And that would work. But a class gives us three things that module-level globals
 The producer method. Three things happen:
 
 ```typescript
-const id = crypto.randomUUID()
-this.toasts = [...this.toasts, { id, message, type }]
-setTimeout(() => this.dismiss(id), 3000)
+const id = crypto.randomUUID();
+this.toasts = [...this.toasts, { id, message, type }];
+setTimeout(() => this.dismiss(id), 3000);
 ```
 
 - `crypto.randomUUID()` — a Web Crypto API function available in all modern browsers and in Node 19+. Returns a v4 UUID string. Globally unique with astronomical probability, zero dependencies, zero setup. Perfect for our needs.
@@ -175,35 +179,35 @@ Create `src/lib/components/ToastContainer.svelte`:
 ```svelte
 <!-- src/lib/components/ToastContainer.svelte -->
 <script lang="ts">
-  import { fly, fade } from 'svelte/transition'
-  import { toast } from '$lib/stores/toast.svelte'
+	import { fly, fade } from 'svelte/transition';
+	import { toast } from '$lib/stores/toast.svelte';
 </script>
 
 <div
-  class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"
-  role="status"
-  aria-live="polite"
+	class="pointer-events-none fixed top-4 right-4 z-50 flex flex-col gap-2"
+	role="status"
+	aria-live="polite"
 >
-  {#each toast.toasts as t (t.id)}
-    <div
-      class="pointer-events-auto rounded-lg px-4 py-3 shadow-lg text-sm font-medium flex items-center gap-3 min-w-[280px]"
-      class:bg-green-600={t.type === 'success'}
-      class:bg-red-600={t.type === 'error'}
-      class:bg-gray-800={t.type === 'info'}
-      in:fly={{ x: 300, duration: 200 }}
-      out:fade={{ duration: 150 }}
-    >
-      <span class="text-white flex-1">{t.message}</span>
-      <button
-        type="button"
-        class="text-white/70 hover:text-white"
-        onclick={() => toast.dismiss(t.id)}
-        aria-label="Dismiss"
-      >
-        ×
-      </button>
-    </div>
-  {/each}
+	{#each toast.toasts as t (t.id)}
+		<div
+			class="pointer-events-auto flex min-w-[280px] items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium shadow-lg"
+			class:bg-green-600={t.type === 'success'}
+			class:bg-red-600={t.type === 'error'}
+			class:bg-gray-800={t.type === 'info'}
+			in:fly={{ x: 300, duration: 200 }}
+			out:fade={{ duration: 150 }}
+		>
+			<span class="flex-1 text-white">{t.message}</span>
+			<button
+				type="button"
+				class="text-white/70 hover:text-white"
+				onclick={() => toast.dismiss(t.id)}
+				aria-label="Dismiss"
+			>
+				×
+			</button>
+		</div>
+	{/each}
 </div>
 ```
 
@@ -249,12 +253,12 @@ Svelte's `svelte/transition` module is one of the framework's killer features �
 
 ```svelte
 <button
-  type="button"
-  class="text-white/70 hover:text-white"
-  onclick={() => toast.dismiss(t.id)}
-  aria-label="Dismiss"
+	type="button"
+	class="text-white/70 hover:text-white"
+	onclick={() => toast.dismiss(t.id)}
+	aria-label="Dismiss"
 >
-  ×
+	×
 </button>
 ```
 
@@ -271,10 +275,10 @@ Open `src/routes/+layout.svelte` and add the container so it's always mounted:
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
-  import '../app.css'
-  import ToastContainer from '$lib/components/ToastContainer.svelte'
+	import '../app.css';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
-  let { children } = $props()
+	let { children } = $props();
 </script>
 
 {@render children()}
@@ -292,7 +296,7 @@ Once the container is mounted, firing a toast is a one-liner from any component:
 
 ```svelte
 <script lang="ts">
-  import { toast } from '$lib/stores/toast.svelte'
+	import { toast } from '$lib/stores/toast.svelte';
 </script>
 
 <button onclick={() => toast.add('Contact saved', 'success')}>Save</button>
@@ -310,15 +314,15 @@ First, update a form action. Here's an example from the contact-create flow:
 
 ```typescript
 // src/routes/(app)/contacts/new/+page.server.ts
-import { redirect } from '@sveltejs/kit'
+import { redirect } from '@sveltejs/kit';
 
 export const actions = {
-  default: async ({ request, locals }) => {
-    // ... validation + insert ...
+	default: async ({ request, locals }) => {
+		// ... validation + insert ...
 
-    redirect(303, '/contacts?flash=contact-created')
-  }
-}
+		redirect(303, '/contacts?flash=contact-created');
+	}
+};
 ```
 
 The simplest pattern: redirect with a query param the next page reads. Then the destination's load function converts it to a flash:
@@ -326,15 +330,14 @@ The simplest pattern: redirect with a query param the next page reads. Then the 
 ```typescript
 // src/routes/(app)/contacts/+page.server.ts
 export const load = async ({ url, locals }) => {
-  const flash = url.searchParams.get('flash')
-  // ... existing contact loading ...
-  return {
-    contacts,
-    flash: flash === 'contact-created'
-      ? { message: 'Contact saved', type: 'success' as const }
-      : null
-  }
-}
+	const flash = url.searchParams.get('flash');
+	// ... existing contact loading ...
+	return {
+		contacts,
+		flash:
+			flash === 'contact-created' ? { message: 'Contact saved', type: 'success' as const } : null
+	};
+};
 ```
 
 And in the layout we pick up any `data.flash` and push it to the toast store:
@@ -342,25 +345,25 @@ And in the layout we pick up any `data.flash` and push it to the toast store:
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
-  import '../app.css'
-  import ToastContainer from '$lib/components/ToastContainer.svelte'
-  import { page } from '$app/state'
-  import { toast } from '$lib/stores/toast.svelte'
+	import '../app.css';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import { page } from '$app/state';
+	import { toast } from '$lib/stores/toast.svelte';
 
-  let { children } = $props()
+	let { children } = $props();
 
-  let lastFlash: string | null = $state(null)
+	let lastFlash: string | null = $state(null);
 
-  $effect(() => {
-    const flash = page.data.flash as
-      | { message: string; type: 'success' | 'error' | 'info' }
-      | null
-      | undefined
-    if (flash && flash.message !== lastFlash) {
-      lastFlash = flash.message
-      toast.add(flash.message, flash.type)
-    }
-  })
+	$effect(() => {
+		const flash = page.data.flash as
+			| { message: string; type: 'success' | 'error' | 'info' }
+			| null
+			| undefined;
+		if (flash && flash.message !== lastFlash) {
+			lastFlash = flash.message;
+			toast.add(flash.message, flash.type);
+		}
+	});
 </script>
 
 {@render children()}

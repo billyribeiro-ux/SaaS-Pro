@@ -32,7 +32,9 @@
 		className
 	)}
 >
-	<div class="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-2">
+	<div
+		class="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-2"
+	>
 		<div class="flex items-center gap-2">
 			<div class="flex items-center gap-1.5" aria-hidden="true">
 				<span class="size-2.5 rounded-full bg-red-500/70"></span>

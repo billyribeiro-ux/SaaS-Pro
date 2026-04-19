@@ -1,10 +1,10 @@
 ---
-title: "8.1 - Create Products & Prices"
+title: '8.1 - Create Products & Prices'
 module: 8
 lesson: 1
-moduleSlug: "module-08-pricing-page"
-lessonSlug: "01-create-products-prices"
-description: "Create the Contactly Pro product and its three pricing tiers in Stripe test mode."
+moduleSlug: 'module-08-pricing-page'
+lessonSlug: '01-create-products-prices'
+description: 'Create the Contactly Pro product and its three pricing tiers in Stripe test mode.'
 duration: 12
 preview: false
 ---
@@ -39,8 +39,8 @@ You will create **one Product** (the thing: Contactly Pro) and **three Prices** 
 
 Before clicking anything, it's worth ten seconds on Stripe's data model, because a lot of Stripe confusion comes from mixing up these three concepts.
 
-- A **Product** is the *thing* you sell. One product per offering. If you eventually sold "Contactly Pro" and "Contactly Team", those would be two products. Today we have exactly one: Contactly Pro. A product has a name, a description, maybe an image, and a set of prices.
-- A **Price** is a *way to pay for* that product. Every recurring interval or amount is its own Price. Monthly billing? One Price. Yearly billing? Another Price. A one-time lifetime fee? Another Price. Same product, three Prices. This lets Stripe handle discounting, A/B testing, currency localisation, etc., without duplicating the product metadata.
+- A **Product** is the _thing_ you sell. One product per offering. If you eventually sold "Contactly Pro" and "Contactly Team", those would be two products. Today we have exactly one: Contactly Pro. A product has a name, a description, maybe an image, and a set of prices.
+- A **Price** is a _way to pay for_ that product. Every recurring interval or amount is its own Price. Monthly billing? One Price. Yearly billing? Another Price. A one-time lifetime fee? Another Price. Same product, three Prices. This lets Stripe handle discounting, A/B testing, currency localisation, etc., without duplicating the product metadata.
 - A **Plan** is a legacy term Stripe used before Prices existed. You'll still see it in old tutorials and in some Stripe API responses. Treat "Plan" as a synonym for a recurring Price. In new code we always say **Price**.
 
 The relationship is one-to-many: one Product has many Prices. When a customer subscribes, they subscribe to **a Price** (not to a Product); the Product metadata is carried along for receipts and display.
@@ -63,7 +63,7 @@ That's our target state. Let's build it.
 Open [dashboard.stripe.com](https://dashboard.stripe.com). In the top-right corner, you'll see a toggle labelled **Test mode**. Flip it on. You should see an orange banner across the top of every page saying `TEST MODE` and the navigation will look slightly different (fewer menu items, no "Payouts" for example).
 
 > [!WARNING]
-> **Check the banner every time.** Test mode and live mode are *completely separate* environments — separate data, separate API keys, separate products. It is embarrassingly easy to create a product in live mode because you forgot to flip the switch. Every developer does it at least once. Check the banner before every click.
+> **Check the banner every time.** Test mode and live mode are _completely separate_ environments — separate data, separate API keys, separate products. It is embarrassingly easy to create a product in live mode because you forgot to flip the switch. Every developer does it at least once. Check the banner before every click.
 
 Our `.env` has a key that starts with `sk_test_...` — so the app is already wired to test mode. The products we create now will match those keys.
 
@@ -130,7 +130,7 @@ contactly_monthly
 ```
 
 > [!NOTE]
-> **What is a lookup key?** A lookup key is a stable, developer-defined string attached to a Price. Stripe's auto-generated Price IDs (`price_1Q7xYz...`) are opaque and change between environments — the ID in your test account won't match the ID in your production account. Lookup keys *do* match, because *you* assign them. You can then query `stripe.prices.list({ lookup_keys: ['contactly_monthly'] })` and get the right Price in any environment. This is the pattern we'll use in lesson 8.4 to populate the pricing page. Without lookup keys you'd have to hardcode `price_1Q7xYz...` into your app and maintain separate constants per environment. Nobody has time for that.
+> **What is a lookup key?** A lookup key is a stable, developer-defined string attached to a Price. Stripe's auto-generated Price IDs (`price_1Q7xYz...`) are opaque and change between environments — the ID in your test account won't match the ID in your production account. Lookup keys _do_ match, because _you_ assign them. You can then query `stripe.prices.list({ lookup_keys: ['contactly_monthly'] })` and get the right Price in any environment. This is the pattern we'll use in lesson 8.4 to populate the pricing page. Without lookup keys you'd have to hardcode `price_1Q7xYz...` into your app and maintain separate constants per environment. Nobody has time for that.
 
 ### Click **Add price** (or **Save**)
 
@@ -174,11 +174,11 @@ Click **Add price**.
 
 Go back to the Contactly Pro product page. You should see a table like this:
 
-| Price            | Billing            | Lookup key           |
-|------------------|--------------------|-----------------------|
-| $97.00 / month   | Recurring monthly  | `contactly_monthly`   |
-| $997.00 / year   | Recurring yearly   | `contactly_yearly`    |
-| $4,997.00        | One time           | `contactly_lifetime`  |
+| Price          | Billing           | Lookup key           |
+| -------------- | ----------------- | -------------------- |
+| $97.00 / month | Recurring monthly | `contactly_monthly`  |
+| $997.00 / year | Recurring yearly  | `contactly_yearly`   |
+| $4,997.00      | One time          | `contactly_lifetime` |
 
 **Every row must have a lookup key.** If one is blank, click the price, edit it, and set the missing lookup key. Our SvelteKit code in lesson 8.4 will ask Stripe: "Give me the prices with these three lookup keys." If a price has no lookup key, it's invisible to our app.
 
@@ -252,7 +252,7 @@ When archiving a price to replace it (as in Mistake 4), you need the lookup key 
 
 Creating products by clicking in a dashboard is fine for one developer on day one. It falls apart the moment a teammate joins, you onboard a new production account, or you want a clean staging environment. Every click is state that lives only in one place and can't be code-reviewed.
 
-In lesson 8.2 we'll write this exact setup as a TypeScript script. That script is the *source of truth* for what products and prices exist in any Stripe environment. Dashboards become read-only verification tools. This is the same shift you made with database migrations in Module 1 (don't edit via Studio; write a migration) and the same shift you'll make with infrastructure in Module 12 (don't configure Vercel via the UI; commit config files). Keep noticing the pattern — "click-ops" doesn't scale, code does.
+In lesson 8.2 we'll write this exact setup as a TypeScript script. That script is the _source of truth_ for what products and prices exist in any Stripe environment. Dashboards become read-only verification tools. This is the same shift you made with database migrations in Module 1 (don't edit via Studio; write a migration) and the same shift you'll make with infrastructure in Module 12 (don't configure Vercel via the UI; commit config files). Keep noticing the pattern — "click-ops" doesn't scale, code does.
 
 ### 2. Why duplicate Module 5's content here?
 
@@ -262,7 +262,7 @@ The tradeoff is that linear readers re-see the product setup. We make that cheap
 
 ### 3. Lookup keys are an abstraction boundary
 
-Without lookup keys, your price IDs leak across every boundary — test code, staging configs, production configs, seed scripts, database rows, email templates. With lookup keys, your *code* mentions `contactly_monthly` and Stripe resolves it to the right internal ID per environment. That's the same abstraction pattern as environment variables (code says `DATABASE_URL`, deployment resolves it to the actual connection string). Both are boundaries between "what I care about" (the semantic name) and "what the system needs" (the opaque ID).
+Without lookup keys, your price IDs leak across every boundary — test code, staging configs, production configs, seed scripts, database rows, email templates. With lookup keys, your _code_ mentions `contactly_monthly` and Stripe resolves it to the right internal ID per environment. That's the same abstraction pattern as environment variables (code says `DATABASE_URL`, deployment resolves it to the actual connection string). Both are boundaries between "what I care about" (the semantic name) and "what the system needs" (the opaque ID).
 
 Whenever you find yourself pasting an opaque ID into application code, pause and ask: is there a human-readable alias I can use instead? If yes, use it. Stripe has lookup keys. Supabase Auth has slugs. DNS has hostnames. The pattern is everywhere.
 
@@ -270,7 +270,7 @@ Whenever you find yourself pasting an opaque ID into application code, pause and
 
 Lookup keys are also why our seed script in lesson 8.2 can be made idempotent: re-running it doesn't create duplicate prices because Stripe rejects duplicate lookup keys. We get safe re-runs for free because the API makes wrong things impossible.
 
-Compare that to a seed script keyed on price *amount* (`create if no $97 price exists`). That's fragile: change the amount and you create a second row. Lookup keys are a contract between your code and Stripe — "this string uniquely identifies this business concept". Once you pick one, it's stable forever.
+Compare that to a seed script keyed on price _amount_ (`create if no $97 price exists`). That's fragile: change the amount and you create a second row. Lookup keys are a contract between your code and Stripe — "this string uniquely identifies this business concept". Once you pick one, it's stable forever.
 
 ### 5. Prices are pricing, not packaging
 

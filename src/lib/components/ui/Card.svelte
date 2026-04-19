@@ -13,13 +13,7 @@
 		children: Snippet;
 	};
 
-	let {
-		class: className,
-		interactive = false,
-		header,
-		footer,
-		children
-	}: Props = $props();
+	let { class: className, interactive = false, header, footer, children }: Props = $props();
 </script>
 
 <div

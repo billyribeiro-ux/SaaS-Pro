@@ -1,10 +1,10 @@
 ---
-title: "2.3 - Server-Side Supabase"
+title: '2.3 - Server-Side Supabase'
 module: 2
 lesson: 3
-moduleSlug: "module-02-supabase-integration"
-lessonSlug: "03-server-side-supabase"
-description: "Configure the Supabase server client in hooks.server.ts using @supabase/ssr for cookie-based session management."
+moduleSlug: 'module-02-supabase-integration'
+lessonSlug: '03-server-side-supabase'
+description: 'Configure the Supabase server client in hooks.server.ts using @supabase/ssr for cookie-based session management.'
 duration: 14
 preview: false
 ---
@@ -39,14 +39,14 @@ Think of it as middleware, but SvelteKit's own word is "hook." Every request flo
 
 ```typescript
 // src/hooks.server.ts
-import type { Handle } from '@sveltejs/kit'
+import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  // before: set up things on `event.locals`
-  const response = await resolve(event)
-  // after: read/modify the response
-  return response
-}
+	// before: set up things on `event.locals`
+	const response = await resolve(event);
+	// after: read/modify the response
+	return response;
+};
 ```
 
 - **`event`** — all the information about this request: URL, method, headers, cookies, and `event.locals` (a fresh empty object for you to stuff things into for downstream code).
@@ -76,6 +76,7 @@ If you're new, here's the background you need.
 A **cookie** is a tiny piece of text the browser stores on behalf of a specific domain. When the browser makes any request to that domain, it attaches every non-expired cookie to the request as a header. Servers can set new cookies by returning a `Set-Cookie` response header.
 
 Cookies have attributes:
+
 - `HttpOnly` — JavaScript in the browser cannot read this cookie. Only the server sees it. Defeats XSS attacks.
 - `Secure` — only transmitted over HTTPS.
 - `SameSite=Lax` or `Strict` — only sent on same-origin requests (or relaxed for top-level navigations). Defeats CSRF.
@@ -96,49 +97,49 @@ Create (or replace) `src/hooks.server.ts` with:
 
 ```typescript
 // src/hooks.server.ts
-import { createServerClient } from '@supabase/ssr'
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
-import type { Handle } from '@sveltejs/kit'
-import type { Database } from '$lib/types/database.types'
+import { createServerClient } from '@supabase/ssr';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import type { Handle } from '@sveltejs/kit';
+import type { Database } from '$lib/types/database.types';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  // Build a per-request Supabase client that reads cookies from the incoming
-  // request and writes any session updates to the outgoing response.
-  event.locals.supabase = createServerClient<Database>(
-    PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll: () => event.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            event.cookies.set(name, value, { ...options, path: '/' })
-          })
-        }
-      }
-    }
-  )
+	// Build a per-request Supabase client that reads cookies from the incoming
+	// request and writes any session updates to the outgoing response.
+	event.locals.supabase = createServerClient<Database>(
+		PUBLIC_SUPABASE_URL,
+		PUBLIC_SUPABASE_ANON_KEY,
+		{
+			cookies: {
+				getAll: () => event.cookies.getAll(),
+				setAll: (cookiesToSet) => {
+					cookiesToSet.forEach(({ name, value, options }) => {
+						event.cookies.set(name, value, { ...options, path: '/' });
+					});
+				}
+			}
+		}
+	);
 
-  // Resolve the authenticated user by validating the session with the Auth
-  // server. NEVER use getSession() for authorization — it trusts the cookie
-  // without contacting the server and can be spoofed by a malicious client.
-  event.locals.getUser = async () => {
-    const {
-      data: { user },
-      error
-    } = await event.locals.supabase.auth.getUser()
-    if (error || !user) return null
-    return user
-  }
+	// Resolve the authenticated user by validating the session with the Auth
+	// server. NEVER use getSession() for authorization — it trusts the cookie
+	// without contacting the server and can be spoofed by a malicious client.
+	event.locals.getUser = async () => {
+		const {
+			data: { user },
+			error
+		} = await event.locals.supabase.auth.getUser();
+		if (error || !user) return null;
+		return user;
+	};
 
-  return resolve(event, {
-    // Supabase uses custom response headers. SvelteKit strips most headers from
-    // the serialized response by default; these two need to pass through.
-    filterSerializedResponseHeaders(name) {
-      return name === 'content-range' || name === 'x-supabase-api-version'
-    }
-  })
-}
+	return resolve(event, {
+		// Supabase uses custom response headers. SvelteKit strips most headers from
+		// the serialized response by default; these two need to pass through.
+		filterSerializedResponseHeaders(name) {
+			return name === 'content-range' || name === 'x-supabase-api-version';
+		}
+	});
+};
 ```
 
 Let's walk through every line.
@@ -150,10 +151,10 @@ Let's walk through every line.
 ### The imports
 
 ```typescript
-import { createServerClient } from '@supabase/ssr'
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
-import type { Handle } from '@sveltejs/kit'
-import type { Database } from '$lib/types/database.types'
+import { createServerClient } from '@supabase/ssr';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import type { Handle } from '@sveltejs/kit';
+import type { Database } from '$lib/types/database.types';
 ```
 
 - `createServerClient` — the Supabase SSR factory function. Returns a `SupabaseClient` instance wired for server-side cookie handling.
@@ -165,13 +166,18 @@ import type { Database } from '$lib/types/database.types'
 
 ```typescript
 event.locals.supabase = createServerClient<Database>(
-  PUBLIC_SUPABASE_URL,
-  PUBLIC_SUPABASE_ANON_KEY,
-  { cookies: { /* ... */ } }
-)
+	PUBLIC_SUPABASE_URL,
+	PUBLIC_SUPABASE_ANON_KEY,
+	{
+		cookies: {
+			/* ... */
+		}
+	}
+);
 ```
 
 Three positional arguments:
+
 1. The Supabase API URL.
 2. The anon key.
 3. A client config object — for SSR, the essential field is `cookies`.
@@ -204,13 +210,13 @@ SvelteKit provides both operations on `event.cookies`. We're just bridging the t
 
 ```typescript
 event.locals.getUser = async () => {
-  const {
-    data: { user },
-    error
-  } = await event.locals.supabase.auth.getUser()
-  if (error || !user) return null
-  return user
-}
+	const {
+		data: { user },
+		error
+	} = await event.locals.supabase.auth.getUser();
+	if (error || !user) return null;
+	return user;
+};
 ```
 
 This function is what every downstream server code will call to determine "who is this user?" We wrap `supabase.auth.getUser()` in a thin helper that returns `User | null`, making the caller's life easier.
@@ -263,10 +269,10 @@ Save yourself the debate. Use `getUser()`.
 
 ```typescript
 return resolve(event, {
-  filterSerializedResponseHeaders(name) {
-    return name === 'content-range' || name === 'x-supabase-api-version'
-  }
-})
+	filterSerializedResponseHeaders(name) {
+		return name === 'content-range' || name === 'x-supabase-api-version';
+	}
+});
 ```
 
 When SvelteKit renders a page on the server, it also serializes any `fetch()` responses you made during `load` functions so the client can hydrate with the same data. For security, SvelteKit's default is to strip most headers from those serialized responses — you don't want `Set-Cookie` or `Authorization` leaking to the client.
@@ -286,28 +292,28 @@ SvelteKit keeps `event.locals` type-safe via a special `App.Locals` interface in
 
 ```typescript
 // src/app.d.ts
-import type { SupabaseClient, User } from '@supabase/supabase-js'
-import type { Database } from '$lib/types/database.types'
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { Database } from '$lib/types/database.types';
 
 declare global {
-  namespace App {
-    interface Locals {
-      supabase: SupabaseClient<Database>
-      getUser(): Promise<User | null>
-    }
+	namespace App {
+		interface Locals {
+			supabase: SupabaseClient<Database>;
+			getUser(): Promise<User | null>;
+		}
 
-    interface PageData {
-      user: User | null
-    }
+		interface PageData {
+			user: User | null;
+		}
 
-    interface Error {
-      message: string
-      code?: string
-    }
-  }
+		interface Error {
+			message: string;
+			code?: string;
+		}
+	}
 }
 
-export {}
+export {};
 ```
 
 Three things to understand:
@@ -338,6 +344,7 @@ pnpm dev
 Visit `localhost:5173`. The page loads. Nothing visibly changed — the hook is running silently for every request, setting up a Supabase client nobody is using yet. That's expected.
 
 If the server throws an error on startup, check:
+
 - Did you replace `src/hooks.server.ts` fully, or is there a conflict with existing content?
 - Are `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` both set in `.env`?
 - Is `@supabase/ssr` installed? `pnpm list @supabase/ssr` should show a version.

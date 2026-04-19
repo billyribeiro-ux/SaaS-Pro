@@ -1,10 +1,10 @@
 ---
-title: "Thank You"
+title: 'Thank You'
 module: 14
 lesson: 1
-moduleSlug: "module-14-thank-you"
-lessonSlug: "00-thank-you"
-description: "Congratulations on completing the course. What you built, what you learned, and where to go next."
+moduleSlug: 'module-14-thank-you'
+lessonSlug: '00-thank-you'
+description: 'Congratulations on completing the course. What you built, what you learned, and where to go next.'
 duration: 3
 preview: false
 ---

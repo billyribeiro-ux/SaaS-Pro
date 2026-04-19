@@ -1,9 +1,9 @@
 ---
-title: "5.4 - Products & Prices Overview"
+title: '5.4 - Products & Prices Overview'
 module: 5
 lesson: 5
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "04-products-prices-overview"
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '04-products-prices-overview'
 description: "Understand Stripe's product and pricing data model before creating your own."
 duration: 10
 preview: false
@@ -11,7 +11,7 @@ preview: false
 
 ## Overview
 
-Before we click "New product" in the Stripe dashboard, we need to understand the model Stripe is quietly imposing on our catalog. It's a two-object model: **Products** and **Prices**. A Product is *what* you sell. A Price is *how much and how often*. One Product can have many Prices — monthly, yearly, regional, lifetime, legacy, experimental. This split looks overengineered at first glance, but it's one of the cleanest data-model decisions in any SaaS API. By the end of this lesson you'll understand why, and you'll know how to think in Stripe's terms before you ever write SQL for your own billing logic.
+Before we click "New product" in the Stripe dashboard, we need to understand the model Stripe is quietly imposing on our catalog. It's a two-object model: **Products** and **Prices**. A Product is _what_ you sell. A Price is _how much and how often_. One Product can have many Prices — monthly, yearly, regional, lifetime, legacy, experimental. This split looks overengineered at first glance, but it's one of the cleanest data-model decisions in any SaaS API. By the end of this lesson you'll understand why, and you'll know how to think in Stripe's terms before you ever write SQL for your own billing logic.
 
 This lesson is **conceptual only**. No buttons clicked, no code written. Lesson 5.5 creates the actual Contactly Pro product and its three prices. Here we lay the groundwork so that when you create them, every field makes sense.
 
@@ -31,7 +31,7 @@ This lesson is **conceptual only**. No buttons clicked, no code written. Lesson 
 
 ## Step 1: What Is a Product?
 
-A Stripe **Product** is a reusable catalog entry describing *something you sell*. It has:
+A Stripe **Product** is a reusable catalog entry describing _something you sell_. It has:
 
 - **`name`** — human-readable name ("Contactly Pro"). Shown on invoices, receipts, and checkout pages.
 - **`description`** — human-readable description ("Full access to Contactly — unlimited contacts and all features"). Also surfaced on checkout and receipts.
@@ -40,9 +40,9 @@ A Stripe **Product** is a reusable catalog entry describing *something you sell*
 - **`metadata`** — a free-form key/value map. This is your escape hatch for app-specific data ("`internal_sku`, `tier_slug`, `feature_flags_json`"). Metadata never appears on receipts; it's invisible to customers.
 - **`id`** — starts with `prod_` (e.g., `prod_Nv7k8KZabc`). Stripe generates this on creation; you reference it when creating a Price.
 
-Notice what **isn't** here: no price, no interval, no currency. A Product doesn't know how much it costs. It's just a *thing*.
+Notice what **isn't** here: no price, no interval, no currency. A Product doesn't know how much it costs. It's just a _thing_.
 
-This is deliberate. Think of Product as the platonic ideal of "the service you offer" — its identity, its branding, its description. If you change your pricing tomorrow, you don't want to create a new product; the product is still Contactly Pro. The *terms* changed, not the thing.
+This is deliberate. Think of Product as the platonic ideal of "the service you offer" — its identity, its branding, its description. If you change your pricing tomorrow, you don't want to create a new product; the product is still Contactly Pro. The _terms_ changed, not the thing.
 
 ### Examples of Products
 
@@ -79,11 +79,11 @@ One Product has many Prices. Each Price represents one specific commercial offer
 
 For `prod_Nv7k8KZ` (Contactly Pro), we'll create three Prices:
 
-| Price | `unit_amount` | `currency` | `type` | `interval` | `lookup_key` |
-|-------|---------------|------------|--------|------------|--------------|
-| Monthly | 9700 | `usd` | recurring | month | `contactly_monthly` |
-| Yearly | 99700 | `usd` | recurring | year | `contactly_yearly` |
-| Lifetime | 499700 | `usd` | one_time | — | `contactly_lifetime` |
+| Price    | `unit_amount` | `currency` | `type`    | `interval` | `lookup_key`         |
+| -------- | ------------- | ---------- | --------- | ---------- | -------------------- |
+| Monthly  | 9700          | `usd`      | recurring | month      | `contactly_monthly`  |
+| Yearly   | 99700         | `usd`      | recurring | year       | `contactly_yearly`   |
+| Lifetime | 499700        | `usd`      | one_time  | —          | `contactly_lifetime` |
 
 All three attach to the same `prod_` ID. All three are listed under the Contactly Pro product in the dashboard. When a customer checks out, they pick one Price (via our UI); Stripe creates a Subscription (for recurring) or a Payment (for one_time) against that specific Price.
 
@@ -155,11 +155,9 @@ UIs show `$97.00`, not `9700`. So you divide by 100 just before rendering:
 
 ```typescript
 const displayPrice = (amountInCents: number, currency: string) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
-    amountInCents / 100
-  )
+	new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountInCents / 100);
 
-displayPrice(9700, 'USD') // "$97.00"
+displayPrice(9700, 'USD'); // "$97.00"
 ```
 
 Pitfall: some currencies don't divide by 100. Japanese Yen is a whole-unit currency (`unit_amount: 100` means ¥100, not ¥1). Bahraini Dinar divides by 1000. The `Intl.NumberFormat` API handles this correctly if you pass the currency — don't hardcode `/ 100` for international apps.
@@ -172,10 +170,10 @@ If a form lets the user enter `97`, you multiply by 100 to get cents. Use intege
 
 ```typescript
 // Good: integer input, integer math
-const cents = parseInt(inputDollars, 10) * 100
+const cents = parseInt(inputDollars, 10) * 100;
 
 // Bad: float input, float math — will sometimes produce 9699 or 9701
-const cents = Math.round(parseFloat(inputDollars) * 100)
+const cents = Math.round(parseFloat(inputDollars) * 100);
 ```
 
 (The "bad" version is occasionally necessary when users enter decimals like `97.50`. In that case `Math.round(parseFloat(input) * 100)` is the widely-accepted safe pattern — but prefer keeping the UI whole-dollar if possible.)
@@ -229,9 +227,9 @@ Every Price has a globally unique ID like `price_1Nv7k8KZabc` — assigned by St
 
 ```typescript
 // In a SvelteKit route — DO NOT do this
-const PRICE_MONTHLY = 'price_1Nv7k8KZabc'
-const PRICE_YEARLY  = 'price_1Nv7k8KZxyz'
-const PRICE_LIFETIME = 'price_1Nv7k8KZfoo'
+const PRICE_MONTHLY = 'price_1Nv7k8KZabc';
+const PRICE_YEARLY = 'price_1Nv7k8KZxyz';
+const PRICE_LIFETIME = 'price_1Nv7k8KZfoo';
 ```
 
 This breaks badly the first time you need to change a price. If you bump monthly from $97 to $127, you:
@@ -259,8 +257,8 @@ You create "Contactly Pro Monthly" and "Contactly Pro Yearly" as two Products. I
 ### Mistake 2: Using decimals for `unit_amount`
 
 ```typescript
-unit_amount: 97.00   // WRONG — API expects an integer
-unit_amount: 9700    // RIGHT — 9700 cents = $97.00
+unit_amount: 97.0; // WRONG — API expects an integer
+unit_amount: 9700; // RIGHT — 9700 cents = $97.00
 ```
 
 The SDK will sometimes accept `97.00` and silently truncate to `97` (i.e., $0.97 — a near-free price), or sometimes error out. Either outcome is bad. Always integer.
@@ -295,7 +293,7 @@ The big mental shift this lesson wants you to make: **pricing is data, not code*
 
 This is the same separation as "feature flags are data, config is data, localization strings are data." You're building a **machine** that reads its rules from a **database**; Stripe just happens to be that database for pricing.
 
-Engineers who haven't internalized this split often argue that hardcoded prices "are simpler" or "don't change often enough to matter." In my experience, both are wrong — prices change *more* than you expect (promos, regional adjustments, grandfathering, experiments), and the cost of coupling pricing to deploy cycles is paid with interest. Start decoupled.
+Engineers who haven't internalized this split often argue that hardcoded prices "are simpler" or "don't change often enough to matter." In my experience, both are wrong — prices change _more_ than you expect (promos, regional adjustments, grandfathering, experiments), and the cost of coupling pricing to deploy cycles is paid with interest. Start decoupled.
 
 ### Amount-in-cents as a civilizational agreement
 

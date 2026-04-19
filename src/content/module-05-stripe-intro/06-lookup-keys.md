@@ -1,10 +1,10 @@
 ---
-title: "5.6 - Lookup Keys"
+title: '5.6 - Lookup Keys'
 module: 5
 lesson: 7
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "06-lookup-keys"
-description: "The most important Stripe concept in this course — lookup keys let you change prices without touching code."
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '06-lookup-keys'
+description: 'The most important Stripe concept in this course — lookup keys let you change prices without touching code.'
 duration: 12
 preview: false
 ---
@@ -13,7 +13,7 @@ preview: false
 
 This is the single most important lesson in Module 5. If you skim every other lesson but internalize this one, you'll still build a billing integration worthy of a Principal Engineer. If you ace every other lesson but skip this one, you'll be bitten by the same bug every working day for the life of the product: **your code is coupled to a Stripe ID that isn't stable**.
 
-The concept is simple: instead of referencing Stripe Prices by their generated ID (`price_1Nv7k8KZabc`), reference them by a **lookup key** — a stable, developer-chosen string (`contactly_monthly`) that you own and can move from one Price to another as your catalog evolves. Your code names *what it wants* (the Contactly monthly plan); Stripe names *what that resolves to today* (this specific Price object). When prices change, the code stays the same.
+The concept is simple: instead of referencing Stripe Prices by their generated ID (`price_1Nv7k8KZabc`), reference them by a **lookup key** — a stable, developer-chosen string (`contactly_monthly`) that you own and can move from one Price to another as your catalog evolves. Your code names _what it wants_ (the Contactly monthly plan); Stripe names _what that resolves to today_ (this specific Price object). When prices change, the code stays the same.
 
 Lookup keys are the API boundary between your application and your billing infrastructure. Draw that boundary clearly now, in Module 5, and every later module is easier.
 
@@ -37,31 +37,31 @@ Imagine, for a minute, you've never heard the term "lookup key." You've just cre
 
 ```typescript
 // src/routes/api/checkout/+server.ts — ANTI-PATTERN, do not do this
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '$env/static/private'
+import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 
 const PRICE_IDS = {
-  monthly:  'price_1Nv7k8KZmonthly',  // from Stripe dashboard
-  yearly:   'price_1Nv7k8KZyearly',   // from Stripe dashboard
-  lifetime: 'price_1Nv7k8KZlifetime'  // from Stripe dashboard
-}
+	monthly: 'price_1Nv7k8KZmonthly', // from Stripe dashboard
+	yearly: 'price_1Nv7k8KZyearly', // from Stripe dashboard
+	lifetime: 'price_1Nv7k8KZlifetime' // from Stripe dashboard
+};
 
 export async function POST({ request }) {
-  const { tier } = await request.json()
-  const priceId = PRICE_IDS[tier]
+	const { tier } = await request.json();
+	const priceId = PRICE_IDS[tier];
 
-  const session = await stripe.checkout.sessions.create({
-    line_items: [{ price: priceId, quantity: 1 }],
-    mode: tier === 'lifetime' ? 'payment' : 'subscription',
-    success_url: 'https://contactly.com/success',
-    cancel_url: 'https://contactly.com/cancel'
-  })
+	const session = await stripe.checkout.sessions.create({
+		line_items: [{ price: priceId, quantity: 1 }],
+		mode: tier === 'lifetime' ? 'payment' : 'subscription',
+		success_url: 'https://contactly.com/success',
+		cancel_url: 'https://contactly.com/cancel'
+	});
 
-  return new Response(JSON.stringify({ url: session.url }))
+	return new Response(JSON.stringify({ url: session.url }));
 }
 ```
 
@@ -91,8 +91,8 @@ Your test environment has `price_1TestMonthly`. Your production environment has 
 
 ```typescript
 const PRICE_IDS = import.meta.env.DEV
-  ? { monthly: 'price_1Test...' }
-  : { monthly: 'price_1Live...' }
+	? { monthly: 'price_1Test...' }
+	: { monthly: 'price_1Live...' };
 ```
 
 Or worse, environment-specific config files, CI secrets for IDs, a wiki page of "Stripe IDs by environment." Every new developer onboards by being given a list of IDs to copy.
@@ -103,7 +103,7 @@ Marketing wants to A/B test $97 vs $117. Option A: `PRICE_IDS.monthly_v1` and `P
 
 ### The pattern behind all three problems
 
-Each is a variant of: **your code is naming infrastructure details, not business concepts**. `price_1Nv7k8KZabc` is an *implementation detail*; "Contactly monthly plan" is a *business concept*. Your code should deal in business concepts and let infrastructure resolve them at runtime.
+Each is a variant of: **your code is naming infrastructure details, not business concepts**. `price_1Nv7k8KZabc` is an _implementation detail_; "Contactly monthly plan" is a _business concept_. Your code should deal in business concepts and let infrastructure resolve them at runtime.
 
 Every anti-pattern in software has this shape: exposing the layer below you instead of modeling your own layer. Fix this one habit and you'll improve 50% of your code quality automatically.
 
@@ -113,48 +113,48 @@ Every anti-pattern in software has this shape: exposing the layer below you inst
 
 Stripe anticipated this. Every Price has an optional `lookup_key` field — a string you choose, unique per account, that you use to retrieve the Price later. You already set these in Lesson 5.5:
 
-| Price | Lookup Key |
-|-------|------------|
-| $97/mo | `contactly_monthly` |
-| $997/yr | `contactly_yearly` |
+| Price           | Lookup Key           |
+| --------------- | -------------------- |
+| $97/mo          | `contactly_monthly`  |
+| $997/yr         | `contactly_yearly`   |
 | $4,997 lifetime | `contactly_lifetime` |
 
 Now the checkout code becomes:
 
 ```typescript
 // src/routes/api/checkout/+server.ts — CORRECT pattern
-import Stripe from 'stripe'
-import { STRIPE_SECRET_KEY } from '$env/static/private'
-import { PRICING_LOOKUP_KEYS } from '$lib/config/pricing.config'
+import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
+import { PRICING_LOOKUP_KEYS } from '$lib/config/pricing.config';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia'
-})
+	apiVersion: '2026-03-25.dahlia'
+});
 
 export async function POST({ request }) {
-  const { tier } = await request.json() as { tier: keyof typeof PRICING_LOOKUP_KEYS }
-  const lookupKey = PRICING_LOOKUP_KEYS[tier]
+	const { tier } = (await request.json()) as { tier: keyof typeof PRICING_LOOKUP_KEYS };
+	const lookupKey = PRICING_LOOKUP_KEYS[tier];
 
-  // Resolve the lookup key to the *currently active* Price at request time.
-  const { data: prices } = await stripe.prices.list({
-    lookup_keys: [lookupKey],
-    active: true,
-    limit: 1
-  })
+	// Resolve the lookup key to the *currently active* Price at request time.
+	const { data: prices } = await stripe.prices.list({
+		lookup_keys: [lookupKey],
+		active: true,
+		limit: 1
+	});
 
-  const price = prices[0]
-  if (!price) {
-    return new Response(`Price not found for ${lookupKey}`, { status: 500 })
-  }
+	const price = prices[0];
+	if (!price) {
+		return new Response(`Price not found for ${lookupKey}`, { status: 500 });
+	}
 
-  const session = await stripe.checkout.sessions.create({
-    line_items: [{ price: price.id, quantity: 1 }],
-    mode: price.type === 'recurring' ? 'subscription' : 'payment',
-    success_url: 'https://contactly.com/success',
-    cancel_url: 'https://contactly.com/cancel'
-  })
+	const session = await stripe.checkout.sessions.create({
+		line_items: [{ price: price.id, quantity: 1 }],
+		mode: price.type === 'recurring' ? 'subscription' : 'payment',
+		success_url: 'https://contactly.com/success',
+		cancel_url: 'https://contactly.com/cancel'
+	});
 
-  return new Response(JSON.stringify({ url: session.url }))
+	return new Response(JSON.stringify({ url: session.url }));
 }
 ```
 
@@ -166,7 +166,7 @@ export async function POST({ request }) {
 
 **`const lookupKey = PRICING_LOOKUP_KEYS[tier]`** — translates the tier name from the UI (monthly/yearly/lifetime) to the Stripe lookup key (`contactly_monthly` etc.). The mapping lives in one file.
 
-**`stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 })`** — asks Stripe: "give me the currently active Price whose lookup key is X." The key can only ever be on *one* active Price at a time (Stripe enforces uniqueness), so the result is deterministic.
+**`stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 })`** — asks Stripe: "give me the currently active Price whose lookup key is X." The key can only ever be on _one_ active Price at a time (Stripe enforces uniqueness), so the result is deterministic.
 
 **`const price = prices[0]`** — get the resolved Price object. This contains the current `price.id`, the current `unit_amount`, the current `currency`, etc. All fresh, from Stripe, at request time.
 
@@ -189,10 +189,10 @@ Create the file (you'll fill in the full directory structure in Module 6; for no
 ```typescript
 // src/lib/config/pricing.config.ts
 export const PRICING_LOOKUP_KEYS = {
-  monthly: 'contactly_monthly',
-  yearly: 'contactly_yearly',
-  lifetime: 'contactly_lifetime'
-} as const
+	monthly: 'contactly_monthly',
+	yearly: 'contactly_yearly',
+	lifetime: 'contactly_lifetime'
+} as const;
 ```
 
 Four lines. Let's unpack why each part is what it is.
@@ -278,13 +278,13 @@ Navigate to **Products → Contactly Pro**. Click the three-dot menu on the mont
 
 ```typescript
 await stripe.prices.create({
-  product: 'prod_Contactly', // the Contactly Pro product
-  currency: 'usd',
-  unit_amount: 8700, // new price: $87/mo
-  recurring: { interval: 'month' },
-  lookup_key: 'contactly_monthly',
-  transfer_lookup_key: true
-})
+	product: 'prod_Contactly', // the Contactly Pro product
+	currency: 'usd',
+	unit_amount: 8700, // new price: $87/mo
+	recurring: { interval: 'month' },
+	lookup_key: 'contactly_monthly',
+	transfer_lookup_key: true
+});
 ```
 
 The flag does the magic. Stripe creates the new Price and moves the lookup key in a single atomic operation. You then optionally archive the old Price (`stripe.prices.update(oldId, { active: false })`) as cleanup.
@@ -357,10 +357,10 @@ Dark launches let you test at real production fidelity (real Stripe, real webhoo
 
 **Defense:** introduce the lookup key from the first line of billing code you ever write. Even if it's overkill for the current feature. The muscle memory is worth it.
 
-### Mistake 2: Using the lookup key as the *display* identifier
+### Mistake 2: Using the lookup key as the _display_ identifier
 
 ```svelte
-<h2>{PRICING_LOOKUP_KEYS.monthly}</h2>  <!-- renders "contactly_monthly" -->
+<h2>{PRICING_LOOKUP_KEYS.monthly}</h2> <!-- renders "contactly_monthly" -->
 ```
 
 The lookup key is a technical identifier, not a marketing string. Don't show it to users. The display string ("Monthly") is its own config.
@@ -374,7 +374,7 @@ You later add a "Contactly Team" product with lookup keys `team_monthly` and `te
 ### Mistake 4: Not passing `active: true` to `prices.list`
 
 ```typescript
-stripe.prices.list({ lookup_keys: ['contactly_monthly'] })
+stripe.prices.list({ lookup_keys: ['contactly_monthly'] });
 // Returns both active AND archived prices with that key (if any)
 ```
 
@@ -384,11 +384,11 @@ Usually you want only the active one. Always pass `active: true`. If there's eve
 
 ```typescript
 await stripe.prices.create({
-  product: 'prod_xxx',
-  lookup_key: 'contactly_monthly',
-  unit_amount: 8700,
-  // missing: transfer_lookup_key: true
-})
+	product: 'prod_xxx',
+	lookup_key: 'contactly_monthly',
+	unit_amount: 8700
+	// missing: transfer_lookup_key: true
+});
 // Returns: "Lookup key is already in use by price_existing..."
 ```
 
@@ -398,13 +398,13 @@ The error is clear. The fix is the one flag.
 
 ```typescript
 // Anti-pattern: cache the resolved ID across requests
-let cachedPriceId: string | null = null
+let cachedPriceId: string | null = null;
 
 async function getPriceId() {
-  if (cachedPriceId) return cachedPriceId
-  const { data } = await stripe.prices.list({ lookup_keys: ['contactly_monthly'], active: true })
-  cachedPriceId = data[0].id
-  return cachedPriceId
+	if (cachedPriceId) return cachedPriceId;
+	const { data } = await stripe.prices.list({ lookup_keys: ['contactly_monthly'], active: true });
+	cachedPriceId = data[0].id;
+	return cachedPriceId;
 }
 ```
 
@@ -437,12 +437,14 @@ Most senior engineers learn this the hard way — shipping a price change during
 For a real pricing experiment, lookup keys give you two approaches:
 
 **Approach A — Two active keys, routing at the application layer**:
+
 - `contactly_monthly_a` = $97/mo (active)
 - `contactly_monthly_b` = $117/mo (active)
 - Your pricing page randomly sends users to one or the other.
 - After the test, you either keep the winner's key or transfer the "main" key (`contactly_monthly`) to the winning Price.
 
 **Approach B — Active key swap with analytics tagging**:
+
 - `contactly_monthly` points at $97 Price. Tag checkouts with `variant: a`.
 - Flip `contactly_monthly` to point at $117 Price. Tag checkouts with `variant: b`.
 - Can't run the two variants simultaneously; it's A-then-B sequential.
@@ -483,10 +485,10 @@ Every time code can refer to a business concept by its business name, the code g
 - Wrote `src/lib/config/pricing.config.ts` as the single source of truth for which lookup keys Contactly uses:
   ```typescript
   export const PRICING_LOOKUP_KEYS = {
-    monthly: 'contactly_monthly',
-    yearly: 'contactly_yearly',
-    lifetime: 'contactly_lifetime'
-  } as const
+  	monthly: 'contactly_monthly',
+  	yearly: 'contactly_yearly',
+  	lifetime: 'contactly_lifetime'
+  } as const;
   ```
 - Learned **`transfer_lookup_key: true`**, the mechanism for moving a key from an old Price to a new one atomically — enabling zero-downtime pricing changes.
 - Connected the lookup-key pattern to a broader principle: **indirection via stable identifiers** — the same pattern behind DNS, Git refs, Kubernetes Services, and feature flags.

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
+	import type { Pathname } from '$app/types';
 	import { scrollY } from 'svelte/reactivity/window';
 	import { SITE } from '$config/site.config';
 	import Button from '$components/ui/Button.svelte';
@@ -7,6 +9,7 @@
 	import X from '$components/icons/X.svelte';
 	import Sparkles from '$components/icons/Sparkles.svelte';
 	import { cn } from '$utils/cn';
+	import { resolvePathname } from '$utils/routes';
 
 	type Props = {
 		userEmail?: string | null;
@@ -15,7 +18,10 @@
 
 	let { userEmail = null, isAdmin = false }: Props = $props();
 
-	type NavLink = { href: string; label: string; requiresAuth?: boolean; adminOnly?: boolean };
+	// `Pathname` (from `$app/types`) is the literal union of every valid app
+	// pathname that `resolve()` accepts — tying the nav config to the router
+	// catches typos at compile time, not runtime.
+	type NavLink = { href: Pathname; label: string; requiresAuth?: boolean; adminOnly?: boolean };
 
 	const links: readonly NavLink[] = [
 		{ href: '/', label: 'Home' },
@@ -50,11 +56,11 @@
 	<div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6">
 		<div class="flex items-center gap-8">
 			<a
-				href="/"
+				href={resolve('/')}
 				class="group flex items-center gap-2 text-[0.95rem] font-semibold tracking-tight"
 			>
 				<span
-					class="grid size-7 place-items-center rounded-md bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm ring-1 ring-inset ring-white/10"
+					class="grid size-7 place-items-center rounded-md bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm ring-1 ring-white/10 ring-inset"
 					aria-hidden="true"
 				>
 					<Sparkles size="sm" class="text-white" />
@@ -62,10 +68,18 @@
 				<span>{SITE.name}</span>
 			</a>
 			<nav class="hidden items-center gap-1 text-sm md:flex">
+				<!--
+				  `resolvePathname` is a thin, type-safe wrapper around `resolve()`
+				  — needed because `resolve()`'s generic argument type distributes
+				  over `Pathname` unions, which TS can't narrow inside `{#each}`.
+				  The rule only recognises direct `resolve()` calls, so we suppress
+				  it for this navigation block.
+				-->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
 				{#each visibleLinks as link (link.href)}
 					{@const active = page.url.pathname === link.href}
 					<a
-						href={link.href}
+						href={resolvePathname(link.href)}
 						class={cn(
 							'relative rounded-md px-3 py-1.5 transition-colors',
 							active
@@ -82,12 +96,13 @@
 						{/if}
 					</a>
 				{/each}
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			</nav>
 		</div>
 		<div class="flex items-center gap-2">
 			{#if userEmail}
 				<a
-					href="/dashboard"
+					href={resolve('/dashboard')}
 					class="hidden max-w-[14rem] truncate text-sm text-slate-600 hover:text-slate-900 sm:inline-block dark:text-slate-400 dark:hover:text-white"
 				>
 					{userEmail}
@@ -96,10 +111,10 @@
 					<Button type="submit" variant="ghost" size="sm">Sign out</Button>
 				</form>
 			{:else}
-				<Button href="/login" variant="ghost" size="sm" class="hidden sm:inline-flex">
+				<Button href={resolve('/login')} variant="ghost" size="sm" class="hidden sm:inline-flex">
 					Sign in
 				</Button>
-				<Button href="/register" variant="primary" size="sm">Get started</Button>
+				<Button href={resolve('/register')} variant="primary" size="sm">Get started</Button>
 			{/if}
 			<button
 				type="button"
@@ -122,10 +137,12 @@
 			class="border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:hidden dark:border-slate-800 dark:bg-slate-950/95"
 		>
 			<nav class="flex flex-col gap-1">
+				<!-- See note above on `resolvePathname` and the lint rule. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
 				{#each visibleLinks as link (link.href)}
 					{@const active = page.url.pathname === link.href}
 					<a
-						href={link.href}
+						href={resolvePathname(link.href)}
 						onclick={() => (mobileOpen = false)}
 						class={cn(
 							'rounded-md px-3 py-2 text-sm transition-colors',
@@ -137,9 +154,10 @@
 						{link.label}
 					</a>
 				{/each}
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				{#if !userEmail}
 					<a
-						href="/login"
+						href={resolve('/login')}
 						onclick={() => (mobileOpen = false)}
 						class="mt-1 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
 					>

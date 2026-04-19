@@ -37,15 +37,15 @@ Svelte 3/4 had `use:` actions: a function that receives a DOM node, runs side ef
 
 ```svelte
 <script>
-  function clickOutside(node, callback) {
-    function handle(e) {
-      if (!node.contains(e.target)) callback();
-    }
-    document.addEventListener('click', handle, true);
-    return {
-      destroy: () => document.removeEventListener('click', handle, true)
-    };
-  }
+	function clickOutside(node, callback) {
+		function handle(e) {
+			if (!node.contains(e.target)) callback();
+		}
+		document.addEventListener('click', handle, true);
+		return {
+			destroy: () => document.removeEventListener('click', handle, true)
+		};
+	}
 </script>
 
 <div use:clickOutside={() => console.log('clicked outside')}>...</div>
@@ -68,10 +68,10 @@ Minimal example:
 
 ```svelte
 <script>
-  function logOnMount(element) {
-    console.log('mounted', element.tagName);
-    return () => console.log('cleanup');
-  }
+	function logOnMount(element) {
+		console.log('mounted', element.tagName);
+		return () => console.log('cleanup');
+	}
 </script>
 
 <div {@attach logOnMount}>...</div>
@@ -85,11 +85,11 @@ The common case is an attachment that takes arguments. The pattern is a factory 
 
 ```svelte
 <script>
-  function log(message) {
-    return (element) => {
-      console.log(message, element.tagName);
-    };
-  }
+	function log(message) {
+		return (element) => {
+			console.log(message, element.tagName);
+		};
+	}
 </script>
 
 <div {@attach log('div mounted')}>...</div>
@@ -106,33 +106,33 @@ Click-outside is the canonical example. You want to know when the user clicked a
 ```ts
 // src/lib/actions/clickOutside.ts
 export function clickOutside(node: HTMLElement, callback: () => void) {
-  let onclickoutside = callback;
+	let onclickoutside = callback;
 
-  function handle(e: MouseEvent) {
-    if (!node.contains(e.target as Node)) onclickoutside();
-  }
+	function handle(e: MouseEvent) {
+		if (!node.contains(e.target as Node)) onclickoutside();
+	}
 
-  document.addEventListener('click', handle, true);
+	document.addEventListener('click', handle, true);
 
-  return {
-    update(newCallback: () => void) {
-      onclickoutside = newCallback;
-    },
-    destroy() {
-      document.removeEventListener('click', handle, true);
-    }
-  };
+	return {
+		update(newCallback: () => void) {
+			onclickoutside = newCallback;
+		},
+		destroy() {
+			document.removeEventListener('click', handle, true);
+		}
+	};
 }
 ```
 
 ```svelte
 <script>
-  import { clickOutside } from '$lib/actions/clickOutside';
-  let { onclose } = $props();
+	import { clickOutside } from '$lib/actions/clickOutside';
+	let { onclose } = $props();
 </script>
 
 <div use:clickOutside={onclose}>
-  <!-- dropdown content -->
+	<!-- dropdown content -->
 </div>
 ```
 
@@ -143,30 +143,30 @@ export function clickOutside(node: HTMLElement, callback: () => void) {
 import type { Attachment } from 'svelte/attachments';
 
 export function clickOutside(onclickoutside: () => void): Attachment {
-  return (node) => {
-    function handle(e: MouseEvent) {
-      if (!(node as HTMLElement).contains(e.target as Node)) {
-        onclickoutside();
-      }
-    }
+	return (node) => {
+		function handle(e: MouseEvent) {
+			if (!(node as HTMLElement).contains(e.target as Node)) {
+				onclickoutside();
+			}
+		}
 
-    document.addEventListener('click', handle, true);
+		document.addEventListener('click', handle, true);
 
-    return () => {
-      document.removeEventListener('click', handle, true);
-    };
-  };
+		return () => {
+			document.removeEventListener('click', handle, true);
+		};
+	};
 }
 ```
 
 ```svelte
 <script>
-  import { clickOutside } from '$lib/attachments/clickOutside';
-  let { onclose } = $props();
+	import { clickOutside } from '$lib/attachments/clickOutside';
+	let { onclose } = $props();
 </script>
 
 <div {@attach clickOutside(onclose)}>
-  <!-- dropdown content -->
+	<!-- dropdown content -->
 </div>
 ```
 
@@ -188,7 +188,7 @@ Autofocus — focus the input when the element mounts. Common on modal open, for
 
 ```ts
 export function autofocus(node: HTMLElement) {
-  requestAnimationFrame(() => node.focus());
+	requestAnimationFrame(() => node.focus());
 }
 ```
 
@@ -203,13 +203,13 @@ export function autofocus(node: HTMLElement) {
 import type { Attachment } from 'svelte/attachments';
 
 export const autofocus: Attachment = (node) => {
-  requestAnimationFrame(() => (node as HTMLElement).focus());
+	requestAnimationFrame(() => (node as HTMLElement).focus());
 };
 ```
 
 ```svelte
 <script>
-  import { autofocus } from '$lib/attachments/autofocus';
+	import { autofocus } from '$lib/attachments/autofocus';
 </script>
 
 <input {@attach autofocus} />
@@ -225,16 +225,16 @@ Toast notifications that auto-dismiss after a timeout are another common case.
 
 ```ts
 export function autoDismiss(node: HTMLElement, ms: number) {
-  let timer = setTimeout(() => node.remove(), ms);
-  return {
-    update(newMs: number) {
-      clearTimeout(timer);
-      timer = setTimeout(() => node.remove(), newMs);
-    },
-    destroy() {
-      clearTimeout(timer);
-    }
-  };
+	let timer = setTimeout(() => node.remove(), ms);
+	return {
+		update(newMs: number) {
+			clearTimeout(timer);
+			timer = setTimeout(() => node.remove(), newMs);
+		},
+		destroy() {
+			clearTimeout(timer);
+		}
+	};
 }
 ```
 
@@ -245,22 +245,20 @@ export function autoDismiss(node: HTMLElement, ms: number) {
 import type { Attachment } from 'svelte/attachments';
 
 export function autoDismiss(ms: number, onDismiss: () => void): Attachment {
-  return () => {
-    const timer = setTimeout(onDismiss, ms);
-    return () => clearTimeout(timer);
-  };
+	return () => {
+		const timer = setTimeout(onDismiss, ms);
+		return () => clearTimeout(timer);
+	};
 }
 ```
 
 ```svelte
 <script>
-  import { autoDismiss } from '$lib/attachments/autoDismiss';
-  let { onclose } = $props();
+	import { autoDismiss } from '$lib/attachments/autoDismiss';
+	let { onclose } = $props();
 </script>
 
-<div class="toast" {@attach autoDismiss(3000, onclose)}>
-  Your contact was saved.
-</div>
+<div class="toast" {@attach autoDismiss(3000, onclose)}>Your contact was saved.</div>
 ```
 
 Two improvements over the action version:
@@ -275,21 +273,22 @@ Here is where attachments shine beyond what actions could do. You can pass them 
 ```svelte
 <!-- Button.svelte -->
 <script lang="ts">
-  import type { HTMLButtonAttributes } from 'svelte/elements';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 
-  let { children, ...props }: HTMLButtonAttributes & { children: import('svelte').Snippet } = $props();
+	let { children, ...props }: HTMLButtonAttributes & { children: import('svelte').Snippet } =
+		$props();
 </script>
 
 <button {...props}>
-  {@render children()}
+	{@render children()}
 </button>
 ```
 
 ```svelte
 <!-- App.svelte -->
 <script>
-  import Button from './Button.svelte';
-  import { tooltip } from '$lib/attachments/tooltip';
+	import Button from './Button.svelte';
+	import { tooltip } from '$lib/attachments/tooltip';
 </script>
 
 <Button {@attach tooltip('Click me!')}>Submit</Button>
@@ -319,22 +318,22 @@ This is cleaner than the action equivalent, which required you to put an `{#if}`
 
 `{@attach tooltip(content)}` re-runs whenever `content` changes. If your attachment does expensive setup (creates a worker, instantiates a heavy third-party library), you do not want to re-create that worker every time a text label changes.
 
-The docs pattern: take a *getter function* and read it inside an inner `$effect`.
+The docs pattern: take a _getter function_ and read it inside an inner `$effect`.
 
 ```ts
 // src/lib/attachments/expensive.ts
 import type { Attachment } from 'svelte/attachments';
 
 export function expensive(getConfig: () => Config): Attachment {
-  return (node) => {
-    const instance = createExpensiveThing(node);
+	return (node) => {
+		const instance = createExpensiveThing(node);
 
-    $effect(() => {
-      instance.update(getConfig());
-    });
+		$effect(() => {
+			instance.update(getConfig());
+		});
 
-    return () => instance.destroy();
-  };
+		return () => instance.destroy();
+	};
 }
 ```
 
@@ -346,7 +345,7 @@ export function expensive(getConfig: () => Config): Attachment {
 - The inner `$effect` reads `getConfig()` and updates the instance whenever any reactive dependency inside `config` changes.
 - Cleanup tears down the instance.
 
-Pass the *getter*, not the value, when you want to avoid re-running the outer setup.
+Pass the _getter_, not the value, when you want to avoid re-running the outer setup.
 
 ### Attachments vs. actions — migration strategy
 
@@ -367,7 +366,7 @@ Svelte 5 introduced `await` in markup. You can write:
 
 ```svelte
 {#each await getContacts() as contact (contact.id)}
-  <li>{contact.first_name}</li>
+	<li>{contact.first_name}</li>
 {/each}
 ```
 
@@ -384,25 +383,25 @@ Before boundaries, you handled both manually: `{#await promise}{:then data}{:cat
 
 ```svelte
 <svelte:boundary onerror={(err, reset) => console.error(err)}>
-  {#snippet pending()}
-    <p>Loading...</p>
-  {/snippet}
+	{#snippet pending()}
+		<p>Loading...</p>
+	{/snippet}
 
-  {#snippet failed(err, reset)}
-    <div class="error">
-      Something went wrong: {err.message}
-      <button onclick={reset}>Try again</button>
-    </div>
-  {/snippet}
+	{#snippet failed(err, reset)}
+		<div class="error">
+			Something went wrong: {err.message}
+			<button onclick={reset}>Try again</button>
+		</div>
+	{/snippet}
 
-  <ContactList />
+	<ContactList />
 </svelte:boundary>
 ```
 
 Four pieces:
 
 - **Children** (`<ContactList />`) — the normal content the boundary wraps.
-- **`pending` snippet** — shown while any `await` inside the boundary is resolving *for the first time*. Required if children use top-level await.
+- **`pending` snippet** — shown while any `await` inside the boundary is resolving _for the first time_. Required if children use top-level await.
 - **`failed` snippet** — shown if any child throws during render. Receives the error and a `reset()` callback.
 - **`onerror` handler** — side effect, runs when an error is caught. Useful for telemetry.
 
@@ -414,31 +413,31 @@ The Remote Functions lesson already showed this pattern; let's look at it more c
 
 ```svelte
 <script>
-  import { getContacts } from './contacts.remote';
+	import { getContacts } from './contacts.remote';
 </script>
 
 <svelte:boundary>
-  {#snippet pending()}
-    <div class="skeleton">
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row"></div>
-    </div>
-  {/snippet}
+	{#snippet pending()}
+		<div class="skeleton">
+			<div class="skeleton-row"></div>
+			<div class="skeleton-row"></div>
+			<div class="skeleton-row"></div>
+		</div>
+	{/snippet}
 
-  {#snippet failed(err, reset)}
-    <div class="error-panel">
-      <h3>We couldn't load your contacts.</h3>
-      <p>{err.message}</p>
-      <button onclick={reset}>Retry</button>
-    </div>
-  {/snippet}
+	{#snippet failed(err, reset)}
+		<div class="error-panel">
+			<h3>We couldn't load your contacts.</h3>
+			<p>{err.message}</p>
+			<button onclick={reset}>Retry</button>
+		</div>
+	{/snippet}
 
-  <ul>
-    {#each await getContacts() as contact (contact.id)}
-      <li>{contact.first_name} {contact.last_name}</li>
-    {/each}
-  </ul>
+	<ul>
+		{#each await getContacts() as contact (contact.id)}
+			<li>{contact.first_name} {contact.last_name}</li>
+		{/each}
+	</ul>
 </svelte:boundary>
 ```
 
@@ -465,21 +464,21 @@ The `onerror` handler is where you wire error reporting.
 
 ```svelte
 <script lang="ts">
-  import * as Sentry from '@sentry/svelte';
+	import * as Sentry from '@sentry/svelte';
 
-  function reportError(err: unknown, reset: () => void) {
-    Sentry.captureException(err, {
-      tags: { source: 'component-boundary' }
-    });
-  }
+	function reportError(err: unknown, reset: () => void) {
+		Sentry.captureException(err, {
+			tags: { source: 'component-boundary' }
+		});
+	}
 </script>
 
 <svelte:boundary onerror={reportError}>
-  {#snippet failed(err, reset)}
-    <p>Sorry, this bit is broken.</p>
-  {/snippet}
+	{#snippet failed(err, reset)}
+		<p>Sorry, this bit is broken.</p>
+	{/snippet}
 
-  <FlakyChart />
+	<FlakyChart />
 </svelte:boundary>
 ```
 
@@ -502,28 +501,28 @@ The `onerror` handler is where you wire error reporting.
 - Errors from `setTimeout` callbacks, `Promise.then`, `requestAnimationFrame`, or anything that runs outside the render tree.
 - Server-side rendering errors (by default). As of Svelte 5.51 you can configure `transformError` on the server renderer — SvelteKit will surface this via `handleError` in a future version.
 
-The rule of thumb: if the error happens while Svelte is *rendering*, the boundary catches it. If it happens in response to a user event or a background task, it does not.
+The rule of thumb: if the error happens while Svelte is _rendering_, the boundary catches it. If it happens in response to a user event or a background task, it does not.
 
 ### Granular vs. page-level boundaries
 
-You can nest boundaries. When an error bubbles up, the *nearest* boundary catches it. This lets you scope errors to the smallest reasonable unit.
+You can nest boundaries. When an error bubbles up, the _nearest_ boundary catches it. This lets you scope errors to the smallest reasonable unit.
 
 **Bad pattern: one giant boundary:**
 
 ```svelte
 <svelte:boundary>
-  {#snippet failed(err, reset)}
-    <p>Oh no, everything broke. <button onclick={reset}>Reload page</button></p>
-  {/snippet}
+	{#snippet failed(err, reset)}
+		<p>Oh no, everything broke. <button onclick={reset}>Reload page</button></p>
+	{/snippet}
 
-  <Header />
-  <Sidebar />
-  <MainContent>
-    <ContactList />
-    <RecentActivity />
-    <ChartOfEverything />
-  </MainContent>
-  <Footer />
+	<Header />
+	<Sidebar />
+	<MainContent>
+		<ContactList />
+		<RecentActivity />
+		<ChartOfEverything />
+	</MainContent>
+	<Footer />
 </svelte:boundary>
 ```
 
@@ -536,34 +535,34 @@ If the chart fails, the header, sidebar, main content, and footer all disappear 
 <Sidebar />
 
 <MainContent>
-  <svelte:boundary>
-    {#snippet failed(err, reset)}
-      <div class="card-error">
-        <p>Contact list unavailable.</p>
-        <button onclick={reset}>Retry</button>
-      </div>
-    {/snippet}
-    <ContactList />
-  </svelte:boundary>
+	<svelte:boundary>
+		{#snippet failed(err, reset)}
+			<div class="card-error">
+				<p>Contact list unavailable.</p>
+				<button onclick={reset}>Retry</button>
+			</div>
+		{/snippet}
+		<ContactList />
+	</svelte:boundary>
 
-  <svelte:boundary>
-    {#snippet failed(err, reset)}
-      <div class="card-error">
-        <p>Activity unavailable.</p>
-        <button onclick={reset}>Retry</button>
-      </div>
-    {/snippet}
-    <RecentActivity />
-  </svelte:boundary>
+	<svelte:boundary>
+		{#snippet failed(err, reset)}
+			<div class="card-error">
+				<p>Activity unavailable.</p>
+				<button onclick={reset}>Retry</button>
+			</div>
+		{/snippet}
+		<RecentActivity />
+	</svelte:boundary>
 
-  <svelte:boundary>
-    {#snippet failed(err, reset)}
-      <div class="card-error">
-        <p>Chart unavailable.</p>
-      </div>
-    {/snippet}
-    <ChartOfEverything />
-  </svelte:boundary>
+	<svelte:boundary>
+		{#snippet failed(err, reset)}
+			<div class="card-error">
+				<p>Chart unavailable.</p>
+			</div>
+		{/snippet}
+		<ChartOfEverything />
+	</svelte:boundary>
 </MainContent>
 
 <Footer />
@@ -577,11 +576,11 @@ You do not have to use boundaries for errors. You can use them just for the pend
 
 ```svelte
 <svelte:boundary>
-  {#snippet pending()}
-    <p>Loading contacts...</p>
-  {/snippet}
+	{#snippet pending()}
+		<p>Loading contacts...</p>
+	{/snippet}
 
-  <ContactList />
+	<ContactList />
 </svelte:boundary>
 ```
 
@@ -593,13 +592,13 @@ The boundary's `pending` snippet shows while `await` resolves. If you have multi
 
 ```svelte
 <svelte:boundary>
-  {#snippet pending()}
-    <p>Loading...</p>
-  {/snippet}
+	{#snippet pending()}
+		<p>Loading...</p>
+	{/snippet}
 
-  <h1>{await getUserName()}</h1>
-  <p>You have {await getContactCount()} contacts.</p>
-  <p>{await getRecentActivity()} activities this week.</p>
+	<h1>{await getUserName()}</h1>
+	<p>You have {await getContactCount()} contacts.</p>
+	<p>{await getRecentActivity()} activities this week.</p>
 </svelte:boundary>
 ```
 
@@ -607,18 +606,18 @@ The pending snippet shows until all three promises resolve. If you want per-piec
 
 ```svelte
 <svelte:boundary>
-  {#snippet pending()}<p>Loading name...</p>{/snippet}
-  <h1>{await getUserName()}</h1>
+	{#snippet pending()}<p>Loading name...</p>{/snippet}
+	<h1>{await getUserName()}</h1>
 </svelte:boundary>
 
 <svelte:boundary>
-  {#snippet pending()}<p>Loading count...</p>{/snippet}
-  <p>You have {await getContactCount()} contacts.</p>
+	{#snippet pending()}<p>Loading count...</p>{/snippet}
+	<p>You have {await getContactCount()} contacts.</p>
 </svelte:boundary>
 
 <svelte:boundary>
-  {#snippet pending()}<p>Loading activity...</p>{/snippet}
-  <p>{await getRecentActivity()} activities this week.</p>
+	{#snippet pending()}<p>Loading activity...</p>{/snippet}
+	<p>{await getRecentActivity()} activities this week.</p>
 </svelte:boundary>
 ```
 

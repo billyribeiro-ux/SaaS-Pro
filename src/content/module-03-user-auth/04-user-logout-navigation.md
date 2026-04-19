@@ -1,10 +1,10 @@
 ---
-title: "3.4 - User Logout & Navigation"
+title: '3.4 - User Logout & Navigation'
 module: 3
 lesson: 4
-moduleSlug: "module-03-user-auth"
-lessonSlug: "04-user-logout-navigation"
-description: "Build a secure logout flow and an auth-aware Navbar so users can see who they are and safely sign out."
+moduleSlug: 'module-03-user-auth'
+lessonSlug: '04-user-logout-navigation'
+description: 'Build a secure logout flow and an auth-aware Navbar so users can see who they are and safely sign out.'
 duration: 18
 preview: false
 ---
@@ -44,7 +44,7 @@ This lesson will look deceptively small — maybe fifty lines of code once you c
 
 ## Why Logout Must Be a POST Request (Not a GET)
 
-Before we write a single line of code, let's answer a question that trips up nearly every beginner (and plenty of seniors): **why can't logout just be a link?** A link like `<a href="/logout">Sign out</a>` is *so* tempting. It's simple. It's short. It works on the first try. So why do professional codebases insist on wrapping logout in a form?
+Before we write a single line of code, let's answer a question that trips up nearly every beginner (and plenty of seniors): **why can't logout just be a link?** A link like `<a href="/logout">Sign out</a>` is _so_ tempting. It's simple. It's short. It works on the first try. So why do professional codebases insist on wrapping logout in a form?
 
 The answer comes down to how the web itself classifies HTTP methods.
 
@@ -52,7 +52,7 @@ The answer comes down to how the web itself classifies HTTP methods.
 
 The HTTP spec divides methods into two buckets:
 
-- **Safe methods** — `GET`, `HEAD`, `OPTIONS`. These are *supposed* to be read-only: no side effects on the server. Hit the URL as many times as you want and nothing changes.
+- **Safe methods** — `GET`, `HEAD`, `OPTIONS`. These are _supposed_ to be read-only: no side effects on the server. Hit the URL as many times as you want and nothing changes.
 - **Unsafe methods** — `POST`, `PUT`, `PATCH`, `DELETE`. These change state. You submit them intentionally, and the browser treats them very differently from reads.
 
 Browsers, search engine crawlers, and even email clients assume GET requests are safe. They trigger GET requests for all sorts of reasons you never asked for:
@@ -78,7 +78,7 @@ POST-plus-CSRF-protection is the standard defense. SvelteKit enables [CSRF prote
 
 ### Idempotency
 
-There's one more subtle reason. POST is non-idempotent by convention, meaning "submitting this twice is not automatically the same as submitting it once." That's the right mental model for logout — we're *changing* state (invalidating a session). If the user hits their back button after logging out and the browser offers to "resubmit the form," they at least get a prompt, not a silent re-request.
+There's one more subtle reason. POST is non-idempotent by convention, meaning "submitting this twice is not automatically the same as submitting it once." That's the right mental model for logout — we're _changing_ state (invalidating a session). If the user hits their back button after logging out and the browser offers to "resubmit the form," they at least get a prompt, not a silent re-request.
 
 ### The Practical Rule
 
@@ -104,10 +104,10 @@ import { redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
-  signout: async ({ locals }) => {
-    await locals.supabase.auth.signOut();
-    redirect(303, '/');
-  }
+	signout: async ({ locals }) => {
+		await locals.supabase.auth.signOut();
+		redirect(303, '/');
+	}
 };
 ```
 
@@ -126,7 +126,7 @@ That's the whole thing. Seven functional lines. Let's walk through them.
 
 Three reasons:
 
-1. **Clarity of user intent.** A person who just signed out wants to *leave*, not be nagged to sign back in. Dropping them on `/login` feels pushy.
+1. **Clarity of user intent.** A person who just signed out wants to _leave_, not be nagged to sign back in. Dropping them on `/login` feels pushy.
 2. **Marketing funnel.** The home page shows your pricing, product highlights, and testimonials. If a user is canceling (or a friend of a canceled user is using their computer), `/` is the page that might re-engage them.
 3. **Route-guard cleanliness.** After `signOut()` the user no longer has a session. If we redirected to `/login` and the login page tried to load session-aware data, we'd rely on correct ordering. `/` has no such coupling.
 
@@ -138,7 +138,7 @@ This is where most tutorials wave their hands. We won't.
 
 When `locals.supabase.auth.signOut()` is called server-side, the `@supabase/ssr` client does two things:
 
-1. **Revokes the session on Supabase's side.** The current access token is marked invalid in Supabase's auth database. Subsequent requests using that token will be rejected. This is *server-side invalidation* — the most important step.
+1. **Revokes the session on Supabase's side.** The current access token is marked invalid in Supabase's auth database. Subsequent requests using that token will be rejected. This is _server-side invalidation_ — the most important step.
 2. **Deletes the session cookies.** The `sb-<project-ref>-auth-token` cookie (and its `-refresh` companion) is cleared from the browser by setting an expired `Set-Cookie` header in the response.
 
 Both steps matter. Clearing the cookie alone (client-side) is weak: if an attacker had sniffed the cookie earlier, they could keep using it until it naturally expires. Step 1 — revoking the session server-side — makes the stolen token instantly useless.
@@ -160,78 +160,76 @@ Create `src/lib/components/layout/Navbar.svelte`:
 ```svelte
 <!-- src/lib/components/layout/Navbar.svelte -->
 <script lang="ts">
-  import { page } from '$app/state';
-  import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { enhance } from '$app/forms';
 
-  type Props = {
-    userEmail?: string | null;
-  };
+	type Props = {
+		userEmail?: string | null;
+	};
 
-  let { userEmail = null }: Props = $props();
+	let { userEmail = null }: Props = $props();
 
-  type NavLink = { href: string; label: string; requiresAuth?: boolean };
+	type NavLink = { href: string; label: string; requiresAuth?: boolean };
 
-  const links: readonly NavLink[] = [
-    { href: '/', label: 'Home' },
-    { href: '/pricing', label: 'Pricing' },
-    { href: '/dashboard', label: 'Dashboard', requiresAuth: true },
-    { href: '/account', label: 'Account', requiresAuth: true }
-  ];
+	const links: readonly NavLink[] = [
+		{ href: '/', label: 'Home' },
+		{ href: '/pricing', label: 'Pricing' },
+		{ href: '/dashboard', label: 'Dashboard', requiresAuth: true },
+		{ href: '/account', label: 'Account', requiresAuth: true }
+	];
 
-  let visibleLinks = $derived(
-    links.filter((link) => !link.requiresAuth || Boolean(userEmail))
-  );
+	let visibleLinks = $derived(links.filter((link) => !link.requiresAuth || Boolean(userEmail)));
 </script>
 
 <header
-  class="border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
+	class="border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
 >
-  <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-    <div class="flex items-center gap-6">
-      <a href="/" class="text-lg font-semibold tracking-tight">Contactly</a>
-      <nav class="hidden items-center gap-4 text-sm md:flex">
-        {#each visibleLinks as link (link.href)}
-          {@const isActive = page.url.pathname === link.href}
-          <a
-            href={link.href}
-            class="rounded-md px-3 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-            class:text-blue-700={isActive}
-            class:text-slate-700={!isActive}
-            aria-current={isActive ? 'page' : undefined}
-          >
-            {link.label}
-          </a>
-        {/each}
-      </nav>
-    </div>
+	<div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+		<div class="flex items-center gap-6">
+			<a href="/" class="text-lg font-semibold tracking-tight">Contactly</a>
+			<nav class="hidden items-center gap-4 text-sm md:flex">
+				{#each visibleLinks as link (link.href)}
+					{@const isActive = page.url.pathname === link.href}
+					<a
+						href={link.href}
+						class="rounded-md px-3 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+						class:text-blue-700={isActive}
+						class:text-slate-700={!isActive}
+						aria-current={isActive ? 'page' : undefined}
+					>
+						{link.label}
+					</a>
+				{/each}
+			</nav>
+		</div>
 
-    <div class="flex items-center gap-3">
-      {#if userEmail}
-        <span class="text-sm text-slate-600 dark:text-slate-300">{userEmail}</span>
-        <form method="POST" action="/account?/signout" use:enhance>
-          <button
-            type="submit"
-            class="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            Sign out
-          </button>
-        </form>
-      {:else}
-        <a
-          href="/login"
-          class="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          Sign in
-        </a>
-        <a
-          href="/register"
-          class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Get started
-        </a>
-      {/if}
-    </div>
-  </div>
+		<div class="flex items-center gap-3">
+			{#if userEmail}
+				<span class="text-sm text-slate-600 dark:text-slate-300">{userEmail}</span>
+				<form method="POST" action="/account?/signout" use:enhance>
+					<button
+						type="submit"
+						class="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+					>
+						Sign out
+					</button>
+				</form>
+			{:else}
+				<a
+					href="/login"
+					class="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+				>
+					Sign in
+				</a>
+				<a
+					href="/register"
+					class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+				>
+					Get started
+				</a>
+			{/if}
+		</div>
+	</div>
 </header>
 ```
 
@@ -251,7 +249,7 @@ import { enhance } from '$app/forms';
 
 ```typescript
 type Props = {
-  userEmail?: string | null;
+	userEmail?: string | null;
 };
 
 let { userEmail = null }: Props = $props();
@@ -264,10 +262,10 @@ let { userEmail = null }: Props = $props();
 type NavLink = { href: string; label: string; requiresAuth?: boolean };
 
 const links: readonly NavLink[] = [
-  { href: '/', label: 'Home' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/dashboard', label: 'Dashboard', requiresAuth: true },
-  { href: '/account', label: 'Account', requiresAuth: true }
+	{ href: '/', label: 'Home' },
+	{ href: '/pricing', label: 'Pricing' },
+	{ href: '/dashboard', label: 'Dashboard', requiresAuth: true },
+	{ href: '/account', label: 'Account', requiresAuth: true }
 ];
 ```
 
@@ -275,12 +273,10 @@ const links: readonly NavLink[] = [
 - **`readonly NavLink[]`** — the array itself is `const`, but declaring the element type as `readonly` also stops anyone inside the component from accidentally calling `.push()` or `.splice()` and mutating the menu. Small defensive touch; saves you a bug years from now.
 
 ```typescript
-let visibleLinks = $derived(
-  links.filter((link) => !link.requiresAuth || Boolean(userEmail))
-);
+let visibleLinks = $derived(links.filter((link) => !link.requiresAuth || Boolean(userEmail)));
 ```
 
-- **`$derived(expression)`** — declares a *reactive computed* value. Whenever any reactive dependency in the expression changes (here, `userEmail`), `visibleLinks` recomputes automatically.
+- **`$derived(expression)`** — declares a _reactive computed_ value. Whenever any reactive dependency in the expression changes (here, `userEmail`), `visibleLinks` recomputes automatically.
 - **The filter rule**: keep a link if (a) it doesn't require auth, or (b) the user is authenticated (`userEmail` is truthy). `Boolean(userEmail)` forces a clean conversion — `null`, `undefined`, and empty string all become `false`; a real email becomes `true`.
 
 Why `$derived` instead of just `const visibleLinks = ...`? Because `userEmail` is a prop — its value can change at runtime (e.g., after a layout reload following login/logout). A plain `const` would compute once and never update. `$derived` keeps the menu in sync with the auth state automatically.
@@ -305,18 +301,18 @@ Why `$derived` instead of just `const visibleLinks = ...`? Because `userEmail` i
 ```svelte
 <a href="/" class="text-lg font-semibold tracking-tight">Contactly</a>
 <nav class="hidden items-center gap-4 text-sm md:flex">
-  {#each visibleLinks as link (link.href)}
-    {@const isActive = page.url.pathname === link.href}
-    <a
-      href={link.href}
-      class="rounded-md px-3 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-      class:text-blue-700={isActive}
-      class:text-slate-700={!isActive}
-      aria-current={isActive ? 'page' : undefined}
-    >
-      {link.label}
-    </a>
-  {/each}
+	{#each visibleLinks as link (link.href)}
+		{@const isActive = page.url.pathname === link.href}
+		<a
+			href={link.href}
+			class="rounded-md px-3 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+			class:text-blue-700={isActive}
+			class:text-slate-700={!isActive}
+			aria-current={isActive ? 'page' : undefined}
+		>
+			{link.label}
+		</a>
+	{/each}
 </nav>
 ```
 
@@ -329,15 +325,13 @@ Why `$derived` instead of just `const visibleLinks = ...`? Because `userEmail` i
 
 ```svelte
 {#if userEmail}
-  <span class="text-sm text-slate-600 dark:text-slate-300">{userEmail}</span>
-  <form method="POST" action="/account?/signout" use:enhance>
-    <button type="submit" ...>
-      Sign out
-    </button>
-  </form>
+	<span class="text-sm text-slate-600 dark:text-slate-300">{userEmail}</span>
+	<form method="POST" action="/account?/signout" use:enhance>
+		<button type="submit" ...> Sign out </button>
+	</form>
 {:else}
-  <a href="/login" ...>Sign in</a>
-  <a href="/register" ...>Get started</a>
+	<a href="/login" ...>Sign in</a>
+	<a href="/register" ...>Get started</a>
 {/if}
 ```
 
@@ -346,10 +340,10 @@ This is the heart of auth-awareness:
 - **`{#if userEmail}`** — simple truthy check. If we have an email, the user is logged in; show the logout form and their email.
 - **`<form method="POST" action="/account?/signout" use:enhance>`** — posts to the `signout` named action you wrote in Step 1. Let's dissect this attribute by attribute:
   - **`method="POST"`** — non-negotiable, for all the reasons in the opening section.
-  - **`action="/account?/signout"`** — the full-path form. The format is `action="/<route>?/<actionName>"`. `/account` is the route that owns `+page.server.ts`; `signout` is the named action key. Because the Navbar is rendered on *many* pages, we use the absolute path so the form always targets the same action regardless of where it's embedded.
+  - **`action="/account?/signout"`** — the full-path form. The format is `action="/<route>?/<actionName>"`. `/account` is the route that owns `+page.server.ts`; `signout` is the named action key. Because the Navbar is rendered on _many_ pages, we use the absolute path so the form always targets the same action regardless of where it's embedded.
   - **`use:enhance`** — layers on AJAX submission + automatic re-render. Without it, the form still works (full page reload), but with it, logout feels instant.
-- **`<button type="submit">`** — crucial detail: `type="submit"` is explicit. Without it, buttons inside forms default to submit *most* of the time, but not in all browsers and not if you ever wrap the button in another component. Explicit submit type = zero surprises.
-- **The else branch** — two plain `<a>` links because "Sign in" and "Get started" are *navigation*, not state-changing actions. GET is the right method for reading the page.
+- **`<button type="submit">`** — crucial detail: `type="submit"` is explicit. Without it, buttons inside forms default to submit _most_ of the time, but not in all browsers and not if you ever wrap the button in another component. Explicit submit type = zero surprises.
+- **The else branch** — two plain `<a>` links because "Sign in" and "Get started" are _navigation_, not state-changing actions. GET is the right method for reading the page.
 
 ---
 
@@ -361,15 +355,15 @@ Open `src/routes/(app)/+layout.svelte`. It currently looks something like:
 
 ```svelte
 <script lang="ts">
-  import type { Snippet } from 'svelte';
-  import type { LayoutData } from './$types';
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
 
-  type Props = {
-    data: LayoutData;
-    children: Snippet;
-  };
+	type Props = {
+		data: LayoutData;
+		children: Snippet;
+	};
 
-  let { data, children }: Props = $props();
+	let { data, children }: Props = $props();
 </script>
 
 {@render children()}
@@ -380,22 +374,22 @@ Update it to render the Navbar above the page content:
 ```svelte
 <!-- src/routes/(app)/+layout.svelte -->
 <script lang="ts">
-  import type { Snippet } from 'svelte';
-  import type { LayoutData } from './$types';
-  import Navbar from '$lib/components/layout/Navbar.svelte';
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
+	import Navbar from '$lib/components/layout/Navbar.svelte';
 
-  type Props = {
-    data: LayoutData;
-    children: Snippet;
-  };
+	type Props = {
+		data: LayoutData;
+		children: Snippet;
+	};
 
-  let { data, children }: Props = $props();
+	let { data, children }: Props = $props();
 </script>
 
 <Navbar userEmail={data.user?.email} />
 
 <main class="mx-auto max-w-6xl px-4 py-8">
-  {@render children()}
+	{@render children()}
 </main>
 ```
 
@@ -481,7 +475,7 @@ Behind the scenes, every navigation updates `page.url.pathname`, which forces th
 
 3. **The route guard is your last line of defense, not your first.** We depend on the `(app)/+layout.server.ts` guard to redirect post-logout users away from `/dashboard`. But `locals.supabase.auth.signOut()` also invalidates the session at the Supabase level. The double check is deliberate: defense in depth. If the route guard ever has a bug, the server-side session is still revoked; if server-side revocation is somehow bypassed, the route guard still bounces users. You want both.
 
-4. **The Navbar knows nothing about Supabase.** Notice that our Navbar component takes only `userEmail: string | null`. It doesn't import Supabase, doesn't call any auth APIs, doesn't know how sessions work. That separation is intentional: the Navbar is a *pure presentation component*. The layout is the one doing the auth wiring. This pattern — layouts do the side-effectful data fetching, components render props — is how you keep large Svelte codebases testable and refactorable.
+4. **The Navbar knows nothing about Supabase.** Notice that our Navbar component takes only `userEmail: string | null`. It doesn't import Supabase, doesn't call any auth APIs, doesn't know how sessions work. That separation is intentional: the Navbar is a _pure presentation component_. The layout is the one doing the auth wiring. This pattern — layouts do the side-effectful data fetching, components render props — is how you keep large Svelte codebases testable and refactorable.
 
 5. **`aria-current="page"` is not optional in production.** Screen reader users navigating a site by landmark don't see your blue underline. They need `aria-current` to know "this link represents the page you're currently on." Adding the attribute costs nothing and makes the Navbar meaningfully usable for more people. The industry term for this is "accessibility as a first-class concern" — not an afterthought, not a Module 11 bolt-on.
 
@@ -502,4 +496,4 @@ Behind the scenes, every navigation updates `page.url.pathname`, which forces th
 
 ## Next Lesson
 
-In **Lesson 3.5** you'll build the **Account page** that *displays* the logged-in user's profile — pulling their `full_name`, email, and sign-up date from the `profiles` table via a `load` function. You'll meet `.single()` vs. `.maybeSingle()`, see RLS working as defense-in-depth, and learn the right way to format dates in a SvelteKit app.
+In **Lesson 3.5** you'll build the **Account page** that _displays_ the logged-in user's profile — pulling their `full_name`, email, and sign-up date from the `profiles` table via a `load` function. You'll meet `.single()` vs. `.maybeSingle()`, see RLS working as defense-in-depth, and learn the right way to format dates in a SvelteKit app.

@@ -1,10 +1,10 @@
 ---
-title: "9.1 - Checkout Sessions"
+title: '9.1 - Checkout Sessions'
 module: 9
 lesson: 1
-moduleSlug: "module-09-checkout-billing"
-lessonSlug: "01-checkout-sessions"
-description: "Build the checkout endpoint that creates a Stripe Checkout session and redirects the user to pay."
+moduleSlug: 'module-09-checkout-billing'
+lessonSlug: '01-checkout-sessions'
+description: 'Build the checkout endpoint that creates a Stripe Checkout session and redirects the user to pay.'
 duration: 18
 preview: false
 ---
@@ -69,6 +69,7 @@ The pricing page has a "Subscribe" button next to each tier. When clicked, it PO
 ```
 
 The server:
+
 1. Verifies the user is logged in.
 2. Verifies `lookup_key` is in the allowed set (defense against a malicious client sending `enterprise_free`).
 3. Gets or creates the Stripe customer for this user.
@@ -77,6 +78,7 @@ The server:
 6. Returns `{ url: session.url }`.
 
 The client:
+
 1. `fetch`es `/api/billing/checkout`, reads `{ url }`.
 2. `window.location.href = url` (or `goto(url)`).
 3. Browser is now on `checkout.stripe.com`.
@@ -91,7 +93,7 @@ Stripe gives every price object an ID like `price_1P9abCDeFgHiJkLm`. It's tempti
 
 ```typescript
 // DON'T
-const PRO_MONTHLY_PRICE_ID = 'price_1P9abCDeFgHiJkLm'
+const PRO_MONTHLY_PRICE_ID = 'price_1P9abCDeFgHiJkLm';
 ```
 
 Three things go wrong when you do:
@@ -112,10 +114,10 @@ Our config file (from Module 8) defines the allowed set:
 ```typescript
 // src/lib/config/pricing.config.ts (excerpt)
 export const PRICING_LOOKUP_KEYS = {
-  starterMonthly: 'starter_monthly',
-  proMonthly: 'pro_monthly',
-  enterpriseMonthly: 'enterprise_monthly'
-} as const
+	starterMonthly: 'starter_monthly',
+	proMonthly: 'pro_monthly',
+	enterpriseMonthly: 'enterprise_monthly'
+} as const;
 ```
 
 `Object.values(PRICING_LOOKUP_KEYS)` gives us `['starter_monthly', 'pro_monthly', 'enterprise_monthly']` — the closed set of strings we'll validate the request body against.
@@ -128,55 +130,55 @@ Create `src/routes/api/billing/checkout/+server.ts`:
 
 ```typescript
 // src/routes/api/billing/checkout/+server.ts
-import { json, redirect, error } from '@sveltejs/kit'
-import { stripe } from '$server/stripe'
-import { getOrCreateCustomer } from '$server/billing/customers.service'
-import { PRICING_LOOKUP_KEYS } from '$config/pricing.config'
-import { PUBLIC_APP_URL } from '$env/static/public'
-import type { RequestHandler } from './$types'
+import { json, redirect, error } from '@sveltejs/kit';
+import { stripe } from '$server/stripe';
+import { getOrCreateCustomer } from '$server/billing/customers.service';
+import { PRICING_LOOKUP_KEYS } from '$config/pricing.config';
+import { PUBLIC_APP_URL } from '$env/static/public';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  const user = await locals.getUser()
-  if (!user) error(401, 'Unauthorized')
+	const user = await locals.getUser();
+	if (!user) error(401, 'Unauthorized');
 
-  const { lookup_key } = await request.json()
+	const { lookup_key } = await request.json();
 
-  const validKeys = Object.values(PRICING_LOOKUP_KEYS)
-  if (!validKeys.includes(lookup_key)) {
-    error(400, 'Invalid pricing tier')
-  }
+	const validKeys = Object.values(PRICING_LOOKUP_KEYS);
+	if (!validKeys.includes(lookup_key)) {
+		error(400, 'Invalid pricing tier');
+	}
 
-  const customerId = await getOrCreateCustomer(user.id, user.email!)
+	const customerId = await getOrCreateCustomer(user.id, user.email!);
 
-  const prices = await stripe.prices.list({
-    lookup_keys: [lookup_key],
-    active: true,
-    limit: 1
-  })
+	const prices = await stripe.prices.list({
+		lookup_keys: [lookup_key],
+		active: true,
+		limit: 1
+	});
 
-  const price = prices.data[0]
-  if (!price) error(400, 'Price not found')
+	const price = prices.data[0];
+	if (!price) error(400, 'Price not found');
 
-  const mode = price.type === 'one_time' ? 'payment' : 'subscription'
+	const mode = price.type === 'one_time' ? 'payment' : 'subscription';
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    line_items: [{ price: price.id, quantity: 1 }],
-    mode,
-    success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${PUBLIC_APP_URL}/pricing?checkout=cancelled`,
-    allow_promotion_codes: true,
-    ...(mode === 'subscription' && {
-      subscription_data: {
-        metadata: { user_id: user.id }
-      }
-    })
-  })
+	const session = await stripe.checkout.sessions.create({
+		customer: customerId,
+		line_items: [{ price: price.id, quantity: 1 }],
+		mode,
+		success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+		cancel_url: `${PUBLIC_APP_URL}/pricing?checkout=cancelled`,
+		allow_promotion_codes: true,
+		...(mode === 'subscription' && {
+			subscription_data: {
+				metadata: { user_id: user.id }
+			}
+		})
+	});
 
-  if (!session.url) error(500, 'Failed to create checkout session')
+	if (!session.url) error(500, 'Failed to create checkout session');
 
-  return json({ url: session.url })
-}
+	return json({ url: session.url });
+};
 ```
 
 Now let's walk through every line and decision.
@@ -184,7 +186,7 @@ Now let's walk through every line and decision.
 ### Line 1: imports
 
 ```typescript
-import { json, redirect, error } from '@sveltejs/kit'
+import { json, redirect, error } from '@sveltejs/kit';
 ```
 
 Three helpers from SvelteKit, each with a different control-flow contract:
@@ -198,10 +200,10 @@ One thing to internalize: you **don't** `return error(...)`. You just call it. C
 ### Lines 2–5: server-side imports
 
 ```typescript
-import { stripe } from '$server/stripe'
-import { getOrCreateCustomer } from '$server/billing/customers.service'
-import { PRICING_LOOKUP_KEYS } from '$config/pricing.config'
-import { PUBLIC_APP_URL } from '$env/static/public'
+import { stripe } from '$server/stripe';
+import { getOrCreateCustomer } from '$server/billing/customers.service';
+import { PRICING_LOOKUP_KEYS } from '$config/pricing.config';
+import { PUBLIC_APP_URL } from '$env/static/public';
 ```
 
 - **`$server/stripe`** — our Stripe client from Module 6, with `apiVersion: '2026-03-25.dahlia'` and the secret key loaded from env.
@@ -224,8 +226,8 @@ SvelteKit routes `+server.ts` files by HTTP verb. `export const POST` handles PO
 ### Lines 9–10: auth gate
 
 ```typescript
-const user = await locals.getUser()
-if (!user) error(401, 'Unauthorized')
+const user = await locals.getUser();
+if (!user) error(401, 'Unauthorized');
 ```
 
 `locals.getUser()` is the auth helper we built in Module 2 — it reads the session cookie, validates the JWT with Supabase, and returns the user or null. If null, we throw a 401.
@@ -235,11 +237,11 @@ if (!user) error(401, 'Unauthorized')
 ### Lines 12–17: body parsing and input validation
 
 ```typescript
-const { lookup_key } = await request.json()
+const { lookup_key } = await request.json();
 
-const validKeys = Object.values(PRICING_LOOKUP_KEYS)
+const validKeys = Object.values(PRICING_LOOKUP_KEYS);
 if (!validKeys.includes(lookup_key)) {
-  error(400, 'Invalid pricing tier')
+	error(400, 'Invalid pricing tier');
 }
 ```
 
@@ -248,6 +250,7 @@ if (!validKeys.includes(lookup_key)) {
 We could use Zod here (and in a production polish pass we would), but this endpoint has exactly one field with a closed set of allowed values — the plain `.includes()` check reads more directly than a full Zod schema. Principal-engineer judgement call: for two or more fields, reach for Zod; for one field with a closed set, a direct check is fine.
 
 **Why validate at all? The price lookup would fail anyway if `lookup_key` is bogus.** Yes, but:
+
 1. "Price not found" is a confusing error for a user who typed a valid-looking URL. "Invalid pricing tier" is more diagnostic.
 2. Validating locally avoids making a Stripe API call for requests we know are bad. Stripe API calls cost time (~100–300ms) and count against your rate limit.
 3. Defense in depth: if a future code path wires Stripe calls before validation, our validation still runs first.
@@ -255,7 +258,7 @@ We could use Zod here (and in a production polish pass we would), but this endpo
 ### Line 19: customer resolution
 
 ```typescript
-const customerId = await getOrCreateCustomer(user.id, user.email!)
+const customerId = await getOrCreateCustomer(user.id, user.email!);
 ```
 
 `getOrCreateCustomer` (from Module 7) does:
@@ -272,13 +275,13 @@ We need a customer ID up front because we pass it to `checkout.sessions.create`.
 
 ```typescript
 const prices = await stripe.prices.list({
-  lookup_keys: [lookup_key],
-  active: true,
-  limit: 1
-})
+	lookup_keys: [lookup_key],
+	active: true,
+	limit: 1
+});
 
-const price = prices.data[0]
-if (!price) error(400, 'Price not found')
+const price = prices.data[0];
+if (!price) error(400, 'Price not found');
 ```
 
 `stripe.prices.list({ lookup_keys: [...] })` searches for prices by the stable lookup key. We pass `active: true` to skip archived prices, and `limit: 1` because we expect exactly one match (lookup keys are unique per active price within your account).
@@ -290,7 +293,7 @@ Why not cache this price lookup? Prices change rarely, and a cache would get sta
 ### Line 30: mode detection
 
 ```typescript
-const mode = price.type === 'one_time' ? 'payment' : 'subscription'
+const mode = price.type === 'one_time' ? 'payment' : 'subscription';
 ```
 
 Stripe prices are either `one_time` (charged once, e.g., lifetime deal, credits pack) or `recurring` (charged on a schedule). Checkout sessions need to be told which mode to use:
@@ -304,18 +307,18 @@ By deriving `mode` from the price type, we keep the endpoint flexible. If you la
 
 ```typescript
 const session = await stripe.checkout.sessions.create({
-  customer: customerId,
-  line_items: [{ price: price.id, quantity: 1 }],
-  mode,
-  success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-  cancel_url: `${PUBLIC_APP_URL}/pricing?checkout=cancelled`,
-  allow_promotion_codes: true,
-  ...(mode === 'subscription' && {
-    subscription_data: {
-      metadata: { user_id: user.id }
-    }
-  })
-})
+	customer: customerId,
+	line_items: [{ price: price.id, quantity: 1 }],
+	mode,
+	success_url: `${PUBLIC_APP_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+	cancel_url: `${PUBLIC_APP_URL}/pricing?checkout=cancelled`,
+	allow_promotion_codes: true,
+	...(mode === 'subscription' && {
+		subscription_data: {
+			metadata: { user_id: user.id }
+		}
+	})
+});
 ```
 
 This is the meaty call. Each field:
@@ -327,7 +330,6 @@ This is the meaty call. Each field:
 - **`mode`** — the `'payment'` or `'subscription'` we computed above.
 
 - **`success_url`** — where Stripe sends the user after successful payment. Three things to know:
-
   - Stripe replaces `{CHECKOUT_SESSION_ID}` with the actual session ID. This lets the success page call `stripe.checkout.sessions.retrieve(session_id)` to show the user exactly what they bought, before the webhook has necessarily arrived. (The webhook is the source of truth for what lands in your DB, but showing a "thanks!" page doesn't need to wait for it.)
   - The literal string is `{CHECKOUT_SESSION_ID}` — not a template variable you interpolate. Pass it to Stripe exactly. Stripe performs the substitution.
   - The URL must be absolute. Hence `PUBLIC_APP_URL`.
@@ -343,9 +345,9 @@ This is the meaty call. Each field:
 ### Lines 46–47: success-case guard
 
 ```typescript
-if (!session.url) error(500, 'Failed to create checkout session')
+if (!session.url) error(500, 'Failed to create checkout session');
 
-return json({ url: session.url })
+return json({ url: session.url });
 ```
 
 `stripe.checkout.sessions.create` returns a `Session` object. The `url` field is typed as `string | null` in Stripe's TypeScript types because some session modes (embedded, redirect-less flows) don't have a URL. For hosted mode — which is what we're using — it's always present, but the type doesn't know that.
@@ -362,35 +364,35 @@ The pricing page in Module 8 has a "Subscribe" button per tier. Here's how the c
 
 ```svelte
 <script lang="ts">
-  import { goto } from '$app/navigation'
+	import { goto } from '$app/navigation';
 
-  let submitting = $state<string | null>(null)
+	let submitting = $state<string | null>(null);
 
-  async function subscribe(lookup_key: string) {
-    submitting = lookup_key
-    try {
-      const response = await fetch('/api/billing/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lookup_key })
-      })
+	async function subscribe(lookup_key: string) {
+		submitting = lookup_key;
+		try {
+			const response = await fetch('/api/billing/checkout', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ lookup_key })
+			});
 
-      if (!response.ok) {
-        const { message } = await response.json()
-        alert(message)
-        return
-      }
+			if (!response.ok) {
+				const { message } = await response.json();
+				alert(message);
+				return;
+			}
 
-      const { url } = await response.json()
-      window.location.href = url
-    } finally {
-      submitting = null
-    }
-  }
+			const { url } = await response.json();
+			window.location.href = url;
+		} finally {
+			submitting = null;
+		}
+	}
 </script>
 
 <button onclick={() => subscribe('pro_monthly')} disabled={submitting !== null}>
-  {submitting === 'pro_monthly' ? 'Redirecting...' : 'Subscribe'}
+	{submitting === 'pro_monthly' ? 'Redirecting...' : 'Subscribe'}
 </button>
 ```
 
@@ -406,18 +408,18 @@ We stuck with a classic `+server.ts` endpoint here because it's the pattern ever
 
 ```typescript
 // src/lib/billing.remote.ts
-import { command } from '$app/server'
-import * as z from 'zod'
-import { PRICING_LOOKUP_KEYS } from '$config/pricing.config'
+import { command } from '$app/server';
+import * as z from 'zod';
+import { PRICING_LOOKUP_KEYS } from '$config/pricing.config';
 
-const validKeys = Object.values(PRICING_LOOKUP_KEYS) as [string, ...string[]]
+const validKeys = Object.values(PRICING_LOOKUP_KEYS) as [string, ...string[]];
 
 export const createCheckoutUrl = command(
-  z.object({ lookup_key: z.enum(validKeys) }),
-  async ({ lookup_key }, { locals }) => {
-    // same body as POST above, return { url }
-  }
-)
+	z.object({ lookup_key: z.enum(validKeys) }),
+	async ({ lookup_key }, { locals }) => {
+		// same body as POST above, return { url }
+	}
+);
 ```
 
 The pricing-page button becomes `const { url } = await createCheckoutUrl({ lookup_key: 'pro_monthly' })` — no `fetch`, no JSON plumbing, no manual validation. Bonus lesson 14.7 covers this pattern end-to-end.

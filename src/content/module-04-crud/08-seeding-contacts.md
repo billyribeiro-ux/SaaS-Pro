@@ -1,10 +1,10 @@
 ---
-title: "4.8 - Seeding Contacts"
+title: '4.8 - Seeding Contacts'
 module: 4
 lesson: 9
-moduleSlug: "module-04-crud"
-lessonSlug: "08-seeding-contacts"
-description: "Add 20 realistic contacts to your seed data so you have a full dataset to develop against."
+moduleSlug: 'module-04-crud'
+lessonSlug: '08-seeding-contacts'
+description: 'Add 20 realistic contacts to your seed data so you have a full dataset to develop against.'
 duration: 8
 preview: false
 ---
@@ -42,6 +42,7 @@ The number matters more than it seems. Here's the decision framework:
 **A thousand contacts** — you'd find a lot of performance issues at this scale (N+1 query bugs, missing indexes, memory hogs). But you also can't **read** your list to check it's rendering correctly. Bugs hide in the noise. Tools like Faker generate thousands of contacts for load testing — that's a different use case.
 
 **Twenty contacts** — just right. It's:
+
 - More than a typical "first page" of a paginated list, so pagination gets exercised.
 - Few enough that you can scan the list with your eyes in ten seconds.
 - Varied enough (if you deliberately vary the data) to stress-test search and filter logic.
@@ -173,28 +174,28 @@ One `INSERT` statement with many tuples. This is faster than 20 separate inserts
 
 Scan the data carefully:
 
-| Name | Email | Phone | Company | Scenario |
-| --- | --- | --- | --- | --- |
-| Alice | yes | yes | yes | Fully populated |
-| Bob | yes | yes | yes | Fully populated |
-| Carol | yes | **null** | yes | No phone |
-| David | **null** | yes | **null** | No email, no company |
-| Emma | yes | yes | yes | Fully populated |
-| Frank | yes | **null** | yes | No phone |
-| Grace | **null** | yes | yes | No email |
-| Henry | yes | yes | yes | Fully populated |
-| Isabel | yes | yes | **null** | No company |
-| James | yes | **null** | yes | No phone |
-| Karen | **null** | yes | yes | No email |
-| Liam | yes | yes | yes | Fully populated |
-| Mia | yes | yes | yes | Fully populated |
-| Noah | **null** | **null** | yes | Only name + company |
-| Olivia | yes | yes | yes | Fully populated |
-| Paul | yes | **null** | **null** | Only name + email |
-| Quinn | yes | yes | yes | Fully populated |
-| Rachel | **null** | yes | yes | No email |
-| Sam | yes | yes | yes | Fully populated |
-| Tina | yes | yes | yes | Fully populated |
+| Name   | Email    | Phone    | Company  | Scenario             |
+| ------ | -------- | -------- | -------- | -------------------- |
+| Alice  | yes      | yes      | yes      | Fully populated      |
+| Bob    | yes      | yes      | yes      | Fully populated      |
+| Carol  | yes      | **null** | yes      | No phone             |
+| David  | **null** | yes      | **null** | No email, no company |
+| Emma   | yes      | yes      | yes      | Fully populated      |
+| Frank  | yes      | **null** | yes      | No phone             |
+| Grace  | **null** | yes      | yes      | No email             |
+| Henry  | yes      | yes      | yes      | Fully populated      |
+| Isabel | yes      | yes      | **null** | No company           |
+| James  | yes      | **null** | yes      | No phone             |
+| Karen  | **null** | yes      | yes      | No email             |
+| Liam   | yes      | yes      | yes      | Fully populated      |
+| Mia    | yes      | yes      | yes      | Fully populated      |
+| Noah   | **null** | **null** | yes      | Only name + company  |
+| Olivia | yes      | yes      | yes      | Fully populated      |
+| Paul   | yes      | **null** | **null** | Only name + email    |
+| Quinn  | yes      | yes      | yes      | Fully populated      |
+| Rachel | **null** | yes      | yes      | No email             |
+| Sam    | yes      | yes      | yes      | Fully populated      |
+| Tina   | yes      | yes      | yes      | Fully populated      |
 
 Count of null fields: 5 emails null, 5 phones null, 3 companies null. Some rows have multiple nulls (David, Noah, Paul). The "name only" case isn't in this set, but you could easily add one if you wanted to exercise that specifically.
 

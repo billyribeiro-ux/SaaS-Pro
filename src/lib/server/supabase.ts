@@ -24,16 +24,13 @@ function getAdmin(): SupabaseClient<Database> {
 	return _admin;
 }
 
-export const supabaseAdmin: SupabaseClient<Database> = new Proxy(
-	{} as SupabaseClient<Database>,
-	{
-		get(_target, prop, receiver) {
-			const client = getAdmin();
-			const value = Reflect.get(client as object, prop, receiver);
-			return typeof value === 'function' ? value.bind(client) : value;
-		}
+export const supabaseAdmin: SupabaseClient<Database> = new Proxy({} as SupabaseClient<Database>, {
+	get(_target, prop, receiver) {
+		const client = getAdmin();
+		const value = Reflect.get(client as object, prop, receiver);
+		return typeof value === 'function' ? value.bind(client) : value;
 	}
-);
+});
 
 // Request-scoped SSR client — respects RLS via the caller's session cookie.
 // Instantiate once per request in hooks.server.ts and attach to event.locals.

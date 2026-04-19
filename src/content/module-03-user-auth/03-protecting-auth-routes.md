@@ -1,10 +1,10 @@
 ---
-title: "3.3 - Protecting Auth Routes"
+title: '3.3 - Protecting Auth Routes'
 module: 3
 lesson: 3
-moduleSlug: "module-03-user-auth"
-lessonSlug: "03-protecting-auth-routes"
-description: "Guard the (app) route group with a server-side layout that redirects unauthenticated users to login."
+moduleSlug: 'module-03-user-auth'
+lessonSlug: '03-protecting-auth-routes'
+description: 'Guard the (app) route group with a server-side layout that redirects unauthenticated users to login.'
 duration: 16
 preview: false
 ---
@@ -86,19 +86,19 @@ Create `src/routes/(app)/+layout.server.ts`:
 
 ```typescript
 // src/routes/(app)/+layout.server.ts
-import { redirect } from '@sveltejs/kit'
-import type { LayoutServerLoad } from './$types'
+import { redirect } from '@sveltejs/kit';
+import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-  const user = await locals.getUser()
+	const user = await locals.getUser();
 
-  if (!user) {
-    const redirectTo = encodeURIComponent(url.pathname + url.search)
-    redirect(303, `/login?redirectTo=${redirectTo}`)
-  }
+	if (!user) {
+		const redirectTo = encodeURIComponent(url.pathname + url.search);
+		redirect(303, `/login?redirectTo=${redirectTo}`);
+	}
 
-  return { user }
-}
+	return { user };
+};
 ```
 
 Three real lines of logic. Let's take them apart.
@@ -132,8 +132,8 @@ If we got here, the user is authenticated. We return the user object so child pa
 ## Step 3: The `redirectTo` Round-Trip
 
 ```typescript
-const redirectTo = encodeURIComponent(url.pathname + url.search)
-redirect(303, `/login?redirectTo=${redirectTo}`)
+const redirectTo = encodeURIComponent(url.pathname + url.search);
+redirect(303, `/login?redirectTo=${redirectTo}`);
 ```
 
 This is a subtle but important line. Let's unpack.
@@ -180,14 +180,14 @@ Create `src/routes/(app)/+layout.svelte`:
 ```svelte
 <!-- src/routes/(app)/+layout.svelte -->
 <script lang="ts">
-  let { children } = $props()
+	let { children } = $props();
 </script>
 
 <div class="min-h-screen bg-gray-50">
-  <!-- Navbar will live here in Lesson 3.4 -->
-  <main class="max-w-7xl mx-auto px-4 py-8">
-    {@render children()}
-  </main>
+	<!-- Navbar will live here in Lesson 3.4 -->
+	<main class="mx-auto max-w-7xl px-4 py-8">
+		{@render children()}
+	</main>
 </div>
 ```
 
@@ -229,14 +229,14 @@ To actually test the guard, we need a page behind it. Create `src/routes/(app)/d
 ```svelte
 <!-- src/routes/(app)/dashboard/+page.svelte -->
 <script lang="ts">
-  let { data } = $props()
+	let { data } = $props();
 </script>
 
 <div>
-  <h1 class="text-3xl font-semibold text-gray-900 mb-2">
-    Welcome, {data.user.email}
-  </h1>
-  <p class="text-gray-600">You're signed in. Dashboard coming soon.</p>
+	<h1 class="mb-2 text-3xl font-semibold text-gray-900">
+		Welcome, {data.user.email}
+	</h1>
+	<p class="text-gray-600">You're signed in. Dashboard coming soon.</p>
 </div>
 ```
 
@@ -304,10 +304,10 @@ If you put the `getUser()` check at the page level, you have to remember to add 
 // ❌ DON'T — one per page means drift
 // src/routes/(app)/dashboard/+page.server.ts
 export const load = async ({ locals }) => {
-  const user = await locals.getUser()
-  if (!user) redirect(303, '/login')
-  // ...
-}
+	const user = await locals.getUser();
+	if (!user) redirect(303, '/login');
+	// ...
+};
 ```
 
 The layout-level guard runs once per request and covers the entire subtree. Centralize.
@@ -318,8 +318,10 @@ We keep harping on this because it's the most common real-world bug:
 
 ```typescript
 // ❌ DON'T
-const { data: { session } } = await locals.supabase.auth.getSession()
-if (!session) redirect(303, '/login')
+const {
+	data: { session }
+} = await locals.supabase.auth.getSession();
+if (!session) redirect(303, '/login');
 ```
 
 `getSession` trusts cookies. `getUser` verifies against Supabase. Use `getUser`.
@@ -328,7 +330,7 @@ if (!session) redirect(303, '/login')
 
 ```typescript
 // ❌ DON'T
-redirect(303, `/login?redirectTo=${url.pathname + url.search}`)
+redirect(303, `/login?redirectTo=${url.pathname + url.search}`);
 ```
 
 If the user was visiting `/dashboard/contacts?filter=active`, the redirect URL becomes `/login?redirectTo=/dashboard/contacts?filter=active`. That second `?` and the `&` (if present) will be parsed as additional query params on the login URL itself, and `redirectTo` will be just `/dashboard/contacts`. Encoding prevents this.
@@ -338,7 +340,7 @@ If the user was visiting `/dashboard/contacts?filter=active`, the redirect URL b
 ```typescript
 // ❌ DON'T
 if (!user) {
-  return { user: null }
+	return { user: null };
 }
 ```
 
@@ -349,10 +351,10 @@ Then every page has to null-check `data.user`. The whole point of the guard is t
 ```svelte
 <!-- ❌ DON'T — runs in the browser -->
 <script>
-  import { goto } from '$app/navigation'
-  import { page } from '$app/state'
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 
-  if (!page.data.user) goto('/login')
+	if (!page.data.user) goto('/login');
 </script>
 ```
 
@@ -364,8 +366,8 @@ Always do auth checks server-side. SvelteKit lets you co-locate them in `+layout
 
 ```typescript
 // ❌ DON'T
-const token = cookies.get('sb-access-token')
-if (!token) redirect(303, '/login')
+const token = cookies.get('sb-access-token');
+if (!token) redirect(303, '/login');
 ```
 
 The cookie might exist but be expired, forged, or for a different project. You need Supabase to validate it. `locals.getUser()` does that. Don't read cookies directly for auth decisions.
@@ -381,9 +383,9 @@ In Express/Next.js world, the common pattern is global middleware:
 ```typescript
 // Next.js middleware.ts
 export function middleware(req) {
-  if (req.nextUrl.pathname.startsWith('/dashboard') && !req.cookies.has('session')) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
+	if (req.nextUrl.pathname.startsWith('/dashboard') && !req.cookies.has('session')) {
+		return NextResponse.redirect(new URL('/login', req.url));
+	}
 }
 ```
 
@@ -399,13 +401,15 @@ In Lesson 2.3 we wrapped `getUser` with request-scoped memoization:
 
 ```typescript
 // hooks.server.ts (simplified)
-let cached: User | null | undefined
+let cached: User | null | undefined;
 event.locals.getUser = async () => {
-  if (cached !== undefined) return cached
-  const { data: { user } } = await event.locals.supabase.auth.getUser()
-  cached = user
-  return cached
-}
+	if (cached !== undefined) return cached;
+	const {
+		data: { user }
+	} = await event.locals.supabase.auth.getUser();
+	cached = user;
+	return cached;
+};
 ```
 
 This caches within a single request. The first call hits Supabase; subsequent calls in the same request return the cached result. Guard, layout, page, action — one Supabase call total.

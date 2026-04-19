@@ -16,7 +16,7 @@ select * from contacts where first_name ilike '%ada%';
 
 This works. It returns the right rows. But watch what Postgres has to do:
 
-1. There is no index that can help a pattern starting with `%`. An index on `first_name` is like a dictionary — it is ordered, so you can binary-search for strings starting with `ada`. But a string *containing* `ada` anywhere could be anywhere in the dictionary, so the index is useless.
+1. There is no index that can help a pattern starting with `%`. An index on `first_name` is like a dictionary — it is ordered, so you can binary-search for strings starting with `ada`. But a string _containing_ `ada` anywhere could be anywhere in the dictionary, so the index is useless.
 2. Postgres falls back to a **sequential scan**: it reads every row in the table, lowercases it, checks the pattern. That is O(n) for every search.
 
 On 500 rows, fine. On 50,000 rows, each search takes hundreds of milliseconds — noticeable. On 5,000,000 rows, it takes seconds — broken. And because there are no index assumptions, the query planner cannot parallelize or short-circuit.
@@ -64,10 +64,10 @@ A **GIN index** (Generalized Inverted Index) is Postgres's index structure for t
 
 The comparison:
 
-| Approach | Query time (100k rows) | Index time |
-|---|---|---|
-| `ILIKE '%foo%'` | ~200ms (sequential scan) | n/a (no useful index) |
-| `tsvector @@ tsquery` + GIN | ~2ms | O(log n) |
+| Approach                    | Query time (100k rows)   | Index time            |
+| --------------------------- | ------------------------ | --------------------- |
+| `ILIKE '%foo%'`             | ~200ms (sequential scan) | n/a (no useful index) |
+| `tsvector @@ tsquery` + GIN | ~2ms                     | O(log n)              |
 
 A hundred times faster, not incidentally but fundamentally, because of the algorithmic difference.
 
@@ -135,42 +135,42 @@ select indexname from pg_indexes where tablename = 'contacts';
 ### `src/routes/api/contacts/search/+server.ts`
 
 ```ts
-import { error, json } from '@sveltejs/kit'
-import type { RequestHandler } from './$types'
+import { error, json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals: { supabase, getUser } }) => {
-  const user = await getUser()
-  if (!user) throw error(401, 'Unauthorized')
+	const user = await getUser();
+	if (!user) throw error(401, 'Unauthorized');
 
-  const q = url.searchParams.get('q')?.trim() ?? ''
+	const q = url.searchParams.get('q')?.trim() ?? '';
 
-  // Empty query: return the most recent contacts (same as list page default).
-  if (q.length === 0) {
-    const { data, error: dbError } = await supabase
-      .from('contacts')
-      .select('id, first_name, last_name, email, company')
-      .order('created_at', { ascending: false })
-      .limit(50)
-    if (dbError) throw error(500, dbError.message)
-    return json({ results: data })
-  }
+	// Empty query: return the most recent contacts (same as list page default).
+	if (q.length === 0) {
+		const { data, error: dbError } = await supabase
+			.from('contacts')
+			.select('id, first_name, last_name, email, company')
+			.order('created_at', { ascending: false })
+			.limit(50);
+		if (dbError) throw error(500, dbError.message);
+		return json({ results: data });
+	}
 
-  // Reject absurdly long queries; prevents wasted work.
-  if (q.length > 200) throw error(400, 'Query too long')
+	// Reject absurdly long queries; prevents wasted work.
+	if (q.length > 200) throw error(400, 'Query too long');
 
-  // Use an RPC for the rank+limit query because PostgREST does not expose
-  // ts_rank directly.  Alternative: use rpc/textSearch. We go with the
-  // .textSearch helper for clarity; it builds the @@ query under the hood.
-  const { data, error: dbError } = await supabase
-    .from('contacts')
-    .select('id, first_name, last_name, email, company')
-    .textSearch('search', q, { type: 'plain', config: 'english' })
-    .limit(50)
+	// Use an RPC for the rank+limit query because PostgREST does not expose
+	// ts_rank directly.  Alternative: use rpc/textSearch. We go with the
+	// .textSearch helper for clarity; it builds the @@ query under the hood.
+	const { data, error: dbError } = await supabase
+		.from('contacts')
+		.select('id, first_name, last_name, email, company')
+		.textSearch('search', q, { type: 'plain', config: 'english' })
+		.limit(50);
 
-  if (dbError) throw error(500, dbError.message)
+	if (dbError) throw error(500, dbError.message);
 
-  return json({ results: data })
-}
+	return json({ results: data });
+};
 ```
 
 Key pieces:
@@ -215,7 +215,7 @@ $$;
 Then call it:
 
 ```ts
-const { data, error: dbError } = await supabase.rpc('search_contacts', { q }).limit(50)
+const { data, error: dbError } = await supabase.rpc('search_contacts', { q }).limit(50);
 ```
 
 ## Step 3: The search UI with debouncing
@@ -226,88 +226,89 @@ Every time the user types a character, the browser could fire a search. That is 
 
 ```svelte
 <script lang="ts">
-  import { onMount } from 'svelte'
+	import { onMount } from 'svelte';
 
-  let { data } = $props()
+	let { data } = $props();
 
-  let query = $state('')
-  let results = $state(data.contacts)
-  let isSearching = $state(false)
-  let lastError = $state<string | null>(null)
+	let query = $state('');
+	let results = $state(data.contacts);
+	let isSearching = $state(false);
+	let lastError = $state<string | null>(null);
 
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null
-  let currentController: AbortController | null = null
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let currentController: AbortController | null = null;
 
-  $effect(() => {
-    const q = query
+	$effect(() => {
+		const q = query;
 
-    // Cancel any pending debounce
-    if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => doSearch(q), 300)
+		// Cancel any pending debounce
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => doSearch(q), 300);
 
-    // Cleanup on unmount
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer)
-    }
-  })
+		// Cleanup on unmount
+		return () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+		};
+	});
 
-  async function doSearch(q: string) {
-    // Cancel any in-flight request; its answer is no longer relevant
-    if (currentController) currentController.abort()
-    currentController = new AbortController()
+	async function doSearch(q: string) {
+		// Cancel any in-flight request; its answer is no longer relevant
+		if (currentController) currentController.abort();
+		currentController = new AbortController();
 
-    isSearching = true
-    lastError = null
-    try {
-      const res = await fetch(`/api/contacts/search?q=${encodeURIComponent(q)}`, {
-        signal: currentController.signal
-      })
-      if (!res.ok) throw new Error(`Search failed (${res.status})`)
-      const body = await res.json()
-      results = body.results
-    } catch (err: any) {
-      if (err.name === 'AbortError') return // expected
-      lastError = err.message
-    } finally {
-      isSearching = false
-    }
-  }
+		isSearching = true;
+		lastError = null;
+		try {
+			const res = await fetch(`/api/contacts/search?q=${encodeURIComponent(q)}`, {
+				signal: currentController.signal
+			});
+			if (!res.ok) throw new Error(`Search failed (${res.status})`);
+			const body = await res.json();
+			results = body.results;
+		} catch (err: any) {
+			if (err.name === 'AbortError') return; // expected
+			lastError = err.message;
+		} finally {
+			isSearching = false;
+		}
+	}
 </script>
 
 <div class="mb-4 flex items-center gap-3">
-  <input
-    bind:value={query}
-    type="search"
-    placeholder="Search contacts..."
-    class="flex-1 rounded border px-3 py-2"
-  />
-  {#if isSearching}
-    <span class="text-xs text-gray-500">Searching...</span>
-  {/if}
+	<input
+		bind:value={query}
+		type="search"
+		placeholder="Search contacts..."
+		class="flex-1 rounded border px-3 py-2"
+	/>
+	{#if isSearching}
+		<span class="text-xs text-gray-500">Searching...</span>
+	{/if}
 </div>
 
 {#if lastError}
-  <p class="mb-2 text-sm text-red-600">{lastError}</p>
+	<p class="mb-2 text-sm text-red-600">{lastError}</p>
 {/if}
 
 {#if results.length === 0}
-  <p class="text-sm text-gray-500">
-    {query ? `No results for "${query}"` : 'No contacts yet.'}
-  </p>
+	<p class="text-sm text-gray-500">
+		{query ? `No results for "${query}"` : 'No contacts yet.'}
+	</p>
 {:else}
-  <ul class="divide-y divide-gray-100">
-    {#each results as c (c.id)}
-      <li class="flex items-center gap-3 py-3">
-        <a href="/contacts/{c.id}" class="font-medium hover:underline">
-          {c.first_name ?? ''} {c.last_name ?? ''}
-        </a>
-        <span class="ml-auto text-sm text-gray-500">{c.email ?? ''}</span>
-        {#if c.company}
-          <span class="text-xs text-gray-400">{c.company}</span>
-        {/if}
-      </li>
-    {/each}
-  </ul>
+	<ul class="divide-y divide-gray-100">
+		{#each results as c (c.id)}
+			<li class="flex items-center gap-3 py-3">
+				<a href="/contacts/{c.id}" class="font-medium hover:underline">
+					{c.first_name ?? ''}
+					{c.last_name ?? ''}
+				</a>
+				<span class="ml-auto text-sm text-gray-500">{c.email ?? ''}</span>
+				{#if c.company}
+					<span class="text-xs text-gray-400">{c.company}</span>
+				{/if}
+			</li>
+		{/each}
+	</ul>
 {/if}
 ```
 
@@ -320,7 +321,7 @@ The magic is in the `$effect`:
 And the `AbortController`:
 
 - Each fetch is made with a signal. Starting a new search aborts the previous one.
-- Without this, a slow search for "a" could arrive *after* a fast search for "ada" completed, clobbering the UI with stale results. This is a classic **race condition**.
+- Without this, a slow search for "a" could arrive _after_ a fast search for "ada" completed, clobbering the UI with stale results. This is a classic **race condition**.
 - `err.name === 'AbortError'` — aborted requests throw this specific error; we silently swallow it.
 
 **Why 300ms?** It is the industry rule-of-thumb for balancing responsiveness against wasted requests. Too short (100ms) and you fire a request per keystroke. Too long (1000ms) and the UI feels sluggish. 300ms is just short enough to feel alive and just long enough to drop a few requests per typed word.

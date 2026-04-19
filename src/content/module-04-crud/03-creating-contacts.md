@@ -1,10 +1,10 @@
 ---
-title: "4.3 - Creating Contacts"
+title: '4.3 - Creating Contacts'
 module: 4
 lesson: 3
-moduleSlug: "module-04-crud"
-lessonSlug: "03-creating-contacts"
-description: "Build the create contact form with a SvelteKit form action, Zod validation, and Supabase insert."
+moduleSlug: 'module-04-crud'
+lessonSlug: '03-creating-contacts'
+description: 'Build the create contact form with a SvelteKit form action, Zod validation, and Supabase insert.'
 duration: 15
 preview: false
 ---
@@ -15,7 +15,7 @@ Contactly can list contacts but can't add one. In this lesson you'll build the "
 
 By the end: the user clicks **New contact** → types a name, email, phone, company → hits **Create contact** → a row lands in Supabase, RLS-scoped to their account, and they return to `/contacts` with the new entry visible.
 
-We'll dig into the non-obvious bits: why `user_id` *must* come from the server-side session (with a concrete attack scenario), how Zod v4 handles optional fields that arrive as empty strings, why we convert empty strings to `null` before insert, and a `submitting` state that makes the button feel alive.
+We'll dig into the non-obvious bits: why `user_id` _must_ come from the server-side session (with a concrete attack scenario), how Zod v4 handles optional fields that arrive as empty strings, why we convert empty strings to `null` before insert, and a `submitting` state that makes the button feel alive.
 
 ## Prerequisites
 
@@ -73,23 +73,23 @@ Open `src/routes/(app)/contacts/new/+page.server.ts`.
 
 ```typescript
 // src/routes/(app)/contacts/new/+page.server.ts
-import { fail, redirect, error } from '@sveltejs/kit'
-import * as z from 'zod'
-import type { Actions } from './$types'
+import { fail, redirect, error } from '@sveltejs/kit';
+import * as z from 'zod';
+import type { Actions } from './$types';
 
 const contactSchema = z.object({
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().min(1, 'Last name is required').max(100),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().max(50).optional().or(z.literal('')),
-  company: z.string().max(200).optional().or(z.literal(''))
-})
+	first_name: z.string().min(1, 'First name is required').max(100),
+	last_name: z.string().min(1, 'Last name is required').max(100),
+	email: z.string().email('Invalid email').optional().or(z.literal('')),
+	phone: z.string().max(50).optional().or(z.literal('')),
+	company: z.string().max(200).optional().or(z.literal(''))
+});
 ```
 
 ### Line-by-line
 
 ```typescript
-import { fail, redirect, error } from '@sveltejs/kit'
+import { fail, redirect, error } from '@sveltejs/kit';
 ```
 
 - `fail` — returns a typed failure from a form action. The payload reaches the client as the `form` prop.
@@ -97,13 +97,13 @@ import { fail, redirect, error } from '@sveltejs/kit'
 - `error` — throws an HTTP error (401, 403, 500). Different from `fail`: renders an error page, not the same page with a message.
 
 ```typescript
-import * as z from 'zod'
+import * as z from 'zod';
 ```
 
 The **Zod v4 import style**. If you've seen `import { z } from 'zod'`, that was v3. Contactly uses Zod v4 (check `package.json`). Always use `import * as z from 'zod'`.
 
 ```typescript
-import type { Actions } from './$types'
+import type { Actions } from './$types';
 ```
 
 SvelteKit auto-generates `$types` per route. `Actions` is the exact shape SvelteKit expects for the `actions` export.
@@ -129,6 +129,7 @@ This looks strange. Here's why.
 When a user submits an HTML form without filling in an optional field, `FormData.get('email')` returns **`''` (empty string)**, not `null` or `undefined`. The HTML spec — this has been the case forever.
 
 Zod's `.optional()` means "may be `undefined`." It does **not** mean "may be an empty string." So `z.string().email().optional()` alone would reject `''`:
+
 - `''` is a string (passes `z.string()`).
 - `''` fails the email regex (fails `.email()`).
 - `''` is not `undefined` (so `.optional()` doesn't help).
@@ -145,46 +146,44 @@ Add the `actions` export below the schema:
 
 ```typescript
 export const actions: Actions = {
-  default: async ({ request, locals }) => {
-    const user = await locals.getUser()
-    if (!user) error(401, 'Unauthorized')
+	default: async ({ request, locals }) => {
+		const user = await locals.getUser();
+		if (!user) error(401, 'Unauthorized');
 
-    const formData = await request.formData()
+		const formData = await request.formData();
 
-    const raw = {
-      first_name: formData.get('first_name'),
-      last_name: formData.get('last_name'),
-      email: formData.get('email') || '',
-      phone: formData.get('phone') || '',
-      company: formData.get('company') || ''
-    }
+		const raw = {
+			first_name: formData.get('first_name'),
+			last_name: formData.get('last_name'),
+			email: formData.get('email') || '',
+			phone: formData.get('phone') || '',
+			company: formData.get('company') || ''
+		};
 
-    const result = contactSchema.safeParse(raw)
+		const result = contactSchema.safeParse(raw);
 
-    if (!result.success) {
-      return fail(400, {
-        error: result.error.issues[0]?.message,
-        data: raw
-      })
-    }
+		if (!result.success) {
+			return fail(400, {
+				error: result.error.issues[0]?.message,
+				data: raw
+			});
+		}
 
-    const { error: insertError } = await locals.supabase
-      .from('contacts')
-      .insert({
-        ...result.data,
-        user_id: user.id,
-        email: result.data.email || null,
-        phone: result.data.phone || null,
-        company: result.data.company || null
-      })
+		const { error: insertError } = await locals.supabase.from('contacts').insert({
+			...result.data,
+			user_id: user.id,
+			email: result.data.email || null,
+			phone: result.data.phone || null,
+			company: result.data.company || null
+		});
 
-    if (insertError) {
-      return fail(500, { error: 'Failed to create contact. Please try again.' })
-    }
+		if (insertError) {
+			return fail(500, { error: 'Failed to create contact. Please try again.' });
+		}
 
-    redirect(303, '/contacts')
-  }
-}
+		redirect(303, '/contacts');
+	}
+};
 ```
 
 Let's walk through each block.
@@ -201,11 +200,11 @@ default: async ({ request, locals }) => {
 ### The authorization gate
 
 ```typescript
-const user = await locals.getUser()
-if (!user) error(401, 'Unauthorized')
+const user = await locals.getUser();
+if (!user) error(401, 'Unauthorized');
 ```
 
-Before reading form data, before touching the DB: *who is submitting?* No user → 401.
+Before reading form data, before touching the DB: _who is submitting?_ No user → 401.
 
 The `(app)` layout already blocks unauthenticated navigation, so why re-check? Two reasons: (1) the action is a separate HTTP endpoint reachable directly via `curl` or `fetch` — never assume upstream code ran, and (2) we need `user.id` anyway to set `user_id` on the row.
 
@@ -214,15 +213,15 @@ The `(app)` layout already blocks unauthenticated navigation, so why re-check? T
 ### Reading the form data
 
 ```typescript
-const formData = await request.formData()
+const formData = await request.formData();
 
 const raw = {
-  first_name: formData.get('first_name'),
-  last_name: formData.get('last_name'),
-  email: formData.get('email') || '',
-  phone: formData.get('phone') || '',
-  company: formData.get('company') || ''
-}
+	first_name: formData.get('first_name'),
+	last_name: formData.get('last_name'),
+	email: formData.get('email') || '',
+	phone: formData.get('phone') || '',
+	company: formData.get('company') || ''
+};
 ```
 
 - `await request.formData()` — parses the POST body. A web standard API.
@@ -230,37 +229,35 @@ const raw = {
 
 Why `|| ''` on optional fields? If an attacker POSTs without the `email` field at all, `formData.get('email')` returns `null`. Zod's `z.string()` rejects `null` outright. The `|| ''` fallback turns `null` into `''`, which our schema handles via `.or(z.literal(''))`. The form is now robust to both "missing entirely" and "present but blank."
 
-We don't apply `|| ''` to `first_name`/`last_name`. Those are required — we *want* Zod to reject a missing value.
+We don't apply `|| ''` to `first_name`/`last_name`. Those are required — we _want_ Zod to reject a missing value.
 
 ### Validation
 
 ```typescript
-const result = contactSchema.safeParse(raw)
+const result = contactSchema.safeParse(raw);
 
 if (!result.success) {
-  return fail(400, {
-    error: result.error.issues[0]?.message,
-    data: raw
-  })
+	return fail(400, {
+		error: result.error.issues[0]?.message,
+		data: raw
+	});
 }
 ```
 
 - `safeParse(raw)` — like `parse(raw)` but never throws. Returns `{ success: true, data }` or `{ success: false, error }`.
-- `result.error.issues[0]?.message` — Zod collects *all* problems in `issues`. We show only the first. Stacking "First name is required. Last name is required. Email is invalid." creates decision paralysis; per-field inline errors are a Module 11 upgrade.
+- `result.error.issues[0]?.message` — Zod collects _all_ problems in `issues`. We show only the first. Stacking "First name is required. Last name is required. Email is invalid." creates decision paralysis; per-field inline errors are a Module 11 upgrade.
 - `data: raw` — we echo the raw values back so `+page.svelte` can repopulate. No passwords here, so echoing everything is safe.
 
 ### The insert — and where authorization belongs
 
 ```typescript
-const { error: insertError } = await locals.supabase
-  .from('contacts')
-  .insert({
-    ...result.data,
-    user_id: user.id,
-    email: result.data.email || null,
-    phone: result.data.phone || null,
-    company: result.data.company || null
-  })
+const { error: insertError } = await locals.supabase.from('contacts').insert({
+	...result.data,
+	user_id: user.id,
+	email: result.data.email || null,
+	phone: result.data.phone || null,
+	company: result.data.company || null
+});
 ```
 
 - `locals.supabase` — the per-request client from `hooks.server.ts`. Reads the user's auth cookies; RLS policies apply.
@@ -276,7 +273,7 @@ Imagine `user_id` came from a hidden input in the form:
 
 ```html
 <!-- NEVER DO THIS -->
-<input type="hidden" name="user_id" value={currentUserId} />
+<input type="hidden" name="user_id" value="{currentUserId}" />
 ```
 
 Here's the attack:
@@ -286,7 +283,7 @@ Here's the attack:
 3. Alice edits the hidden input's value from her ID to Bob's.
 4. Alice submits. Our server reads `formData.get('user_id')`, gets Bob's ID, and inserts a row with `user_id = bob`.
 
-Alice just created a contact in Bob's account. In a richer app (billing, messaging), Alice could forge actions *on behalf of* Bob.
+Alice just created a contact in Bob's account. In a richer app (billing, messaging), Alice could forge actions _on behalf of_ Bob.
 
 **"But RLS would reject it, right?"** Depends. RLS policies scope `contacts` to `auth.uid() = user_id`. With the anon-key client bound to Alice's cookies, `auth.uid()` returns Alice's ID — inserting `user_id = bob` violates the policy. Blocked.
 
@@ -294,16 +291,16 @@ Alice just created a contact in Bob's account. In a richer app (billing, messagi
 
 **The robust rule: derive `user_id` from the verified session, every single time.** Never accept it from the client. Not via hidden input, not via query param, not via JSON body. The only source of truth is `locals.getUser()`, which verifies the session cookie on every call.
 
-RLS is a *fence*, but it can be torn down by a teammate who doesn't know what it's protecting. Deriving `user_id` server-side is a *design principle* that survives refactors. Use both — fence and principle — and sleep better.
+RLS is a _fence_, but it can be torn down by a teammate who doesn't know what it's protecting. Deriving `user_id` server-side is a _design principle_ that survives refactors. Use both — fence and principle — and sleep better.
 
 ### Insert error handling and redirect
 
 ```typescript
 if (insertError) {
-  return fail(500, { error: 'Failed to create contact. Please try again.' })
+	return fail(500, { error: 'Failed to create contact. Please try again.' });
 }
 
-redirect(303, '/contacts')
+redirect(303, '/contacts');
 ```
 
 If Supabase errors, we surface a generic message — we don't leak raw SQL errors to the UI.
@@ -320,133 +317,129 @@ Open `src/routes/(app)/contacts/new/+page.svelte`:
 ```svelte
 <!-- src/routes/(app)/contacts/new/+page.svelte -->
 <script lang="ts">
-  import { enhance } from '$app/forms'
-  import type { ActionData } from './$types'
+	import { enhance } from '$app/forms';
+	import type { ActionData } from './$types';
 
-  let { form }: { form: ActionData } = $props()
-  let submitting = $state(false)
+	let { form }: { form: ActionData } = $props();
+	let submitting = $state(false);
 </script>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">New contact</h1>
-    <p class="text-gray-500 text-sm mt-1">
-      Add someone to your Contactly address book.
-    </p>
-  </div>
+<div class="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-gray-900">New contact</h1>
+		<p class="mt-1 text-sm text-gray-500">Add someone to your Contactly address book.</p>
+	</div>
 
-  <form
-    method="POST"
-    use:enhance={() => {
-      submitting = true
-      return async ({ update }) => {
-        await update()
-        submitting = false
-      }
-    }}
-  >
-    {#if form?.error}
-      <div
-        class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm"
-      >
-        {form.error}
-      </div>
-    {/if}
+	<form
+		method="POST"
+		use:enhance={() => {
+			submitting = true;
+			return async ({ update }) => {
+				await update();
+				submitting = false;
+			};
+		}}
+	>
+		{#if form?.error}
+			<div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+				{form.error}
+			</div>
+		{/if}
 
-    <div class="space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
-            First name <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="first_name"
-            name="first_name"
-            type="text"
-            required
-            maxlength="100"
-            value={form?.data?.first_name ?? ''}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Ada"
-          />
-        </div>
+		<div class="space-y-4">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div>
+					<label for="first_name" class="mb-1 block text-sm font-medium text-gray-700">
+						First name <span class="text-red-500">*</span>
+					</label>
+					<input
+						id="first_name"
+						name="first_name"
+						type="text"
+						required
+						maxlength="100"
+						value={form?.data?.first_name ?? ''}
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						placeholder="Ada"
+					/>
+				</div>
 
-        <div>
-          <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
-            Last name <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="last_name"
-            name="last_name"
-            type="text"
-            required
-            maxlength="100"
-            value={form?.data?.last_name ?? ''}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Lovelace"
-          />
-        </div>
-      </div>
+				<div>
+					<label for="last_name" class="mb-1 block text-sm font-medium text-gray-700">
+						Last name <span class="text-red-500">*</span>
+					</label>
+					<input
+						id="last_name"
+						name="last_name"
+						type="text"
+						required
+						maxlength="100"
+						value={form?.data?.last_name ?? ''}
+						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+						placeholder="Lovelace"
+					/>
+				</div>
+			</div>
 
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-          Email <span class="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          maxlength="255"
-          value={form?.data?.email ?? ''}
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="ada@example.com"
-        />
-      </div>
+			<div>
+				<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
+					Email <span class="font-normal text-gray-400">(optional)</span>
+				</label>
+				<input
+					id="email"
+					name="email"
+					type="email"
+					maxlength="255"
+					value={form?.data?.email ?? ''}
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					placeholder="ada@example.com"
+				/>
+			</div>
 
-      <div>
-        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-          Phone <span class="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          maxlength="50"
-          value={form?.data?.phone ?? ''}
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="+1 555 0100"
-        />
-      </div>
+			<div>
+				<label for="phone" class="mb-1 block text-sm font-medium text-gray-700">
+					Phone <span class="font-normal text-gray-400">(optional)</span>
+				</label>
+				<input
+					id="phone"
+					name="phone"
+					type="tel"
+					maxlength="50"
+					value={form?.data?.phone ?? ''}
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					placeholder="+1 555 0100"
+				/>
+			</div>
 
-      <div>
-        <label for="company" class="block text-sm font-medium text-gray-700 mb-1">
-          Company <span class="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <input
-          id="company"
-          name="company"
-          type="text"
-          maxlength="200"
-          value={form?.data?.company ?? ''}
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Analytical Engines Inc."
-        />
-      </div>
+			<div>
+				<label for="company" class="mb-1 block text-sm font-medium text-gray-700">
+					Company <span class="font-normal text-gray-400">(optional)</span>
+				</label>
+				<input
+					id="company"
+					name="company"
+					type="text"
+					maxlength="200"
+					value={form?.data?.company ?? ''}
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+					placeholder="Analytical Engines Inc."
+				/>
+			</div>
 
-      <div class="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-        >
-          {submitting ? 'Saving...' : 'Create contact'}
-        </button>
-        <a href="/contacts" class="text-sm text-gray-600 hover:text-gray-900 font-medium">
-          Cancel
-        </a>
-      </div>
-    </div>
-  </form>
+			<div class="flex items-center gap-3 pt-2">
+				<button
+					type="submit"
+					disabled={submitting}
+					class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+				>
+					{submitting ? 'Saving...' : 'Create contact'}
+				</button>
+				<a href="/contacts" class="text-sm font-medium text-gray-600 hover:text-gray-900">
+					Cancel
+				</a>
+			</div>
+		</div>
+	</form>
 </div>
 ```
 

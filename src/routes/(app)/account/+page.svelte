@@ -28,7 +28,7 @@
 
 <section class="mx-auto max-w-3xl px-6 py-10">
 	<header class="mb-8">
-		<p class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+		<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase dark:text-slate-400">
 			Account
 		</p>
 		<h1 class="font-display mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Settings</h1>
@@ -50,13 +50,17 @@
 			{/snippet}
 			<dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
 				<div>
-					<dt class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+					<dt
+						class="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400"
+					>
 						Email
 					</dt>
 					<dd class="mt-1 font-medium text-slate-900 dark:text-white">{data.user?.email}</dd>
 				</div>
 				<div>
-					<dt class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+					<dt
+						class="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400"
+					>
 						Full name
 					</dt>
 					<dd class="mt-1 font-medium text-slate-900 dark:text-white">
@@ -95,15 +99,19 @@
 			{#if data.subscription}
 				<dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
 					<div>
-						<dt class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+						<dt
+							class="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400"
+						>
 							Status
 						</dt>
-						<dd class="mt-1 font-medium text-slate-900 dark:text-white capitalize">
+						<dd class="mt-1 font-medium text-slate-900 capitalize dark:text-white">
 							{data.subscription.status}
 						</dd>
 					</div>
 					<div>
-						<dt class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+						<dt
+							class="text-xs font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400"
+						>
 							{data.subscription.cancel_at_period_end ? 'Cancels' : 'Renews'}
 						</dt>
 						<dd class="mt-1 font-medium text-slate-900 dark:text-white">
@@ -118,7 +126,9 @@
 			{/if}
 
 			{#if form?.error}
-				<p class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+				<p
+					class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+				>
 					{form.error}
 				</p>
 			{/if}
@@ -185,10 +195,16 @@
 				</div>
 			{/snippet}
 			<p class="text-sm text-slate-600 dark:text-slate-400">
-				Cancel any active subscription first via the billing portal. Contact support to proceed with deletion — this action is irreversible.
+				Cancel any active subscription first via the billing portal. Contact support to proceed with
+				deletion — this action is irreversible.
 			</p>
 			{#snippet footer()}
-				<Button href="mailto:support@saas-pro.dev" variant="ghost" size="sm" class="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40">
+				<Button
+					href="mailto:support@saas-pro.dev"
+					variant="ghost"
+					size="sm"
+					class="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+				>
 					Contact support
 				</Button>
 			{/snippet}

@@ -1,10 +1,10 @@
 ---
-title: "5.3.1 - Stripe CLI WSL Note"
+title: '5.3.1 - Stripe CLI WSL Note'
 module: 5
 lesson: 4
-moduleSlug: "module-05-stripe-intro"
-lessonSlug: "03-1-stripe-cli-wsl-note"
-description: "Windows Subsystem for Linux users: how to get Stripe CLI webhook forwarding working correctly."
+moduleSlug: 'module-05-stripe-intro'
+lessonSlug: '03-1-stripe-cli-wsl-note'
+description: 'Windows Subsystem for Linux users: how to get Stripe CLI webhook forwarding working correctly.'
 duration: 3
 preview: false
 ---
@@ -41,7 +41,7 @@ They are **not the same network interface**.
 
 Windows 11 and newer Windows 10 versions include a feature called **localhost forwarding** that papers over this gap for most tools — Windows automatically forwards `127.0.0.1:X` on the host side to the WSL VM for ports bound by Linux processes. This is why, for a lot of dev work, it just works.
 
-But the Stripe CLI's `--forward-to localhost:5173` isn't trying to *receive* on localhost — it's trying to *send* to localhost. The direction matters:
+But the Stripe CLI's `--forward-to localhost:5173` isn't trying to _receive_ on localhost — it's trying to _send_ to localhost. The direction matters:
 
 - If `stripe listen` is running **inside WSL** and your SvelteKit dev server is **also inside WSL**: works fine. Both processes share the Linux VM's loopback.
 - If `stripe listen` is running **inside WSL** and your SvelteKit dev server is running **on Windows**: `localhost` from inside WSL points at the Linux VM, not at Windows. The forwarder sends to port 5173 on the Linux VM — nothing is listening there — and you get connection-refused errors.
@@ -109,9 +109,9 @@ Save that as an alias or a `package.json` script:
 
 ```json
 {
-  "scripts": {
-    "stripe:listen:wsl": "stripe listen --forward-to \"$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):5173/api/webhooks/stripe\""
-  }
+	"scripts": {
+		"stripe:listen:wsl": "stripe listen --forward-to \"$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):5173/api/webhooks/stripe\""
+	}
 }
 ```
 
@@ -148,11 +148,11 @@ Now the CLI and the dev server share the Windows host's loopback, no cross-VM pl
 
 ### Pros and cons
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| CLI in WSL + Windows IP | Everything in one terminal environment; works regardless of where dev server runs | IP changes across reboots; requires the resolv.conf trick |
-| CLI on Windows | Truly local loopback; no hypervisor concerns | Requires managing two environments (Windows for CLI, WSL for everything else); two terminal windows for Stripe stuff |
-| CLI in WSL + dev server in WSL | Cleanest; both on Linux loopback | Requires running SvelteKit from WSL (but that's what most WSL users do anyway) |
+| Approach                       | Pros                                                                              | Cons                                                                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| CLI in WSL + Windows IP        | Everything in one terminal environment; works regardless of where dev server runs | IP changes across reboots; requires the resolv.conf trick                                                            |
+| CLI on Windows                 | Truly local loopback; no hypervisor concerns                                      | Requires managing two environments (Windows for CLI, WSL for everything else); two terminal windows for Stripe stuff |
+| CLI in WSL + dev server in WSL | Cleanest; both on Linux loopback                                                  | Requires running SvelteKit from WSL (but that's what most WSL users do anyway)                                       |
 
 **Recommendation:** if your dev server runs in WSL (which is the idiomatic WSL workflow), keep the CLI in WSL and use `localhost:5173` — there's no boundary to cross. Fix A or B are only needed when your dev server is on Windows and your CLI is in WSL, which is a less common but real configuration.
 
@@ -208,7 +208,7 @@ Mirrored networking mode closes most of that gap but at some cost (it changes so
 
 A senior engineer's trick: when something "just works" mysteriously, poke at it. Understand what layer is making it work. When that layer fails (eventually, it will), you know where to look. When `stripe listen` fails on WSL, the reflex "localhost is ambiguous in a virtualized boundary" comes from having poked at how localhost forwarding was implemented. Muscle memory, earned.
 
-### The WSL-specific fix is also an example of *documented escape hatches*
+### The WSL-specific fix is also an example of _documented escape hatches_
 
 Notice the approach here: the CLI doesn't try to auto-detect whether you're in WSL and do the right thing. It respects the user's explicit `--forward-to` argument, and the user has the tools (`/etc/resolv.conf`, Windows IP) to pick the right target.
 

@@ -1,31 +1,47 @@
+# Dependencies
 node_modules
+.pnpm-store
 
-# Output
+# Build / framework output
 .output
+.svelte-kit
+build
+dist
+
+# Deploy-platform local state
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
 
-# OS
+# OS junk
 .DS_Store
 Thumbs.db
 
-# Env
+# Environment files (commit only the templates)
 .env
 .env.*
 !.env.example
 !.env.test
 
-# Vite
+# Vite / bundler timestamp shadow files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Playwright
+# Test artifacts
 test-results
 playwright-report
+coverage
 
-# Supabase
+# Supabase local cache
 supabase/.branches
 supabase/.temp
+
+# Editor / IDE local state
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

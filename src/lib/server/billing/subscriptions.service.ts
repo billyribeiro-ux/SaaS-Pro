@@ -1,11 +1,7 @@
 import type Stripe from 'stripe';
 import { supabaseAdmin } from '$server/supabase';
 import { findUserIdByStripeCustomerId } from './customers.service';
-import type {
-	SubscriptionStatus,
-	TablesInsert,
-	Json
-} from '$types/database.types';
+import type { SubscriptionStatus, TablesInsert, Json } from '$types/database.types';
 
 const VALID_STATUSES: readonly SubscriptionStatus[] = [
 	'trialing',
@@ -51,9 +47,7 @@ export async function upsertSubscription(subscription: Stripe.Subscription): Pro
 
 	const userId = await findUserIdByStripeCustomerId(customerId);
 	if (!userId) {
-		throw new Error(
-			`[subscriptions.service] no profile mapped to stripe customer ${customerId}`
-		);
+		throw new Error(`[subscriptions.service] no profile mapped to stripe customer ${customerId}`);
 	}
 
 	const firstItem = subscription.items.data[0];
@@ -87,9 +81,7 @@ export async function upsertSubscription(subscription: Stripe.Subscription): Pro
 		})
 	};
 
-	const { error } = await supabaseAdmin
-		.from('subscriptions')
-		.upsert(row, { onConflict: 'id' });
+	const { error } = await supabaseAdmin.from('subscriptions').upsert(row, { onConflict: 'id' });
 
 	if (error) {
 		throw new Error(

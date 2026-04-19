@@ -17,11 +17,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.order('current_period_end', { ascending: false })
 			.limit(1)
 			.maybeSingle(),
-		supabaseAdmin
-			.from('customers')
-			.select('stripe_customer_id')
-			.eq('id', user.id)
-			.maybeSingle()
+		supabaseAdmin.from('customers').select('stripe_customer_id').eq('id', user.id).maybeSingle()
 	]);
 
 	return {

@@ -1,10 +1,10 @@
 ---
-title: "1.4 - Profiles Table & RLS"
+title: '1.4 - Profiles Table & RLS'
 module: 1
 lesson: 4
-moduleSlug: "module-01-project-setup"
-lessonSlug: "04-profiles-table-rls"
-description: "Create the profiles table with Row Level Security policies and an automatic trigger that creates a profile on user signup."
+moduleSlug: 'module-01-project-setup'
+lessonSlug: '04-profiles-table-rls'
+description: 'Create the profiles table with Row Level Security policies and an automatic trigger that creates a profile on user signup.'
 duration: 12
 preview: false
 ---
@@ -37,7 +37,7 @@ If you've never seen SQL: it stands for **Structured Query Language**. It's the 
 - **DDL (Data Definition Language)** — creates, alters, and drops schema objects. `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`. This is what a migration file contains.
 - **DML (Data Manipulation Language)** — reads and modifies data. `SELECT`, `INSERT`, `UPDATE`, `DELETE`. This is what your app runs to do its job.
 
-SQL is **declarative**: you describe *what* you want, and the database figures out *how*. Keywords are conventionally written in UPPERCASE by older tutorials, but modern Postgres style uses lowercase. We'll use lowercase throughout.
+SQL is **declarative**: you describe _what_ you want, and the database figures out _how_. Keywords are conventionally written in UPPERCASE by older tutorials, but modern Postgres style uses lowercase. We'll use lowercase throughout.
 
 A statement always ends with a semicolon. Multiple statements in one file run in order. If one fails, the whole file aborts and rolls back — nothing is half-applied. This is a **transaction**, and it's one of the reasons Postgres is so safe.
 
@@ -52,6 +52,7 @@ pnpm supabase migration new create_profiles_table
 ```
 
 **Reading this command:**
+
 - `pnpm supabase` — the Supabase CLI.
 - `migration new` — create a new migration file.
 - `create_profiles_table` — a human description; it becomes part of the filename.
@@ -67,6 +68,7 @@ The timestamp (year, month, day, time) is added automatically. Timestamps matter
 ### Why migrations, one more time
 
 A migration is an append-only log of schema changes. Each file is:
+
 - **Committed to git** — permanent, reviewable history.
 - **Run once per environment** — Supabase tracks which migrations have been applied in a system table, so it never replays them.
 - **Immutable** — once a migration has been applied to production, you don't edit it. You write a new migration that modifies what the old one did.
@@ -167,6 +169,7 @@ create table public.profiles (
 ### A note on `uuid` vs `serial`
 
 Postgres supports auto-incrementing integer IDs (`serial`, `bigserial`). We use UUIDs instead because:
+
 - They're generated client-side or via `auth.users.id`, so you don't need a round-trip to the DB to know the new row's ID.
 - They don't leak information (row counts, order of creation).
 - They're safe to expose in URLs — `/contacts/3` tells an attacker you have at least 3 contacts; `/contacts/a6b2...` tells them nothing.
@@ -206,6 +209,7 @@ create policy "Users can view own profile"
 `auth.uid()` returns the current user's UUID (lesson 1.3). `id` is the `profiles.id` column for the row being evaluated.
 
 **What happens when a logged-in user runs `select * from profiles`:**
+
 1. Postgres starts examining rows.
 2. For each row, it evaluates `auth.uid() = id`.
 3. When `id` equals the user's UUID → include the row.
@@ -226,9 +230,11 @@ create policy "Users can update own profile"
 Same structure, different target. `for update` means this policy governs `UPDATE` statements. The `using` clause says a user can only update rows where `auth.uid() = id` — i.e., their own.
 
 If a malicious user tries:
+
 ```sql
 update profiles set full_name = 'Hacked' where id = '<someone else's id>';
 ```
+
 The statement runs without error but updates **zero rows**. The database silently refuses.
 
 ### Why no INSERT or DELETE policies?
@@ -241,6 +247,7 @@ By not writing policies for INSERT and DELETE, we leave them forbidden by defaul
 ### `using` vs `with check`
 
 Policies can have two conditions:
+
 - **`using`** — applied to existing rows. Controls which rows are visible or affected.
 - **`with check`** — applied to new or modified row values. Controls what a user is allowed to write.
 
@@ -272,7 +279,7 @@ This defines a **function** — a named piece of code stored in the database. Tr
 - `create or replace function public.handle_new_user()` — Creates a new function named `handle_new_user` in the `public` schema. `or replace` lets us re-run the migration safely.
 - `returns trigger` — Declares the return type. Trigger functions must return `trigger`. The value returned is the row that will ultimately be written (or `null` to cancel the operation, in `before` triggers).
 - `language plpgsql` — The function is written in PL/pgSQL, Postgres's procedural language. PL/pgSQL adds control flow (IF, LOOP, variables) to SQL.
-- `security definer` — **Important.** The function runs with the privileges of the user who *defined* it (typically `postgres`, the superuser), not the user who triggered it. We need this because the function must write to `public.profiles`, but the anonymous user inserting into `auth.users` doesn't have permission to write to `public.profiles` directly.
+- `security definer` — **Important.** The function runs with the privileges of the user who _defined_ it (typically `postgres`, the superuser), not the user who triggered it. We need this because the function must write to `public.profiles`, but the anonymous user inserting into `auth.users` doesn't have permission to write to `public.profiles` directly.
 - `set search_path = public` — **Equally important.** Pins the function's schema lookup order to `public`. Without this, a malicious user could create a schema with the same name and hijack calls like `insert into profiles` to point at their malicious table. This is called a **schema injection attack** and it's a known class of vulnerability when combining `security definer` with unspecified search paths. Supabase's linter will flag any `security definer` function without `set search_path`.
 - `as $$` … `$$;` — Dollar-quoted string. Everything between the two `$$` markers is the function body. Dollar quoting avoids having to escape single quotes inside the body.
 
@@ -374,6 +381,7 @@ If you see an error — read it carefully. Migration errors are usually typos (m
 ### When to use `db reset`
 
 You'll use this command hundreds of times. Any time you:
+
 - Edit a migration file.
 - Create a new migration file.
 - Want to clear out test data.
@@ -417,27 +425,32 @@ Open that file. You'll see something like:
 
 ```typescript
 export type Database = {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string
-          email: string
-          full_name: string | null
-          avatar_url: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: { /* ... */ }
-        Update: { /* ... */ }
-      }
-    }
-    // ...
-  }
-}
+	public: {
+		Tables: {
+			profiles: {
+				Row: {
+					id: string;
+					email: string;
+					full_name: string | null;
+					avatar_url: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					/* ... */
+				};
+				Update: {
+					/* ... */
+				};
+			};
+		};
+		// ...
+	};
+};
 ```
 
 Three shapes per table:
+
 - **`Row`** — the shape of a row you'd get from a SELECT.
 - **`Insert`** — the shape you must provide to INSERT (optional fields have defaults).
 - **`Update`** — the shape you must provide to UPDATE (all fields optional).
@@ -447,16 +460,14 @@ Three shapes per table:
 When we install the Supabase SDK in the next module, you'll pass `Database` as a type parameter:
 
 ```typescript
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '$lib/types/database.types'
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '$lib/types/database.types';
 
-const supabase = createClient<Database>(url, anonKey)
+const supabase = createClient<Database>(url, anonKey);
 
 // Fully typed: TypeScript knows 'profiles' is a valid table,
 // and 'email' and 'full_name' are valid columns.
-const { data } = await supabase
-  .from('profiles')
-  .select('id, email, full_name')
+const { data } = await supabase.from('profiles').select('id, email, full_name');
 ```
 
 The editor will autocomplete table names, column names, and flag typos before you run the code.

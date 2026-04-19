@@ -18,7 +18,7 @@
 >
 	{#if completed}
 		<span
-			class="inline-flex animate-scale-in items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-500/30 dark:text-emerald-300"
+			class="animate-scale-in inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-700 ring-1 ring-emerald-500/30 ring-inset dark:text-emerald-300"
 		>
 			<span
 				class="grid size-5 place-items-center rounded-full bg-emerald-500 text-white"

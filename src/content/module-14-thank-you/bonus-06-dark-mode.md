@@ -46,27 +46,27 @@ For our three-state toggle to work, we need Tailwind's `dark:` variant to fire w
  * by editing one file.
  * ------------------------------------------------------------------ */
 @theme {
-  /* Brand */
-  --color-brand: oklch(56% 0.2 260);
-  --color-brand-hover: oklch(50% 0.2 260);
+	/* Brand */
+	--color-brand: oklch(56% 0.2 260);
+	--color-brand-hover: oklch(50% 0.2 260);
 
-  /* Neutral surfaces — LIGHT mode defaults */
-  --color-background: oklch(100% 0 0);          /* white */
-  --color-surface: oklch(98% 0 0);              /* off-white cards/sidebars */
-  --color-surface-raised: oklch(100% 0 0);      /* modal, popover */
-  --color-border: oklch(92% 0 0);               /* subtle lines */
-  --color-border-strong: oklch(85% 0 0);        /* input borders */
+	/* Neutral surfaces — LIGHT mode defaults */
+	--color-background: oklch(100% 0 0); /* white */
+	--color-surface: oklch(98% 0 0); /* off-white cards/sidebars */
+	--color-surface-raised: oklch(100% 0 0); /* modal, popover */
+	--color-border: oklch(92% 0 0); /* subtle lines */
+	--color-border-strong: oklch(85% 0 0); /* input borders */
 
-  /* Text */
-  --color-text: oklch(20% 0 0);                 /* near-black body */
-  --color-text-muted: oklch(45% 0 0);           /* secondary text */
-  --color-text-subtle: oklch(60% 0 0);          /* placeholders, labels */
-  --color-text-inverse: oklch(98% 0 0);         /* on-brand buttons */
+	/* Text */
+	--color-text: oklch(20% 0 0); /* near-black body */
+	--color-text-muted: oklch(45% 0 0); /* secondary text */
+	--color-text-subtle: oklch(60% 0 0); /* placeholders, labels */
+	--color-text-inverse: oklch(98% 0 0); /* on-brand buttons */
 
-  /* Status */
-  --color-success: oklch(65% 0.17 145);
-  --color-danger: oklch(60% 0.22 25);
-  --color-warning: oklch(75% 0.15 80);
+	/* Status */
+	--color-success: oklch(65% 0.17 145);
+	--color-danger: oklch(60% 0.22 25);
+	--color-warning: oklch(75% 0.15 80);
 }
 
 /* ------------------------------------------------------------------
@@ -76,45 +76,48 @@ For our three-state toggle to work, we need Tailwind's `dark:` variant to fire w
  * usually stable across modes; neutrals must flip.
  * ------------------------------------------------------------------ */
 .dark {
-  --color-background: oklch(18% 0 0);
-  --color-surface: oklch(22% 0 0);
-  --color-surface-raised: oklch(26% 0 0);
-  --color-border: oklch(30% 0 0);
-  --color-border-strong: oklch(38% 0 0);
+	--color-background: oklch(18% 0 0);
+	--color-surface: oklch(22% 0 0);
+	--color-surface-raised: oklch(26% 0 0);
+	--color-border: oklch(30% 0 0);
+	--color-border-strong: oklch(38% 0 0);
 
-  --color-text: oklch(95% 0 0);
-  --color-text-muted: oklch(70% 0 0);
-  --color-text-subtle: oklch(55% 0 0);
-  --color-text-inverse: oklch(18% 0 0);
+	--color-text: oklch(95% 0 0);
+	--color-text-muted: oklch(70% 0 0);
+	--color-text-subtle: oklch(55% 0 0);
+	--color-text-inverse: oklch(18% 0 0);
 
-  --color-success: oklch(72% 0.17 145);
-  --color-danger: oklch(68% 0.22 25);
-  --color-warning: oklch(80% 0.15 80);
+	--color-success: oklch(72% 0.17 145);
+	--color-danger: oklch(68% 0.22 25);
+	--color-warning: oklch(80% 0.15 80);
 }
 
 /* ------------------------------------------------------------------
  * Base styles
  * ------------------------------------------------------------------ */
 html {
-  background: var(--color-background);
-  color: var(--color-text);
-  color-scheme: light;
+	background: var(--color-background);
+	color: var(--color-text);
+	color-scheme: light;
 }
 
 .dark html,
 html.dark {
-  color-scheme: dark;
+	color-scheme: dark;
 }
 
 body {
-  @apply antialiased;
+	@apply antialiased;
 }
 
 /* Smooth theme transitions — but only for explicitly toggled color
  * changes. Disable transitions during initial load so no flash. */
 .theme-transition,
 .theme-transition * {
-  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+	transition:
+		background-color 200ms ease,
+		color 200ms ease,
+		border-color 200ms ease;
 }
 ```
 
@@ -132,24 +135,24 @@ Let us unpack this.
 
 **`color-scheme`** — a CSS property that tells the browser to use native dark form controls, scrollbars, selection colors, etc. Without it, a dark-themed app will have a white scrollbar and a white autofill on inputs. With it, those native UI bits match.
 
-**`.theme-transition`** — we will apply this class to `<html>` *after* the initial load to enable smooth transitions when the user toggles. During initial load we do not want transitions (otherwise the initial color application animates on every page load, which looks weird). We will toggle this class from JS.
+**`.theme-transition`** — we will apply this class to `<html>` _after_ the initial load to enable smooth transitions when the user toggles. During initial load we do not want transitions (otherwise the initial color application animates on every page load, which looks weird). We will toggle this class from JS.
 
 ## Step 2: The no-flash script
 
-This is the most important part. It goes in `src/app.html`, in the `<head>`, *before* the SvelteKit stylesheet and *before* any JS. It runs synchronously, blocking the first paint. This is the one place "blocking the main thread" is correct — we must have the theme applied before anything is rendered, or there will be a visible flash.
+This is the most important part. It goes in `src/app.html`, in the `<head>`, _before_ the SvelteKit stylesheet and _before_ any JS. It runs synchronously, blocking the first paint. This is the one place "blocking the main thread" is correct — we must have the theme applied before anything is rendered, or there will be a visible flash.
 
 ### `src/app.html`
 
 ```html
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#ffffff" id="theme-color-meta" />
 
-    <!--
+		<!--
       Flash-of-wrong-theme prevention.
 
       Runs before any style or component renders. Reads the saved
@@ -160,32 +163,32 @@ This is the most important part. It goes in `src/app.html`, in the `<head>`, *be
       Note: inline scripts like this bypass SvelteKit's hydration —
       that is deliberate. CSP nonces are supported if needed.
     -->
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem('theme')
-          var theme = saved === 'light' || saved === 'dark' ? saved : 'system'
-          var resolved =
-            theme === 'system'
-              ? window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light'
-              : theme
-          if (resolved === 'dark') document.documentElement.classList.add('dark')
-          // Update the theme-color meta so mobile status bar matches.
-          var meta = document.getElementById('theme-color-meta')
-          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0a0a' : '#ffffff')
-        } catch (e) {
-          /* localStorage unavailable (private mode in old browsers); fail silent */
-        }
-      })()
-    </script>
+		<script>
+			(function () {
+				try {
+					var saved = localStorage.getItem('theme');
+					var theme = saved === 'light' || saved === 'dark' ? saved : 'system';
+					var resolved =
+						theme === 'system'
+							? window.matchMedia('(prefers-color-scheme: dark)').matches
+								? 'dark'
+								: 'light'
+							: theme;
+					if (resolved === 'dark') document.documentElement.classList.add('dark');
+					// Update the theme-color meta so mobile status bar matches.
+					var meta = document.getElementById('theme-color-meta');
+					if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0a0a' : '#ffffff');
+				} catch (e) {
+					/* localStorage unavailable (private mode in old browsers); fail silent */
+				}
+			})();
+		</script>
 
-    %sveltekit.head%
-  </head>
-  <body data-sveltekit-preload-data="hover">
-    <div style="display: contents">%sveltekit.body%</div>
-  </body>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
 </html>
 ```
 
@@ -211,76 +214,74 @@ We will build a state class that:
 ### `src/lib/stores/theme.svelte.ts`
 
 ```ts
-import { browser } from '$app/environment'
+import { browser } from '$app/environment';
 
-type Theme = 'light' | 'dark' | 'system'
-type Resolved = 'light' | 'dark'
+type Theme = 'light' | 'dark' | 'system';
+type Resolved = 'light' | 'dark';
 
-const STORAGE_KEY = 'theme'
+const STORAGE_KEY = 'theme';
 
 function readInitial(): Theme {
-  if (!browser) return 'system'
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'light' || saved === 'dark') return saved
-  } catch {}
-  return 'system'
+	if (!browser) return 'system';
+	try {
+		const saved = localStorage.getItem(STORAGE_KEY);
+		if (saved === 'light' || saved === 'dark') return saved;
+	} catch {}
+	return 'system';
 }
 
 function readSystem(): Resolved {
-  if (!browser) return 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+	if (!browser) return 'light';
+	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 class ThemeStore {
-  // User preference: what they selected in the toggle.
-  preference = $state<Theme>(readInitial())
+	// User preference: what they selected in the toggle.
+	preference = $state<Theme>(readInitial());
 
-  // OS preference: updates when the user changes their OS setting.
-  system = $state<Resolved>(readSystem())
+	// OS preference: updates when the user changes their OS setting.
+	system = $state<Resolved>(readSystem());
 
-  // The theme actually applied to <html>.
-  resolved = $derived<Resolved>(
-    this.preference === 'system' ? this.system : this.preference
-  )
+	// The theme actually applied to <html>.
+	resolved = $derived<Resolved>(this.preference === 'system' ? this.system : this.preference);
 
-  constructor() {
-    if (!browser) return
+	constructor() {
+		if (!browser) return;
 
-    // Listen for OS changes so users on `system` track them live.
-    const mql = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = (e: MediaQueryListEvent) => {
-      this.system = e.matches ? 'dark' : 'light'
-    }
-    mql.addEventListener('change', handler)
+		// Listen for OS changes so users on `system` track them live.
+		const mql = window.matchMedia('(prefers-color-scheme: dark)');
+		const handler = (e: MediaQueryListEvent) => {
+			this.system = e.matches ? 'dark' : 'light';
+		};
+		mql.addEventListener('change', handler);
 
-    // Every time resolved changes, apply it.
-    $effect.root(() => {
-      $effect(() => {
-        const r = this.resolved
-        document.documentElement.classList.toggle('dark', r === 'dark')
-        const meta = document.getElementById('theme-color-meta')
-        if (meta) meta.setAttribute('content', r === 'dark' ? '#0a0a0a' : '#ffffff')
-      })
-    })
+		// Every time resolved changes, apply it.
+		$effect.root(() => {
+			$effect(() => {
+				const r = this.resolved;
+				document.documentElement.classList.toggle('dark', r === 'dark');
+				const meta = document.getElementById('theme-color-meta');
+				if (meta) meta.setAttribute('content', r === 'dark' ? '#0a0a0a' : '#ffffff');
+			});
+		});
 
-    // Enable smooth transitions after the first paint so toggling animates
-    // but initial load does not.
-    requestAnimationFrame(() => {
-      document.documentElement.classList.add('theme-transition')
-    })
-  }
+		// Enable smooth transitions after the first paint so toggling animates
+		// but initial load does not.
+		requestAnimationFrame(() => {
+			document.documentElement.classList.add('theme-transition');
+		});
+	}
 
-  set(value: Theme) {
-    this.preference = value
-    try {
-      if (value === 'system') localStorage.removeItem(STORAGE_KEY)
-      else localStorage.setItem(STORAGE_KEY, value)
-    } catch {}
-  }
+	set(value: Theme) {
+		this.preference = value;
+		try {
+			if (value === 'system') localStorage.removeItem(STORAGE_KEY);
+			else localStorage.setItem(STORAGE_KEY, value);
+		} catch {}
+	}
 }
 
-export const theme = new ThemeStore()
+export const theme = new ThemeStore();
 ```
 
 Why a class instead of top-level `$state`?
@@ -312,49 +313,77 @@ A three-state segmented control: Light, System, Dark.
 
 ```svelte
 <script lang="ts">
-  import { theme } from '$lib/stores/theme.svelte'
+	import { theme } from '$lib/stores/theme.svelte';
 
-  const options = [
-    { value: 'light', label: 'Light' },
-    { value: 'system', label: 'System' },
-    { value: 'dark', label: 'Dark' }
-  ] as const
+	const options = [
+		{ value: 'light', label: 'Light' },
+		{ value: 'system', label: 'System' },
+		{ value: 'dark', label: 'Dark' }
+	] as const;
 </script>
 
 <div
-  class="inline-flex items-center gap-0 rounded-full border border-border bg-surface p-0.5 text-xs"
-  role="group"
-  aria-label="Theme"
+	class="border-border bg-surface inline-flex items-center gap-0 rounded-full border p-0.5 text-xs"
+	role="group"
+	aria-label="Theme"
 >
-  {#each options as opt}
-    <button
-      type="button"
-      onclick={() => theme.set(opt.value)}
-      aria-pressed={theme.preference === opt.value}
-      class="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition"
-      class:bg-background={theme.preference === opt.value}
-      class:text-text={theme.preference === opt.value}
-      class:shadow-sm={theme.preference === opt.value}
-      class:text-text-muted={theme.preference !== opt.value}
-    >
-      {#if opt.value === 'light'}
-        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-linecap="round"/>
-        </svg>
-      {:else if opt.value === 'system'}
-        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="12" rx="2"/>
-          <path d="M8 20h8M12 16v4" stroke-linecap="round"/>
-        </svg>
-      {:else}
-        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      {/if}
-      {opt.label}
-    </button>
-  {/each}
+	{#each options as opt}
+		<button
+			type="button"
+			onclick={() => theme.set(opt.value)}
+			aria-pressed={theme.preference === opt.value}
+			class="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition"
+			class:bg-background={theme.preference === opt.value}
+			class:text-text={theme.preference === opt.value}
+			class:shadow-sm={theme.preference === opt.value}
+			class:text-text-muted={theme.preference !== opt.value}
+		>
+			{#if opt.value === 'light'}
+				<svg
+					class="h-3.5 w-3.5"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="4" />
+					<path
+						d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+						stroke-linecap="round"
+					/>
+				</svg>
+			{:else if opt.value === 'system'}
+				<svg
+					class="h-3.5 w-3.5"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				>
+					<rect x="3" y="4" width="18" height="12" rx="2" />
+					<path d="M8 20h8M12 16v4" stroke-linecap="round" />
+				</svg>
+			{:else}
+				<svg
+					class="h-3.5 w-3.5"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				>
+					<path
+						d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				</svg>
+			{/if}
+			{opt.label}
+		</button>
+	{/each}
 </div>
 ```
 
@@ -369,12 +398,12 @@ Place it in your app header or settings page:
 
 ```svelte
 <script>
-  import ThemeToggle from '$lib/components/ThemeToggle.svelte'
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 </script>
 
-<header class="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
-  <a href="/app" class="font-semibold text-text">Contactly</a>
-  <ThemeToggle />
+<header class="border-border bg-surface flex items-center justify-between border-b px-6 py-3">
+	<a href="/app" class="text-text font-semibold">Contactly</a>
+	<ThemeToggle />
 </header>
 ```
 
@@ -394,15 +423,15 @@ Change to:
 
 Some common replacements:
 
-| Before | After |
-|---|---|
-| `bg-white` | `bg-background` |
-| `bg-gray-50` | `bg-surface` |
-| `bg-gray-100` | `bg-surface-raised` |
-| `text-gray-900` | `text-text` |
-| `text-gray-700` | `text-text-muted` |
-| `text-gray-400` | `text-text-subtle` |
-| `border-gray-200` | `border-border` |
+| Before            | After                  |
+| ----------------- | ---------------------- |
+| `bg-white`        | `bg-background`        |
+| `bg-gray-50`      | `bg-surface`           |
+| `bg-gray-100`     | `bg-surface-raised`    |
+| `text-gray-900`   | `text-text`            |
+| `text-gray-700`   | `text-text-muted`      |
+| `text-gray-400`   | `text-text-subtle`     |
+| `border-gray-200` | `border-border`        |
 | `border-gray-300` | `border-border-strong` |
 
 Keep brand colors (`bg-brand`, `text-brand`) the same across modes unless you specifically want to shift the brand for dark mode (some brands do this — a bright blue at 500 looks garish on a dark background, so they shift to 400).
