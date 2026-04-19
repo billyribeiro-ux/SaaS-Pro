@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import type { PageData } from './$types';
@@ -13,28 +12,6 @@
 	// with the new ?q=, which re-runs the load function.
 	// svelte-ignore state_referenced_locally
 	let searchValue = $state(data.query);
-
-	// Helper: build a URL preserving every param except the one(s) we
-	// override. Used by the pagination links below.
-	//
-	// We use a plain Array of [key, value] pairs instead of
-	// `URLSearchParams` because the svelte/prefer-svelte-reactivity
-	// lint rule doesn't want us holding a mutable URLSearchParams in
-	// component scope (it isn't reactive). For a one-shot URL build
-	// the manual encoding is just as cheap.
-	function pageHref(targetPage: number): string {
-		const params: Array<[string, string]> = [];
-		for (const [key, value] of page.url.searchParams) {
-			if (key === 'page') continue;
-			params.push([key, value]);
-		}
-		if (targetPage > 1) params.push(['page', String(targetPage)]);
-		const qs = params
-			.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-			.join('&');
-		const base = resolve('/(app)/contacts');
-		return qs.length > 0 ? `${base}?${qs}` : base;
-	}
 
 	// "Showing X–Y of Z" copy. Computed from page+pageSize+count so we
 	// don't hard-code the math in two places.
@@ -171,36 +148,47 @@
 {/if}
 
 {#if data.totalPages > 1}
+	<!--
+		Pagination as two GET forms. SvelteKit handles `<form method="GET">`
+		exactly like a link (it serializes the inputs into the query
+		string and navigates), so this is fully SSR-friendly while
+		dodging the no-navigation-without-resolve lint that fires on
+		anchors with computed hrefs. The hidden inputs preserve the
+		current ?q= so paging through search results stays in scope.
+	-->
 	<nav
 		class="mt-6 flex items-center justify-between"
 		aria-label="Pagination"
 		data-testid="contacts-pager"
 	>
-		<!-- pageHref builds the URL via resolve() internally; the lint
-			 rule can't see through the function call so we acknowledge
-			 it here. -->
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a
-			href={pageHref(data.page - 1)}
-			class="text-sm font-medium {data.page <= 1
-				? 'pointer-events-none text-slate-400'
-				: 'text-brand-700 hover:text-brand-600'}"
-			aria-disabled={data.page <= 1 ? 'true' : undefined}
-		>
-			← Previous
-		</a>
+		<form method="GET" action={resolve('/(app)/contacts')}>
+			{#if data.query.length > 0}
+				<input type="hidden" name="q" value={data.query} />
+			{/if}
+			<input type="hidden" name="page" value={String(data.page - 1)} />
+			<button
+				type="submit"
+				disabled={data.page <= 1}
+				class="text-brand-700 hover:text-brand-600 text-sm font-medium disabled:cursor-not-allowed disabled:text-slate-400"
+			>
+				← Previous
+			</button>
+		</form>
 		<span class="text-sm text-slate-600">
 			Page {data.page} of {data.totalPages}
 		</span>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a
-			href={pageHref(data.page + 1)}
-			class="text-sm font-medium {data.page >= data.totalPages
-				? 'pointer-events-none text-slate-400'
-				: 'text-brand-700 hover:text-brand-600'}"
-			aria-disabled={data.page >= data.totalPages ? 'true' : undefined}
-		>
-			Next →
-		</a>
+		<form method="GET" action={resolve('/(app)/contacts')}>
+			{#if data.query.length > 0}
+				<input type="hidden" name="q" value={data.query} />
+			{/if}
+			<input type="hidden" name="page" value={String(data.page + 1)} />
+			<button
+				type="submit"
+				disabled={data.page >= data.totalPages}
+				class="text-brand-700 hover:text-brand-600 text-sm font-medium disabled:cursor-not-allowed disabled:text-slate-400"
+			>
+				Next →
+			</button>
+		</form>
 	</nav>
 {/if}
