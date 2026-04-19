@@ -119,7 +119,28 @@ export default defineConfig(({ mode }) => {
 			...sentryPlugins
 		],
 		build: {
-			sourcemap: 'hidden'
+			sourcemap: 'hidden',
+			rollupOptions: {
+				// Rolldown (Vite 8+) ships a `pluginTimings` check that
+				// fires `[PLUGIN_TIMINGS]` whenever a single plugin accounts
+				// for >100x the link-stage time. SvelteKit's internal
+				// `vite-plugin-sveltekit-guard` hooks every module resolution
+				// to enforce `$env`/`$lib`/`$app` import boundaries — by
+				// design it dominates a small project's plugin time, so the
+				// warning fires on every build with no actionable fix on our
+				// end (it's the framework, not our code).
+				//
+				// We disable ONLY this check; every other Rolldown safety net
+				// (circular deps, unresolved imports, eval, missing globals,
+				// etc.) stays on. If we ever add a custom plugin that
+				// genuinely is slow, drop this override locally to
+				// investigate.
+				//
+				// See https://rolldown.rs/options/checks#plugintimings.
+				checks: {
+					pluginTimings: false
+				}
+			}
 		},
 		server: {
 			port: 5173,
