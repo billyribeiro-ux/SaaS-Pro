@@ -119,7 +119,7 @@ Each lesson lands a verified, tagged commit:
   attaches `event.locals.supabase` + `event.locals.safeGetSession`
   (which validates the JWT via `getUser()` instead of trusting the raw
   cookie). `src/routes/+layout.server.ts` exposes `{ session, user,
-  cookies }` to every page. `src/app.d.ts` types `App.Locals` so the
+cookies }` to every page. `src/app.d.ts` types `App.Locals` so the
   whole codebase gets autocomplete on these. Playwright's web server
   now seeds demo Supabase env so e2e tests boot cleanly without
   requiring a local `.env`.

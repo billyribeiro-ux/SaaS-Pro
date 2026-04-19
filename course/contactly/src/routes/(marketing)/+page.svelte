@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import Button from '$lib/components/ui/Button.svelte';
 
 	type Props = { data: PageData };
 	let { data }: Props = $props();
@@ -21,13 +22,20 @@
 	/>
 </svelte:head>
 
-<main class="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-6 py-16">
+<main class="mx-auto flex max-w-3xl flex-col px-6 py-16">
 	<p class="text-brand-600 text-sm font-semibold tracking-widest uppercase">SaaS-Pro</p>
 	<h1 class="mt-3 text-5xl font-bold tracking-tight text-slate-900">Welcome to Contactly.</h1>
 	<p class="mt-5 text-lg leading-relaxed text-slate-600">
 		This is the very first commit of the project you're going to build, end to end, with SvelteKit,
 		Supabase, and Stripe. By the time you finish the course, this homepage will be a real product.
 	</p>
+
+	{#if !data.user}
+		<div class="mt-8 flex flex-wrap gap-3">
+			<Button href="/sign-up" variant="primary" size="lg">Get started — it's free</Button>
+			<Button href="/sign-in" variant="secondary" size="lg">Sign in</Button>
+		</div>
+	{/if}
 
 	<section class="mt-12">
 		<h2 class="text-sm font-semibold tracking-wider text-slate-500 uppercase">What lands when</h2>
@@ -64,7 +72,7 @@
 	<footer class="mt-16 text-xs text-slate-400">
 		Latest tag:
 		<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600"
-			>course/lesson-02-04-client-supabase</code
+			>course/lesson-03-01-user-registration</code
 		>
 	</footer>
 </main>
