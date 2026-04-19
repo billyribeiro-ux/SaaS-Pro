@@ -35,6 +35,12 @@
 		description: string;
 	};
 
+	// Extracted to a constant so Prettier can't re-wrap the long radial-gradient
+	// value into multiple lines (a multi-line string in a `style:` directive
+	// trips Svelte's parser — see issue around `style:background` line breaks).
+	const featureHoverGradient =
+		'radial-gradient(400px circle at 50% 0%, oklch(0.62 0.2 268 / 0.08), transparent 60%)';
+
 	const features: Feature[] = [
 		{
 			icon: Lock,
@@ -254,8 +260,7 @@
 			>
 				<div
 					class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-					style:background="radial-gradient(400px circle at 50% 0%, oklch(0.62 0.2 268 / 0.08),
-					transparent 60%)"
+					style:background={featureHoverGradient}
 					aria-hidden="true"
 				></div>
 				<div class="relative">
