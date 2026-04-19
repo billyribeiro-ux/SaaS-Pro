@@ -1,0 +1,5 @@
+-- Contactly seed data.
+--
+-- This file is replayed every time you run `pnpm run db:reset`.
+-- Empty for now; Lesson 4.8 ("Seeding Contacts") populates it with
+-- a realistic test dataset (workspaces, members, contacts, notes).

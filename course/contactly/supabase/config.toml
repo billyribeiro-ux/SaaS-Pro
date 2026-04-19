@@ -1,0 +1,115 @@
+# A unique project ID. Studio uses this for the local project name and
+# `supabase` CLI uses it as a Docker label so multiple Supabase stacks
+# can run side-by-side on the same machine. We deliberately use a
+# project_id and ports that DO NOT collide with the SaaS-Pro platform's
+# own local Supabase (project_id = "saas-pro", ports 54320–54329) so
+# you can run both at the same time.
+project_id = "contactly"
+
+[api]
+enabled = true
+port = 64321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 64322
+shadow_port = 64320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 64329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 64323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+# Local mailbox UI for catching auth + transactional emails the local
+# stack sends. Visit http://localhost:64324 in your browser. In
+# production, Resend takes over (see ADR-003 / Lesson 9.3).
+[inbucket]
+enabled = true
+port = 64324
+
+[storage]
+enabled = true
+file_size_limit = "5MiB"
+
+[auth]
+enabled = true
+# Match Vite's default dev port. Auth callbacks (email confirmation,
+# password reset, magic link) all redirect through the URLs listed
+# below — they MUST include every protocol / port the app is reached on.
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+	"http://127.0.0.1:5173",
+	"http://localhost:5173"
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+# 12 chars is the modern baseline (NIST SP 800-63B). 8 is too short.
+minimum_password_length = 12
+# Supabase enforces this server-side; the client UI in Module 3 enforces
+# the same rule for early feedback. Lower + upper + digits = covers the
+# OWASP "use a passphrase or strong-password rule" guidance without
+# becoming hostile to humans.
+password_requirements = "lower_upper_letters_digits"
+
+# Time-based one-time password MFA. Off in v1 — Module 3 covers the
+# password + magic-link flow; MFA can be added in a bonus lesson without
+# a schema change.
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# Per ADR-005: password sign-ups must verify their email before access.
+enable_confirmations = true
+secure_password_change = true
+# Minimum gap between auth emails to the same address. Stops a
+# misclick from triggering rate-limit pain during local development.
+max_frequency = "60s"
+# Magic-link OTP. 6 digits balances usability and brute-force resistance;
+# combined with otp_expiry it's effectively un-bruteforceable.
+otp_length = 6
+otp_expiry = 3600
+
+# === Resend SMTP (per ADR-003) =========================================
+# Uncomment and fill via env vars when wiring Resend in Module 3 / Module 9.
+# Local dev keeps using Inbucket so we don't burn Resend credits on
+# throwaway sign-ups. This block is what Production gets via
+# `supabase config push`.
+#
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.resend.com"
+# port = 465
+# user = "resend"
+# pass = "env(RESEND_API_KEY)"
+# admin_email = "noreply@contactly.app"
+# sender_name = "Contactly"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[edge_runtime]
+enabled = true
+policy = "oneshot"
+inspector_port = 9083

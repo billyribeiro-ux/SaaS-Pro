@@ -34,37 +34,68 @@ anything load-bearing.
 
 ```bash
 cd course/contactly
+cp .env.example .env          # values shipped are safe local defaults
 pnpm install
+pnpm run db:start             # boots Postgres + Auth + Studio in Docker
 pnpm run dev
 ```
 
-Then open <http://localhost:5173>.
+Then open <http://localhost:5173>. Supabase Studio is at
+<http://localhost:64323>; local emails land in Inbucket at
+<http://localhost:64324>.
+
+> **Docker required.** `pnpm run db:start` needs Docker Desktop (or
+> OrbStack / Colima) running. The first start downloads ~1 GB of
+> images; subsequent starts take ~10 s.
 
 ## Scripts
 
-| Script               | What it does                                                |
-| -------------------- | ----------------------------------------------------------- |
-| `pnpm run dev`       | Vite dev server with HMR                                    |
-| `pnpm run build`     | Production build                                            |
-| `pnpm run preview`   | Serves the production build locally                         |
-| `pnpm run check`     | `svelte-check` — TypeScript + Svelte template type checking |
-| `pnpm run lint`      | Prettier (check) + ESLint                                   |
-| `pnpm run format`    | Prettier (write)                                            |
-| `pnpm run test:unit` | Vitest unit tests                                           |
-| `pnpm run test:e2e`  | Playwright end-to-end tests                                 |
-| `pnpm run test`      | Both unit and e2e                                           |
+| Script                      | What it does                                                |
+| --------------------------- | ----------------------------------------------------------- |
+| `pnpm run dev`              | Vite dev server with HMR                                    |
+| `pnpm run build`            | Production build                                            |
+| `pnpm run preview`          | Serves the production build locally                         |
+| `pnpm run check`            | `svelte-check` — TypeScript + Svelte template type checking |
+| `pnpm run lint`             | Prettier (check) + ESLint                                   |
+| `pnpm run format`           | Prettier (write)                                            |
+| `pnpm run test:unit`        | Vitest unit tests                                           |
+| `pnpm run test:e2e`         | Playwright end-to-end tests                                 |
+| `pnpm run test`             | Both unit and e2e                                           |
+| `pnpm run db:start`         | Boot the local Supabase stack                               |
+| `pnpm run db:stop`          | Stop the local Supabase stack                               |
+| `pnpm run db:status`        | Print URLs + keys for the running stack                     |
+| `pnpm run db:reset`         | Drop and re-apply every migration + replay `seed.sql`       |
+| `pnpm run db:migration:new` | Create a new timestamped migration file                     |
+| `pnpm run db:push`          | Apply pending local migrations to the **linked** project    |
+| `pnpm run db:diff`          | Capture schema drift into a new migration                   |
+| `pnpm run types:generate`   | Regenerate `src/lib/database.types.ts` from the live schema |
 
-## Lesson 1.1 — SvelteKit Project Setup
+### Local Supabase ports
 
-This is what lands at the end of Lesson 1.1:
+We use **64320–64329** (and 9083 for the edge runtime inspector) so this
+project can run side-by-side with the SaaS-Pro platform's own local
+Supabase, which uses 54320–54329.
 
-- A SvelteKit 2 project with TypeScript in **strict** mode.
-- Tailwind v4 wired through the Vite plugin (no `tailwind.config.*` file).
-- ESLint + Prettier configured to lint and auto-format Svelte and TS.
-- Vitest set up for unit tests.
-- Playwright set up for end-to-end tests, with one passing smoke test
-  (`tests/welcome.spec.ts`) that loads the homepage and checks the heading.
-- A welcoming homepage that previews what the rest of the course will build.
+| Service         | URL                                                       |
+| --------------- | --------------------------------------------------------- |
+| API             | <http://127.0.0.1:64321>                                  |
+| DB (psql)       | `postgresql://postgres:postgres@127.0.0.1:64322/postgres` |
+| Studio          | <http://localhost:64323>                                  |
+| Inbucket (mail) | <http://localhost:64324>                                  |
+
+## Module 1 progress
+
+Each lesson lands a verified, tagged commit:
+
+- **Lesson 1.1 — SvelteKit project setup.** SvelteKit 2 + Svelte 5
+  (runes), strict TypeScript, Tailwind v4, ESLint + Prettier, Vitest
+  - Playwright, one passing smoke test, branded welcome homepage.
+- **Lesson 1.2 — Supabase local development.** `supabase init` with a
+  config tuned for the Contactly stack: ports off the default range so
+  it never collides with anything else on your machine, NIST-aligned
+  password rules, mandatory email confirmation for password sign-ups,
+  Inbucket for local mail, and a commented-out Resend SMTP block ready
+  for production.
 
 ## Course progression
 
