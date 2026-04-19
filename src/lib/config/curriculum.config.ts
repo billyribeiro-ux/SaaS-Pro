@@ -521,6 +521,126 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 				title: 'Bonus: Observability & Tracing',
 				duration: 25,
 				preview: false
+			},
+			{
+				slug: 'bonus-11-structured-logging-pino',
+				title: 'Bonus: Structured Logging with Pino',
+				duration: 22,
+				preview: false
+			},
+			{
+				slug: 'bonus-12-sentry-error-tracking',
+				title: 'Bonus: Sentry — Catch Errors in Production',
+				duration: 25,
+				preview: false
+			},
+			{
+				slug: 'bonus-13-webhook-health-dashboard',
+				title: 'Bonus: Webhook Health Dashboard',
+				duration: 28,
+				preview: false
+			},
+			{
+				slug: 'bonus-14-webhook-replay-recovery',
+				title: 'Bonus: Webhook Replay & Recovery',
+				duration: 25,
+				preview: false
+			},
+			{
+				slug: 'bonus-15-production-runbook',
+				title: 'Bonus: Production Runbook & Incident Response',
+				duration: 22,
+				preview: false
+			},
+			{
+				slug: 'bonus-16-vercel-adapter-edge',
+				title: 'Bonus: Vercel Adapter & Edge Deployment',
+				duration: 20,
+				preview: false
+			},
+			{
+				slug: 'bonus-17-sentry-source-maps',
+				title: 'Bonus: Sentry Source Maps in CI',
+				duration: 22,
+				preview: false
+			},
+			{
+				slug: 'bonus-18-release-pin-drift-detection',
+				title: 'Bonus: Release Pinning & Drift Detection',
+				duration: 20,
+				preview: false
+			},
+			{
+				slug: 'bonus-19-security-headers-csp',
+				title: 'Bonus: Security Headers — CSP, HSTS, COOP',
+				duration: 25,
+				preview: false
+			},
+			{
+				slug: 'bonus-20-secret-rotation',
+				title: 'Bonus: Secret Rotation Without Downtime',
+				duration: 18,
+				preview: false
+			},
+			{
+				slug: 'bonus-21-cassette-format',
+				title: 'Bonus: Cassette Format — Deterministic Stripe Tests',
+				duration: 24,
+				preview: false
+			},
+			{
+				slug: 'bonus-22-cassette-signing',
+				title: 'Bonus: Cassette Signing & Tamper Detection',
+				duration: 18,
+				preview: false
+			},
+			{
+				slug: 'bonus-23-cassette-driver',
+				title: 'Bonus: Cassette Driver & Replay Engine',
+				duration: 22,
+				preview: false
+			},
+			{
+				slug: 'bonus-24-cassette-scenarios',
+				title: 'Bonus: Authoring Webhook Scenarios',
+				duration: 20,
+				preview: false
+			},
+			{
+				slug: 'bonus-25-cassettes-in-ci',
+				title: 'Bonus: Cassettes in CI Pipelines',
+				duration: 22,
+				preview: false
+			},
+			{
+				slug: 'bonus-26-totp-2fa',
+				title: 'Bonus: Two-Factor Auth with TOTP',
+				duration: 28,
+				preview: false
+			},
+			{
+				slug: 'bonus-27-magic-link-auth',
+				title: 'Bonus: Magic Link Sign-In',
+				duration: 20,
+				preview: false
+			},
+			{
+				slug: 'bonus-28-optimistic-ui-runes',
+				title: 'Bonus: Optimistic UI with Svelte 5 Runes',
+				duration: 25,
+				preview: false
+			},
+			{
+				slug: 'bonus-29-vercel-cron-jobs',
+				title: 'Bonus: Vercel Cron Jobs & Scheduled Tasks',
+				duration: 22,
+				preview: false
+			},
+			{
+				slug: 'bonus-30-feature-flags',
+				title: 'Bonus: Feature Flags & Kill Switches',
+				duration: 25,
+				preview: false
 			}
 		]
 	}
