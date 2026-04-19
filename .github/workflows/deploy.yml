@@ -3,6 +3,10 @@
 # On every pull request targeting main, run the `ci` job: typecheck + e2e tests.
 # On every push to main, run `ci`, then `deploy` if `ci` passes: push Supabase
 # migrations to the production project, then ship the app to Vercel.
+#
+# Manual reruns: `workflow_dispatch` lets ops trigger a redeploy from the
+# Actions UI without an empty commit. Use this after rotating Vercel/Supabase
+# secrets so the next deploy doesn't have to wait on a real code change.
 name: Deploy
 
 on:
@@ -10,6 +14,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# Cancel in-flight CI on the same ref when a new push lands. Production
+# `deploy` runs serially per `main` so two pushes in a row can't race the
+# Supabase migration step against itself.
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # -------------------------------------------------------------------------
@@ -19,7 +31,7 @@ jobs:
     name: Lint, typecheck, and test
     runs-on: ubuntu-latest
     # Placeholder values so `$env/static/*` type-checks pass in CI. Production
-    # deployment uses real values injected by Vercel's environment settings —
+    # deployment uses real values injected by Vercel's environment settings;
     # these are only visible to the type-checker and Playwright's dev server,
     # which does not hit Supabase or Stripe in the CI suite.
     env:
@@ -31,7 +43,6 @@ jobs:
       STRIPE_SECRET_KEY: sk_test_ci_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
     steps:
-      # Check out the repo at the commit that triggered the workflow.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -48,7 +59,6 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      # Install deps from the lockfile; fail if the lockfile is stale.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -56,36 +66,40 @@ jobs:
       - name: Sync SvelteKit
         run: pnpm exec svelte-kit sync
 
-      # Strict TypeScript + Svelte diagnostics across the project.
       - name: Type-check
         run: pnpm exec svelte-check --tsconfig ./tsconfig.json
 
-      # Pull down the Chromium binary (and its OS deps) for Playwright.
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      # Run the end-to-end suite against a SvelteKit dev/preview server
-      # (wired up inside playwright.config.ts).
       - name: Run Playwright tests
         run: pnpm exec playwright test
 
   # -------------------------------------------------------------------------
-  # deploy: runs ONLY on push to main, after `ci` is green.
-  # Pushes database migrations to the production Supabase project, then
-  # triggers a production deployment on Vercel.
+  # deploy: runs ONLY on push to main (or manual dispatch), after `ci` is
+  # green. Pushes database migrations to the production Supabase project,
+  # then triggers a production deployment on Vercel.
   # -------------------------------------------------------------------------
   deploy:
     name: Deploy to production
     needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       # Supabase CLI picks these up automatically for non-interactive auth.
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # Pin Vercel CLI to a major. `@latest` floats; a CLI breaking change
+      # ships at 3 am and the next deploy goes red without any code change.
+      # Bump deliberately when Vercel cuts a new major; verify in staging.
+      VERCEL_CLI_VERSION: '51'
     steps:
-      # Fresh checkout — jobs don't share filesystem.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -100,29 +114,74 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
+      # ------------------------------------------------------------------
+      # Preflight: validate every required secret is present and the
+      # Vercel token is actually live. This runs BEFORE the slow
+      # `pnpm install` so a stale `VERCEL_TOKEN` fails the job in <10 s
+      # with a self-explanatory error pointing at the runbook, instead
+      # of dying 90 s later inside the deploy step with a cryptic CLI
+      # message that GitHub Actions then masks half of.
+      #
+      # Using `curl` to hit `https://api.vercel.com/v2/user` is enough to
+      # detect: missing token, expired token, revoked token, and
+      # corrupted secret values (e.g. a stray newline from
+      # `gh secret set --body -`). The `gh secret set` newline gotcha
+      # bit us once; this catches it deterministically.
+      # ------------------------------------------------------------------
+      - name: Preflight - required secrets present
+        env:
+          REQUIRED_SECRETS: |
+            SUPABASE_ACCESS_TOKEN
+            SUPABASE_PROJECT_REF
+            SUPABASE_DB_PASSWORD
+            VERCEL_TOKEN
+            VERCEL_ORG_ID
+            VERCEL_PROJECT_ID
+        run: |
+          missing=0
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            value="$(printenv "$name" || true)"
+            if [ -z "$value" ]; then
+              echo "::error::Required secret $name is empty or unset."
+              missing=1
+            fi
+          done <<< "$REQUIRED_SECRETS"
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::See course/contactly/docs/deploy/06-secret-rotation.md."
+            exit 1
+          fi
+
+      - name: Preflight - Vercel token is live
+        run: |
+          status=$(curl -sS -o /tmp/vercel-whoami.json -w "%{http_code}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            https://api.vercel.com/v2/user)
+          if [ "$status" != "200" ]; then
+            echo "::error::Vercel rejected VERCEL_TOKEN (HTTP $status). Token is missing, expired, revoked, or contains a stray newline."
+            echo "::error::Rotate the token: see course/contactly/docs/deploy/06-secret-rotation.md."
+            exit 1
+          fi
+          echo "Vercel token OK (authenticated as $(jq -r '.user.username // .user.email' /tmp/vercel-whoami.json))."
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       # Link this checkout to the production Supabase project so the CLI
       # knows where to push migrations.
       - name: Link Supabase project
-        run: pnpm exec supabase link --project-ref $SUPABASE_PROJECT_REF
+        run: pnpm exec supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       # Apply any pending SQL migrations in supabase/migrations/ to prod.
       - name: Push Supabase migrations
-        run: pnpm exec supabase db push --password $SUPABASE_DB_PASSWORD
+        run: pnpm exec supabase db push --password "$SUPABASE_DB_PASSWORD"
 
       # Trigger a production deploy on Vercel using the official CLI.
-      # We pin to `vercel@latest` rather than a 3rd-party action because the
-      # popular `amondnet/vercel-action` ships an old CLI that Vercel's API
-      # has since rejected (requires >= v47.2.2). Vercel's remote builder
-      # handles the build, so no local `pnpm build` is needed.
+      # We pin to a major version (see VERCEL_CLI_VERSION above) rather
+      # than `@latest` to keep deploys reproducible. Vercel's remote
+      # builder handles the build, so no local `pnpm build` is needed.
       - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          npx --yes "vercel@$VERCEL_CLI_VERSION" pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes "vercel@$VERCEL_CLI_VERSION" build --prod --token="$VERCEL_TOKEN"
+          npx --yes "vercel@$VERCEL_CLI_VERSION" deploy --prebuilt --prod --token="$VERCEL_TOKEN"

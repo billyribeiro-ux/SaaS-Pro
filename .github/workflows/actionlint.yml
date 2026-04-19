@@ -1,0 +1,59 @@
+# Static analysis for every GitHub Actions workflow in this repo.
+#
+# Why this exists:
+#   In April 2026 the Contactly CI workflow shipped with
+#   `cache-dependency-path: course/contactly/pnpm-lock.yaml` — a path that
+#   never existed (the lockfile lives at the repo root because contactly is
+#   a pnpm workspace package). The mistake survived review and only failed
+#   at CI runtime AFTER merge to main. actionlint catches exactly this class
+#   of mistake (plus shellcheck on every `run:` block, expression typos,
+#   missing job dependencies, deprecated action versions, etc.) at PR time.
+#
+# Runs on every PR + push that touches a workflow file. Cheap (<5 s) and
+# blocks merge if anything is wrong.
+name: Actions lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actionlint.yaml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actionlint.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: actionlint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Validate workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pinned binary release (not `apt install`) so we get a known version
+      # and don't depend on whatever Ubuntu's package mirror happens to
+      # ship today. Bump the version deliberately when actionlint releases
+      # a new major; verify locally first with `brew upgrade actionlint`.
+      - name: Install actionlint
+        run: |
+          set -euo pipefail
+          version="1.7.12"
+          curl -sSLo /tmp/actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_amd64.tar.gz"
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          sudo mv /tmp/actionlint /usr/local/bin/actionlint
+          actionlint -version
+
+      # `-color` keeps annotations readable in the GitHub Actions log.
+      # actionlint exits 1 on any finding, which surfaces as a failed
+      # required check.
+      - name: Run actionlint
+        run: actionlint -color

@@ -5,6 +5,13 @@
 # package (see `pnpm-workspace.yaml`) and has its own typecheck + unit suite
 # (and a growing Playwright suite).
 #
+# IMPORTANT — workspace layout:
+#   The lockfile lives at the REPO ROOT (`/pnpm-lock.yaml`), not inside
+#   `course/contactly/`. pnpm installs once at the root and resolves both
+#   the root and contactly importers from that single lockfile. The
+#   `actionlint.yml` workflow validates the paths referenced here, so a
+#   `cache-dependency-path` typo will fail PR CI before merge.
+#
 # This workflow runs on every push/PR that TOUCHES `course/contactly/**`,
 # the workspace lockfile, or this workflow file itself. Lessons that don't
 # touch contactly files don't pay the cost. Lessons that do — including the
@@ -26,6 +33,8 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - '.github/workflows/contactly-ci.yml'
+  # Manual reruns from the Actions UI without an empty commit.
+  workflow_dispatch:
 
 # Cancel in-flight runs on the same ref when a new push/PR arrives. PR
 # workflows during active development churn through dozens of commits;
