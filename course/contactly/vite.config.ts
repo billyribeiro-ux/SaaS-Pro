@@ -3,6 +3,11 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { defineConfig, loadEnv } from 'vite';
+// Relative path on purpose: vite.config.ts runs *before* the
+// SvelteKit plugin sets up the `$lib` alias. Module 11.3 made
+// `release.ts` a leaf with no project imports specifically so
+// this file can pull from it.
+import { resolveRelease } from './src/lib/release';
 
 /**
  * Vite config (Modules 1+, with Module 11.2 source-map upload).
@@ -50,20 +55,12 @@ import { defineConfig, loadEnv } from 'vite';
  * RELEASE STRING SHARING
  * ----------------------
  * The plugin's `release.name` MUST match the runtime SDK's
- * release string. We re-implement the same precedence chain
- * as `resolveRelease()` here in pure JS rather than importing
- * the TS module — this file runs under `tsx` and we want zero
- * type-resolution surprises during a CI build. The unit suite
- * pins the chain so the two implementations stay in lockstep.
+ * release string. Module 11.3 made both call sites import from
+ * `src/lib/release.ts`, so the build-time tag and the runtime
+ * SDK tag are byte-for-byte identical by construction. The
+ * `loadEnv`-provided dictionary is forwarded to `resolveRelease`
+ * so the same fn works regardless of who's reading the env.
  */
-function resolveBuildRelease(env: Record<string, string>): string {
-	const explicit = env.PUBLIC_SENTRY_RELEASE?.trim();
-	if (explicit) return explicit;
-	const sha = env.VERCEL_GIT_COMMIT_SHA?.trim();
-	if (sha) return `contactly@${sha.slice(0, 12)}`;
-	return 'contactly@dev';
-}
-
 export default defineConfig(({ mode }) => {
 	// Merge mode-specific .env files (`.env`, `.env.local`,
 	// `.env.production`, …). Last arg `''` = surface every
@@ -87,7 +84,7 @@ export default defineConfig(({ mode }) => {
 		project: env.SENTRY_PROJECT,
 		authToken: env.SENTRY_AUTH_TOKEN,
 		release: {
-			name: resolveBuildRelease(env),
+			name: resolveRelease(env),
 			// Don't auto-create or auto-finalize from the plugin.
 			// We let the runtime SDK be the source of truth on
 			// "this release went live"; the plugin's job is

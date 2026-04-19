@@ -9,15 +9,22 @@
  * same on both runtimes lives here; runtime-specific options
  * (integrations, transports) stay at the call site.
  *
- * RELEASE TAGGING
- * ---------------
- * Sentry's "release" string is the join key between an error event
- * and "which deploy was this?". We surface the Vercel-provided git
- * SHA (`VERCEL_GIT_COMMIT_SHA`, available at build *and* runtime)
- * with a fallback chain for local dev and self-hosted scenarios.
- * The first env var that's set wins; the literal `'dev'` is the
- * last-resort marker so a local error doesn't pollute the
- * production release's stats.
+ * RELEASE / ENVIRONMENT RESOLUTION
+ * --------------------------------
+ * Module 11.3 collapsed the previous "two near-identical
+ * implementations of resolveRelease" (one here, one in
+ * `vite.config.ts` for the source-map upload plugin) into a
+ * single `src/lib/release.ts` module. Both call sites now import
+ * from the same primitive, so the build-time release tag and
+ * the runtime SDK release tag are byte-for-byte identical by
+ * construction. That guarantees Sentry's source-map join key
+ * always matches.
+ *
+ * This module is now a thin adapter: it re-exports
+ * `resolveRelease` / `resolveEnvironment` for backwards
+ * compatibility (the unit tests import from here) and contributes
+ * the SDK-shaped `baseInitOptions` factory the two `hooks.*.ts`
+ * files spread into their `Sentry.init` calls.
  *
  * DSN AS THE ENABLE TOGGLE
  * ------------------------
@@ -27,45 +34,9 @@
  * accept an empty DSN, the SDK silently no-ops, and `pnpm run dev`
  * doesn't ship errors to the production project.
  */
+import { resolveEnvironment, resolveRelease } from './release';
 
-/**
- * Resolve the release identifier we tag every event with.
- *
- * Order of precedence:
- *   1. `PUBLIC_SENTRY_RELEASE`  — explicit override (CI/CD pinning,
- *                                 reproducible releases).
- *   2. `VERCEL_GIT_COMMIT_SHA`  — Vercel-injected. Truncated to 12
- *                                 chars for ergonomic display in
- *                                 the Sentry UI; full SHA is also
- *                                 attached as a tag for replay.
- *   3. `'dev'`                  — local fallback.
- */
-export function resolveRelease(): string {
-	const explicit = readEnv('PUBLIC_SENTRY_RELEASE');
-	if (explicit) return explicit;
-	const sha = readEnv('VERCEL_GIT_COMMIT_SHA');
-	if (sha) return `contactly@${sha.slice(0, 12)}`;
-	return 'contactly@dev';
-}
-
-/**
- * Resolve the Sentry environment name (used to scope dashboards
- * + alerts in the Sentry UI). Mirrors `NODE_ENV` on most platforms;
- * Vercel adds the `VERCEL_ENV` discriminator (`preview` /
- * `production`) which we surface verbatim so previews are visible
- * but never fire prod alerts.
- */
-export function resolveEnvironment(): string {
-	const vercel = readEnv('VERCEL_ENV');
-	if (vercel) return vercel;
-	const node = readEnv('NODE_ENV');
-	// `readEnv` collapses missing/empty to '', so a truthy check is
-	// the right gate here; Node has the slightly surprising habit of
-	// coercing `delete process.env.X` to `''` rather than `undefined`,
-	// which would otherwise leak through as a Sentry environment of
-	// the empty string.
-	return node || 'development';
-}
+export { resolveEnvironment, resolveRelease };
 
 /**
  * The base config object both runtimes spread into their own
@@ -92,16 +63,4 @@ export function baseInitOptions(dsn: string): Record<string, unknown> {
 		// capture from the SDK is the only thing this disables.
 		sendDefaultPii: false
 	};
-}
-
-/**
- * Read an env var without crashing in environments where some are
- * undefined (e.g. `process.env` doesn't exist in the browser
- * runtime). Returns an empty string when the var is missing or
- * empty so callers can pattern-match on falsy.
- */
-function readEnv(name: string): string {
-	if (typeof process === 'undefined' || !process.env) return '';
-	const value = process.env[name];
-	return typeof value === 'string' ? value.trim() : '';
 }

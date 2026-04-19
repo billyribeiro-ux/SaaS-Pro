@@ -14,6 +14,7 @@
  * and bounces me to sign-in"). A 404 keeps the door closed.
  */
 import { error } from '@sveltejs/kit';
+import { resolveCommitSha, resolveEnvironment, resolveRelease } from '$lib/release';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase } }) => {
@@ -30,5 +31,16 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 	// MUST NOT be readable as "you are an admin".
 	if (readError || !data?.is_platform_admin) throw error(404, 'Not Found');
 
-	return { user };
+	// Surface the deploy identity in the chrome (Module 11.3) so an
+	// operator at a glance knows which release they're acting on.
+	// Same primitive Sentry/source-map upload uses, so a "Reference
+	// id" pasted from Sentry maps unambiguously back to this number.
+	return {
+		user,
+		deploy: {
+			release: resolveRelease(),
+			commit: resolveCommitSha(),
+			environment: resolveEnvironment()
+		}
+	};
 };
