@@ -38,6 +38,11 @@ import {
 	handleCustomerDeleted,
 	handleCustomerUpdated
 } from '$lib/server/billing/customers';
+import {
+	handleSubscriptionDeleted,
+	handleSubscriptionTrialWillEnd,
+	upsertSubscription
+} from '$lib/server/billing/subscriptions';
 
 /**
  * The exhaustive set of Stripe event types Contactly listens for.
@@ -153,38 +158,16 @@ const EVENT_HANDLERS: EventHandlers = {
 		});
 	},
 	'customer.subscription.created': async (event) => {
-		const sub = event.data.object as Stripe.Subscription;
-		console.info('[stripe-webhook] customer.subscription.created', {
-			id: event.id,
-			subscription: sub.id,
-			status: sub.status,
-			customer: sub.customer
-		});
+		await upsertSubscription(event.data.object as Stripe.Subscription);
 	},
 	'customer.subscription.updated': async (event) => {
-		const sub = event.data.object as Stripe.Subscription;
-		console.info('[stripe-webhook] customer.subscription.updated', {
-			id: event.id,
-			subscription: sub.id,
-			status: sub.status,
-			cancel_at_period_end: sub.cancel_at_period_end
-		});
+		await upsertSubscription(event.data.object as Stripe.Subscription);
 	},
 	'customer.subscription.deleted': async (event) => {
-		const sub = event.data.object as Stripe.Subscription;
-		console.info('[stripe-webhook] customer.subscription.deleted', {
-			id: event.id,
-			subscription: sub.id,
-			status: sub.status
-		});
+		await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
 	},
 	'customer.subscription.trial_will_end': async (event) => {
-		const sub = event.data.object as Stripe.Subscription;
-		console.info('[stripe-webhook] customer.subscription.trial_will_end', {
-			id: event.id,
-			subscription: sub.id,
-			trial_end: sub.trial_end
-		});
+		await handleSubscriptionTrialWillEnd(event.data.object as Stripe.Subscription);
 	},
 	'invoice.paid': async (event) => {
 		const inv = event.data.object as Stripe.Invoice;
