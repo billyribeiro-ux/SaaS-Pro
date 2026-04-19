@@ -40,12 +40,11 @@ import type { Actions, PageServerLoad } from './$types';
 import { signInWithMagicLinkSchema, signInWithPasswordSchema } from '$lib/schemas/auth';
 import { safeRedirectPath } from '$lib/utils/safe-redirect';
 
-export const load: PageServerLoad = async ({ locals: { safeGetSession }, url }) => {
-	const { user } = await safeGetSession();
-	if (user) {
-		throw redirect(303, safeRedirectPath(url.searchParams.get('next'), '/dashboard'));
-	}
-
+/**
+ * Already-signed-in visitors are bounced by `(auth)/+layout.server.ts`
+ * (Lesson 3.3) — no need to re-check here.
+ */
+export const load: PageServerLoad = async () => {
 	const [passwordForm, magicForm] = await Promise.all([
 		superValidate(zod4(signInWithPasswordSchema), { id: 'password' }),
 		superValidate(zod4(signInWithMagicLinkSchema), { id: 'magic' })
