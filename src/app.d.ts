@@ -14,6 +14,7 @@ declare global {
 		interface PageData {
 			user: User | null;
 			session: Session | null;
+			isAdmin?: boolean;
 		}
 		interface Error {
 			message: string;

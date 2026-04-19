@@ -9,20 +9,26 @@
 
 	type Props = {
 		userEmail?: string | null;
+		isAdmin?: boolean;
 	};
 
-	let { userEmail = null }: Props = $props();
+	let { userEmail = null, isAdmin = false }: Props = $props();
 
-	type NavLink = { href: string; label: string; requiresAuth?: boolean };
+	type NavLink = { href: string; label: string; requiresAuth?: boolean; adminOnly?: boolean };
 
 	const links: readonly NavLink[] = [
 		{ href: '/', label: 'Home' },
 		{ href: '/pricing', label: 'Pricing' },
-		{ href: '/learn', label: 'Course', requiresAuth: true }
+		{ href: '/learn', label: 'Course', requiresAuth: true },
+		{ href: '/admin', label: 'Admin', requiresAuth: true, adminOnly: true }
 	];
 
 	let visibleLinks = $derived(
-		links.filter((link) => !link.requiresAuth || Boolean(userEmail))
+		links.filter((link) => {
+			if (link.requiresAuth && !userEmail) return false;
+			if (link.adminOnly && !isAdmin) return false;
+			return true;
+		})
 	);
 
 	// Scroll-aware shell — translucent backdrop appears only after the user has moved

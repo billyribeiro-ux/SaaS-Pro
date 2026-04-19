@@ -15,7 +15,7 @@
 </script>
 
 <div class="flex min-h-screen flex-col">
-	<Navbar userEmail={data.user?.email ?? null} />
+	<Navbar userEmail={data.user?.email ?? null} isAdmin={data.isAdmin ?? false} />
 	<main class="flex-1">
 		{@render children()}
 	</main>
