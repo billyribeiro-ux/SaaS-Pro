@@ -11,6 +11,12 @@ vi.mock('$lib/server/billing/products', () => ({
 	deleteStripePrice: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock('$lib/server/billing/customers', () => ({
+	handleCustomerCreated: vi.fn().mockResolvedValue(undefined),
+	handleCustomerUpdated: vi.fn().mockResolvedValue(undefined),
+	handleCustomerDeleted: vi.fn().mockResolvedValue(undefined)
+}));
+
 import { SUBSCRIBED_EVENTS, dispatchStripeEvent, isSubscribedEvent } from './stripe-events';
 
 function fakeEvent<T extends string>(type: T, object: Record<string, unknown> = {}): Stripe.Event {

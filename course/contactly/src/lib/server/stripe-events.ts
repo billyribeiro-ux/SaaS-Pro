@@ -33,6 +33,11 @@ import {
 	upsertStripePrice,
 	upsertStripeProduct
 } from '$lib/server/billing/products';
+import {
+	handleCustomerCreated,
+	handleCustomerDeleted,
+	handleCustomerUpdated
+} from '$lib/server/billing/customers';
 
 /**
  * The exhaustive set of Stripe event types Contactly listens for.
@@ -56,6 +61,12 @@ export const SUBSCRIBED_EVENTS = [
 	'price.created',
 	'price.updated',
 	'price.deleted',
+	// Customer mapping mirror (Module 7.3). `customer.created` is
+	// largely redundant with the upsert inside ensureStripeCustomer
+	// but keeps Dashboard-created customers in sync.
+	'customer.created',
+	'customer.updated',
+	'customer.deleted',
 	// Checkout completion (Module 9.1).
 	'checkout.session.completed',
 	// Subscription mirror (Module 7.4).
@@ -119,6 +130,19 @@ const EVENT_HANDLERS: EventHandlers = {
 	},
 	'price.deleted': async (event) => {
 		await deleteStripePrice((event.data.object as Stripe.Price).id);
+	},
+	'customer.created': async (event) => {
+		await handleCustomerCreated(event.data.object as Stripe.Customer);
+	},
+	'customer.updated': async (event) => {
+		await handleCustomerUpdated(event.data.object as Stripe.Customer);
+	},
+	'customer.deleted': async (event) => {
+		// `event.data.object` for `customer.deleted` is a DeletedCustomer
+		// (Stripe sets `deleted: true` and only the id is meaningful), but
+		// the union over all event objects in the SDK type doesn't narrow
+		// here — go through `unknown` to be explicit about the cast.
+		await handleCustomerDeleted(event.data.object as unknown as Stripe.DeletedCustomer);
 	},
 	'checkout.session.completed': async (event) => {
 		console.info('[stripe-webhook] checkout.session.completed', {
