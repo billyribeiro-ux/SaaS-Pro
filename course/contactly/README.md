@@ -123,6 +123,25 @@ Each lesson lands a verified, tagged commit:
   whole codebase gets autocomplete on these. Playwright's web server
   now seeds demo Supabase env so e2e tests boot cleanly without
   requiring a local `.env`.
+- **Lesson 2.4 — Client-side Supabase + auth-state propagation.**
+  `src/routes/+layout.ts` is the universal load: in the browser it
+  builds a `createBrowserClient`, on the server it builds a
+  `createServerClient` from the cookies forwarded by Lesson 2.3.
+  `+layout.svelte` subscribes to `onAuthStateChange` and calls
+  `invalidate('supabase:auth')` on `SIGNED_IN` / `SIGNED_OUT` /
+  `TOKEN_REFRESHED`, which re-runs every load that depends on
+  session/user — UI updates without a full page reload. The homepage
+  now renders the auth state ("Signed in as …" / "Not signed in")
+  to make the wiring visible, and a second e2e asserts the
+  unauthenticated baseline.
+
+> **Important.** From Lesson 2.1 onwards, `pnpm run build` and
+> `pnpm run dev` both require the env vars in `.env.example` to be set.
+> Copy `.env.example` to `.env` before your first build — the validators
+> in `src/lib/env.public.ts` and `src/lib/server/env.ts` fail loudly if
+> anything required is missing or malformed (which is the point: a
+> deploy with bad env should fail at the build, not at the first
+> request in production).
 
 ## Course progression
 

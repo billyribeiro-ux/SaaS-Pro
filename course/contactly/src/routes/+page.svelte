@@ -1,4 +1,9 @@
 <script lang="ts">
+	import type { PageData } from './$types';
+
+	type Props = { data: PageData };
+	let { data }: Props = $props();
+
 	const milestones = [
 		{ module: 'Module 1', label: 'Project setup & Supabase foundations' },
 		{ module: 'Module 3', label: 'Email + password + magic-link auth' },
@@ -40,10 +45,26 @@
 		</ol>
 	</section>
 
+	<section class="mt-12 rounded-lg border border-slate-200 bg-slate-50 p-4">
+		<h2 class="text-sm font-semibold tracking-wider text-slate-500 uppercase">Auth status</h2>
+		<p class="mt-2 text-sm text-slate-700" data-testid="auth-status">
+			{#if data.user}
+				Signed in as <strong class="font-semibold text-slate-900">{data.user.email}</strong>
+			{:else}
+				Not signed in
+			{/if}
+		</p>
+		<p class="mt-2 text-xs text-slate-400">
+			Rendered server-side via <code class="font-mono">safeGetSession()</code> in
+			<code class="font-mono">hooks.server.ts</code>, hydrated client-side via the universal
+			<code class="font-mono">+layout.ts</code>. End of Module 2.
+		</p>
+	</section>
+
 	<footer class="mt-16 text-xs text-slate-400">
-		Lesson 1.1 — SvelteKit project setup. Tag: <code
-			class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600"
-			>course/lesson-01-01-sveltekit-setup</code
+		Latest tag:
+		<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600"
+			>course/lesson-02-04-client-supabase</code
 		>
 	</footer>
 </main>
