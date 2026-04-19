@@ -67,6 +67,33 @@ const serverEnvSchema = z.object({
 			error:
 				'STRIPE_WEBHOOK_SECRET should start with `whsec_`. ' +
 				'Run `pnpm run stripe:listen` and copy the secret it prints on startup.'
+		}),
+	/**
+	 * Operator-only API token (Module 10.3). When set, lets monitoring
+	 * tools (UptimeRobot, Datadog Synthetics, …) hit `/api/admin/*`
+	 * endpoints with `Authorization: Bearer <OPS_API_TOKEN>` instead
+	 * of going through the human-auth + `is_platform_admin` cookie
+	 * path.
+	 *
+	 * Optional. When empty (the local-dev default) the bearer-token
+	 * branch in `requireAdminOrToken` is fully disabled — *any*
+	 * incoming bearer token is rejected, no string comparison
+	 * happens, no early-return surprise. The flag only opens for
+	 * traffic when an operator deliberately provisions a token.
+	 *
+	 * The 32-char floor is the smallest length where a generic
+	 * brute-force is prohibitively expensive over HTTPS;
+	 * `crypto.randomBytes(32).toString('base64url')` is the
+	 * recommended way to mint one.
+	 */
+	OPS_API_TOKEN: z
+		.string()
+		.optional()
+		.default('')
+		.refine((v) => v === '' || v.length >= 32, {
+			error:
+				'OPS_API_TOKEN must be at least 32 characters when set. ' +
+				'Generate one with `node -e "console.log(crypto.randomBytes(32).toString(\\"base64url\\"))"`.'
 		})
 });
 

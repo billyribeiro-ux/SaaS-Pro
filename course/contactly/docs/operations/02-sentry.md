@@ -2,7 +2,7 @@
 
 > **Module 10 — Webhooks resilience & operational hygiene**
 > Previous: [01 — Structured logger](./01-structured-logger.md)
-> Next: 03 — Webhook backlog health endpoint (Lesson 10.3)
+> Next: [03 — Webhook backlog health + admin dashboard](./03-webhook-health.md)
 
 ## Goal
 
