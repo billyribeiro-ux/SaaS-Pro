@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user!;
 
 	const [tier, subRes, customerRes] = await Promise.all([
-		getSubscriptionTier(user.id),
+		getSubscriptionTier(user),
 		supabaseAdmin
 			.from('subscriptions')
 			.select('id, status, current_period_end, cancel_at_period_end, trial_end')

@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = locals.user!;
 
 	const [tier, progressRes] = await Promise.all([
-		getSubscriptionTier(user.id),
+		getSubscriptionTier(user),
 		supabaseAdmin
 			.from('lesson_progress')
 			.select('module_slug, lesson_slug, completed, completed_at')

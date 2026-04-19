@@ -10,7 +10,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		throw redirect(303, `/login?next=${next}`);
 	}
 
-	const subscribed = await hasActiveSubscription(locals.user.id);
+	const subscribed = await hasActiveSubscription(locals.user);
 	return {
 		user: locals.user,
 		hasSubscription: subscribed

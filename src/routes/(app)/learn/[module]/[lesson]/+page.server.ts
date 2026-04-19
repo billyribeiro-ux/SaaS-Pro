@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const lessonMeta = module ? findLesson(params.module, params.lesson) : null;
 	if (!module || !lessonMeta) throw error(404, 'Lesson not found');
 
-	const allowed = await canAccessLesson(locals.user?.id ?? null, lessonMeta);
+	const allowed = await canAccessLesson(locals.user, lessonMeta);
 	if (!allowed) {
 		return {
 			gated: true as const,
@@ -73,7 +73,7 @@ export const actions: Actions = {
 		const lessonMeta = findLesson(params.module!, params.lesson!);
 		if (!lessonMeta) return fail(404, { error: 'Lesson not found' });
 
-		const allowed = await canAccessLesson(user.id, lessonMeta);
+		const allowed = await canAccessLesson(user, lessonMeta);
 		if (!allowed) return fail(403, { error: 'Subscription required.' });
 
 		const form = await request.formData();

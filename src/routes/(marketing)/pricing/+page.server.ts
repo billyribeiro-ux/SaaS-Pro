@@ -8,8 +8,7 @@ import {
 	ALL_LOOKUP_KEYS,
 	PRICING_LOOKUP_KEYS,
 	PRICING_TIERS,
-	tierForLookupKey,
-	type PricingTier
+	tierForLookupKey
 } from '$config/pricing.config';
 import { getSubscriptionTier } from '$utils/access';
 import type { PriceWithProduct, ResolvedPricing } from '$types/billing.types';
@@ -88,7 +87,7 @@ async function loadLivePrices(): Promise<PriceWithProduct[]> {
 export const load: PageServerLoad = async ({ locals }) => {
 	const [prices, currentTier] = await Promise.all([
 		loadLivePrices(),
-		locals.user ? getSubscriptionTier(locals.user.id) : Promise.resolve<PricingTier | null>(null)
+		getSubscriptionTier(locals.user)
 	]);
 
 	return {
