@@ -96,6 +96,23 @@ Each lesson lands a verified, tagged commit:
   password rules, mandatory email confirmation for password sign-ups,
   Inbucket for local mail, and a commented-out Resend SMTP block ready
   for production.
+- **Lesson 1.3 — Protected auth schema.** First migration: revokes all
+  on `auth.*` from `anon` + `authenticated`, alters default privileges
+  forward, leaves `service_role` and `supabase_auth_admin` untouched.
+- **Lesson 1.4 — Profiles + RLS + triggers.** Second migration: the
+  `public.profiles` table, RLS scoped to the row owner, the reusable
+  `set_updated_at()` trigger, and the `handle_new_user()` trigger that
+  mirrors signups from `auth.users`. Module 4 will extend the trigger
+  to also create the user's personal organization.
+- **Lesson 2.1 — Server-side env with Zod.** `src/lib/env.public.ts`
+  - `src/lib/server/env.ts` parse and validate `$env/dynamic/*` at
+    boot. Misconfiguration produces a precise, actionable error rather
+    than a runtime "URL is undefined" failure.
+- **Lesson 2.2 — Supabase SDKs + database types.**
+  `@supabase/supabase-js` 2.103+ and `@supabase/ssr` 0.10+ installed.
+  Hand-written `src/lib/database.types.ts` that mirrors the migrations
+  exactly so `pnpm run check` is green without Docker; regenerated
+  from the live schema with `pnpm run types:generate`.
 
 ## Course progression
 
