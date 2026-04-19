@@ -90,7 +90,7 @@
 </script>
 
 <section
-	class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+	class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
 	aria-labelledby="plan-heading"
 	data-testid="account-plan-section"
 >

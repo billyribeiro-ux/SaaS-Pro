@@ -145,7 +145,7 @@
 
 	<!-- ============================ Profile ============================ -->
 	<section
-		class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+		class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
 		aria-labelledby="profile-heading"
 	>
 		<h2 id="profile-heading" class="text-lg font-semibold text-slate-900">Profile</h2>
@@ -196,7 +196,7 @@
 
 	<!-- ============================ Email ============================ -->
 	<section
-		class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+		class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
 		aria-labelledby="email-heading"
 	>
 		<h2 id="email-heading" class="text-lg font-semibold text-slate-900">Change email</h2>
@@ -236,7 +236,7 @@
 
 	<!-- ========================== Password ============================ -->
 	<section
-		class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+		class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
 		aria-labelledby="password-heading"
 	>
 		<h2 id="password-heading" class="text-lg font-semibold text-slate-900">Change password</h2>
@@ -296,7 +296,7 @@
 
 	<!-- ========================== Danger zone ========================= -->
 	<section
-		class="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm"
+		class="rounded-xl border border-red-200 bg-red-50 p-8 shadow-sm"
 		aria-labelledby="delete-heading"
 	>
 		<h2 id="delete-heading" class="text-lg font-semibold text-red-900">Delete account</h2>

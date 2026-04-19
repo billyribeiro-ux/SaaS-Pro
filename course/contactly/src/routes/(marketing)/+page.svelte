@@ -23,24 +23,26 @@
 	/>
 </svelte:head>
 
-<main class="mx-auto flex max-w-3xl flex-col px-6 py-16">
+<main class="mx-auto flex max-w-3xl flex-col items-center px-6 py-20 text-center sm:py-24">
 	<p class="text-brand-600 text-sm font-semibold tracking-widest uppercase">SaaS-Pro</p>
-	<h1 class="mt-3 text-5xl font-bold tracking-tight text-slate-900">Welcome to Contactly.</h1>
-	<p class="mt-5 text-lg leading-relaxed text-slate-600">
+	<h1 class="mt-4 text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl">
+		Welcome to Contactly.
+	</h1>
+	<p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
 		This is the very first commit of the project you're going to build, end to end, with SvelteKit,
 		Supabase, and Stripe. By the time you finish the course, this homepage will be a real product.
 	</p>
 
 	{#if !data.user}
-		<div class="mt-8 flex flex-wrap gap-3">
-			<Button href={resolve('/sign-up')} variant="primary" size="lg">
+		<div class="mt-10 flex flex-wrap justify-center gap-4">
+			<Button href={resolve('/sign-up')} variant="primary" size="lg" class="px-8">
 				Get started — it's free
 			</Button>
-			<Button href={resolve('/sign-in')} variant="secondary" size="lg">Sign in</Button>
+			<Button href={resolve('/sign-in')} variant="secondary" size="lg" class="px-8">Sign in</Button>
 		</div>
 	{/if}
 
-	<section class="mt-12">
+	<section class="mt-20 w-full text-left">
 		<h2 class="text-sm font-semibold tracking-wider text-slate-500 uppercase">What lands when</h2>
 		<ol class="mt-4 space-y-3">
 			{#each milestones as milestone (milestone.module)}

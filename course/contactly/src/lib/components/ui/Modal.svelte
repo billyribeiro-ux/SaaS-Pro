@@ -116,7 +116,7 @@
 	data-testid={testid}
 	onclose={handleClose}
 	onclick={handleBackdropClick}
-	class="m-auto max-w-md rounded-lg p-0 backdrop:bg-slate-900/40"
+	class="m-auto max-w-md rounded-xl border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-900/50 backdrop:backdrop-blur-sm"
 >
 	<div class="space-y-4 p-6">
 		<header>

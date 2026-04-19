@@ -73,7 +73,7 @@
 		</div>
 	{:else if data.rows.length === 0}
 		<div
-			class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600 shadow-sm"
+			class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600 shadow-sm"
 			data-testid="billing-history-empty"
 		>
 			<p class="font-medium text-slate-900">No invoices yet</p>
@@ -83,7 +83,7 @@
 			</p>
 		</div>
 	{:else}
-		<div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+		<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 			<table class="min-w-full divide-y divide-slate-200" data-testid="billing-history-table">
 				<thead class="bg-slate-50">
 					<tr>

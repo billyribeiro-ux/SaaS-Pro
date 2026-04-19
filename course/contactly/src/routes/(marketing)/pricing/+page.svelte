@@ -219,7 +219,7 @@
 	{@const price = priceFor(card)}
 	<article
 		class={cn(
-			'flex flex-col rounded-xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-md',
+			'flex flex-col rounded-2xl border bg-white p-8 shadow-md transition-all duration-200 hover:-translate-y-1 hover:shadow-xl',
 			card.recommended ? 'border-brand-300 ring-brand-200 ring-2' : 'border-slate-200'
 		)}
 		data-testid={`pricing-card-${card.tier}`}

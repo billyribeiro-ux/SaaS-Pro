@@ -108,7 +108,7 @@
 		</div>
 	{/if}
 
-	<dl class="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 sm:grid-cols-2">
+	<dl class="grid gap-4 rounded-xl border border-slate-200 bg-white p-8 shadow-sm sm:grid-cols-2">
 		<div>
 			<dt class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Email</dt>
 			<dd class="mt-1 text-sm text-slate-900">
@@ -151,7 +151,7 @@
 	</dl>
 
 	{#if data.contact.notes}
-		<section class="rounded-lg border border-slate-200 bg-white p-6">
+		<section class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
 			<h2 class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Notes</h2>
 			<!-- whitespace-pre-line preserves user paragraph breaks
 				 without enabling raw HTML. We never set innerHTML on

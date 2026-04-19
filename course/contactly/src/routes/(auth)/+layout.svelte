@@ -29,7 +29,9 @@
 
 	<main class="flex flex-1 items-start justify-center px-6 py-12 sm:items-center">
 		<div class="w-full max-w-md">
-			<div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+			<div
+				class="rounded-2xl border border-slate-200/60 bg-white p-8 shadow-xl shadow-slate-200/50"
+			>
 				{@render children()}
 			</div>
 		</div>

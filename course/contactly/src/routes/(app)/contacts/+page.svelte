@@ -106,7 +106,7 @@
 </form>
 
 {#if data.contacts.length > 0}
-	<div class="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white">
+	<div class="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 		<table class="min-w-full divide-y divide-slate-200" data-testid="contacts-table">
 			<thead class="bg-slate-50">
 				<tr>
@@ -167,7 +167,7 @@
 	</div>
 {:else if !data.loadError}
 	<section
-		class="mt-8 rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center"
+		class="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center"
 		data-testid="contacts-empty"
 	>
 		{#if data.query.length === 0}

@@ -22,7 +22,7 @@
 		"you successfully signed in" landing — the simplest possible
 		thing that proves the auth round-trip works end to end.
 	-->
-	<div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+	<div class="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
 		<h2 class="text-lg font-semibold text-slate-900">You're in.</h2>
 		<p class="mt-2 text-sm text-slate-600">
 			This is your private dashboard. The real one lands lesson-by-lesson — contacts in Module 4,

@@ -32,19 +32,20 @@
 
 	const base =
 		'inline-flex items-center justify-center gap-2 rounded-md font-medium ' +
-		'transition-colors focus-visible:outline-none focus-visible:ring-2 ' +
-		'focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
+		'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 ' +
+		'focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]';
 
 	const variants: Record<ButtonVariant, string> = {
 		primary:
-			'bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-600 active:bg-brand-700',
+			'bg-brand-600 text-white shadow-sm hover:bg-brand-700 hover:shadow focus-visible:ring-brand-600',
 		secondary:
-			'bg-white text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 ' +
+			'bg-white text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 ' +
 			'focus-visible:ring-brand-600',
 		ghost:
 			'bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 ' +
 			'focus-visible:ring-brand-600',
-		danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 active:bg-red-700'
+		danger:
+			'bg-red-600 text-white shadow-sm hover:bg-red-700 hover:shadow focus-visible:ring-red-600'
 	};
 
 	const sizes: Record<ButtonSize, string> = {

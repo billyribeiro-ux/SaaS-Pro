@@ -50,7 +50,7 @@
 	<form
 		method="POST"
 		use:enhance
-		class="space-y-4 rounded-lg border border-slate-200 bg-white p-6"
+		class="space-y-4 rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
 		data-testid="edit-contact-form"
 	>
 		<Field id="full_name" label="Full name" required error={$errors.full_name}>
