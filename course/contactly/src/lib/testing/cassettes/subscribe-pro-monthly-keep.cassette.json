@@ -1,0 +1,207 @@
+{
+	"version": 1,
+	"name": "subscribe-pro-monthly-keep",
+	"description": "Happy-path Pro-monthly subscription. Customer signs up, opens Checkout, completes payment, the subscription is created in trial, the trial converts, the first invoice is paid. Five webhooks total — exactly what arrives in production for a clean subscribe.",
+	"recordedAt": "2026-04-19T18:00:00.000Z",
+	"stripeApiVersion": "2026-03-25.dahlia",
+	"events": [
+		{
+			"offsetMs": 0,
+			"event": {
+				"id": "evt_test_keep_001_checkout_completed",
+				"object": "event",
+				"type": "checkout.session.completed",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1745000000,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "cs_test_keep_001",
+						"object": "checkout.session",
+						"customer": "cus_test_keep",
+						"mode": "subscription",
+						"payment_status": "paid",
+						"status": "complete",
+						"subscription": "sub_test_keep",
+						"client_reference_id": "00000000-0000-0000-0000-00000000beef",
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000beef"
+						}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 250,
+			"event": {
+				"id": "evt_test_keep_002_customer_created",
+				"object": "event",
+				"type": "customer.created",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1745000001,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "cus_test_keep",
+						"object": "customer",
+						"created": 1745000000,
+						"deleted": null,
+						"email": "keep@contactly.test",
+						"livemode": false,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000beef"
+						}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 600,
+			"event": {
+				"id": "evt_test_keep_003_subscription_created",
+				"object": "event",
+				"type": "customer.subscription.created",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1745000002,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "sub_test_keep",
+						"object": "subscription",
+						"customer": "cus_test_keep",
+						"status": "trialing",
+						"trial_start": 1745000000,
+						"trial_end": 1746209600,
+						"current_period_start": 1745000000,
+						"current_period_end": 1746209600,
+						"cancel_at_period_end": false,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000beef"
+						},
+						"items": {
+							"object": "list",
+							"data": [
+								{
+									"id": "si_test_keep",
+									"object": "subscription_item",
+									"price": {
+										"id": "price_test_pro_monthly",
+										"object": "price",
+										"product": "prod_test_pro",
+										"lookup_key": "contactly_pro_monthly",
+										"recurring": { "interval": "month", "interval_count": 1 },
+										"unit_amount": 1900,
+										"currency": "usd"
+									},
+									"quantity": 1
+								}
+							]
+						}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 1209600000,
+			"event": {
+				"id": "evt_test_keep_004_subscription_updated_active",
+				"object": "event",
+				"type": "customer.subscription.updated",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1746209601,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "sub_test_keep",
+						"object": "subscription",
+						"customer": "cus_test_keep",
+						"status": "active",
+						"trial_start": 1745000000,
+						"trial_end": 1746209600,
+						"current_period_start": 1746209600,
+						"current_period_end": 1748801600,
+						"cancel_at_period_end": false,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000beef"
+						},
+						"items": {
+							"object": "list",
+							"data": [
+								{
+									"id": "si_test_keep",
+									"object": "subscription_item",
+									"price": {
+										"id": "price_test_pro_monthly",
+										"object": "price",
+										"product": "prod_test_pro",
+										"lookup_key": "contactly_pro_monthly",
+										"recurring": { "interval": "month", "interval_count": 1 },
+										"unit_amount": 1900,
+										"currency": "usd"
+									},
+									"quantity": 1
+								}
+							]
+						}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 1209602000,
+			"event": {
+				"id": "evt_test_keep_005_invoice_paid",
+				"object": "event",
+				"type": "invoice.paid",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1746209602,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "in_test_keep_001",
+						"object": "invoice",
+						"customer": "cus_test_keep",
+						"subscription": "sub_test_keep",
+						"status": "paid",
+						"amount_due": 1900,
+						"amount_paid": 1900,
+						"amount_remaining": 0,
+						"currency": "usd",
+						"hosted_invoice_url": "https://invoice.stripe.com/i/test_keep_001",
+						"invoice_pdf": "https://pay.stripe.com/invoice/test_keep_001/pdf",
+						"number": "CONTACTLY-0001",
+						"created": 1746209601,
+						"period_start": 1745000000,
+						"period_end": 1746209600,
+						"metadata": {}
+					}
+				}
+			}
+		}
+	]
+}
