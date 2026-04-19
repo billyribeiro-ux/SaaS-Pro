@@ -47,13 +47,14 @@
 		</a>
 
 		<div class="flex items-center gap-3">
-			<span
-				class="hidden max-w-[200px] truncate text-sm text-slate-600 sm:inline"
+			<a
+				href={resolve('/account')}
+				class="hidden max-w-[200px] truncate text-sm text-slate-600 hover:text-slate-900 sm:inline"
 				title={user.email}
 				data-testid="app-user-email"
 			>
 				{user.email}
-			</span>
+			</a>
 
 			<form method="POST" action="/sign-out" use:enhance>
 				<Button type="submit" variant="ghost" size="sm" data-testid="sign-out-button">
