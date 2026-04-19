@@ -98,7 +98,7 @@
 	</div>
 {:else if snapshot}
 	<section class="grid gap-4 sm:grid-cols-3" data-testid="webhook-health-summary">
-		<article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+		<article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 			<div class="text-xs tracking-wide text-slate-500 uppercase">Status</div>
 			<div class="mt-2">
 				<span
@@ -114,22 +114,19 @@
 				<code class="rounded bg-slate-100 px-1 py-0.5">/api/admin/webhooks/health</code>.
 			</p>
 		</article>
-		<article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+		<article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 			<div class="text-xs tracking-wide text-slate-500 uppercase">Backlog</div>
 			<div
-				class="mt-2 text-2xl font-semibold text-slate-900"
+				class="mt-2 text-3xl font-bold text-slate-900"
 				data-testid="webhook-health-unprocessed-count"
 			>
 				{snapshot.unprocessedCount}
 			</div>
 			<p class="mt-3 text-xs text-slate-500">unprocessed events right now</p>
 		</article>
-		<article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+		<article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 			<div class="text-xs tracking-wide text-slate-500 uppercase">Oldest stuck</div>
-			<div
-				class="mt-2 text-2xl font-semibold text-slate-900"
-				data-testid="webhook-health-oldest-age"
-			>
+			<div class="mt-2 text-3xl font-bold text-slate-900" data-testid="webhook-health-oldest-age">
 				{formatAge(snapshot.oldestUnprocessedAgeMs)}
 			</div>
 			<p class="mt-3 text-xs text-slate-500">
@@ -139,30 +136,30 @@
 		</article>
 	</section>
 
-	<section class="mt-8 rounded-lg border border-slate-200 bg-white shadow-sm">
-		<header class="flex items-baseline justify-between border-b border-slate-200 px-5 py-3">
+	<section class="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+		<header class="flex items-baseline justify-between border-b border-slate-200 px-6 py-4">
 			<h2 class="text-sm font-semibold text-slate-900">Backlog by event type</h2>
 			<span class="text-xs text-slate-500">
 				measured {dateFormatter.format(new Date(snapshot.measuredAt))}
 			</span>
 		</header>
 		{#if snapshot.byEventType.length === 0}
-			<p class="px-5 py-6 text-sm text-slate-600" data-testid="webhook-health-empty">
+			<p class="px-6 py-8 text-sm text-slate-600" data-testid="webhook-health-empty">
 				No unprocessed events. Everything we've received is acknowledged.
 			</p>
 		{:else}
 			<table class="w-full text-sm">
 				<thead class="bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
 					<tr>
-						<th class="px-5 py-2 font-medium">Event type</th>
-						<th class="px-5 py-2 font-medium">Stuck count</th>
+						<th class="px-6 py-3 font-medium">Event type</th>
+						<th class="px-6 py-3 font-medium">Stuck count</th>
 					</tr>
 				</thead>
 				<tbody data-testid="webhook-health-by-type">
 					{#each snapshot.byEventType as row (row.type)}
 						<tr class="border-t border-slate-100">
-							<td class="px-5 py-2 font-mono text-xs text-slate-800">{row.type}</td>
-							<td class="px-5 py-2 text-slate-900 tabular-nums">{row.count}</td>
+							<td class="px-6 py-3 font-mono text-xs text-slate-800">{row.type}</td>
+							<td class="px-6 py-3 text-slate-900 tabular-nums">{row.count}</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -170,11 +167,11 @@
 		{/if}
 	</section>
 
-	<section class="mt-8 rounded-lg border border-slate-200 bg-white shadow-sm">
-		<header class="flex items-baseline justify-between border-b border-slate-200 px-5 py-3">
+	<section class="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+		<header class="flex items-baseline justify-between border-b border-slate-200 px-6 py-4">
 			<div>
 				<h2 class="text-sm font-semibold text-slate-900">Stuck events</h2>
-				<p class="text-xs text-slate-500">
+				<p class="mt-1 text-xs text-slate-500">
 					Top {snapshot.stuckEvents.length} unprocessed by age. Replay re-runs the dispatcher for the
 					row in place — Stripe is not contacted.
 				</p>
@@ -235,26 +232,26 @@
 		{/if}
 
 		{#if snapshot.stuckEvents.length === 0}
-			<p class="px-5 py-6 text-sm text-slate-600" data-testid="webhook-stuck-empty">
+			<p class="px-6 py-8 text-sm text-slate-600" data-testid="webhook-stuck-empty">
 				Nothing stuck. Excellent.
 			</p>
 		{:else}
 			<table class="w-full text-sm">
 				<thead class="bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
 					<tr>
-						<th class="px-5 py-2 font-medium">Event ID</th>
-						<th class="px-5 py-2 font-medium">Type</th>
-						<th class="px-5 py-2 font-medium">Age</th>
-						<th class="px-5 py-2 text-right font-medium">Replay</th>
+						<th class="px-6 py-3 font-medium">Event ID</th>
+						<th class="px-6 py-3 font-medium">Type</th>
+						<th class="px-6 py-3 font-medium">Age</th>
+						<th class="px-6 py-3 text-right font-medium">Replay</th>
 					</tr>
 				</thead>
 				<tbody data-testid="webhook-stuck-events">
 					{#each snapshot.stuckEvents as event (event.id)}
 						<tr class="border-t border-slate-100">
-							<td class="px-5 py-2 font-mono text-xs text-slate-800">{event.id}</td>
-							<td class="px-5 py-2 font-mono text-xs text-slate-700">{event.type}</td>
-							<td class="px-5 py-2 text-slate-900 tabular-nums">{formatAge(event.ageMs)}</td>
-							<td class="px-5 py-2 text-right">
+							<td class="px-6 py-3 font-mono text-xs text-slate-800">{event.id}</td>
+							<td class="px-6 py-3 font-mono text-xs text-slate-700">{event.type}</td>
+							<td class="px-6 py-3 text-slate-900 tabular-nums">{formatAge(event.ageMs)}</td>
+							<td class="px-6 py-3 text-right">
 								<form
 									method="POST"
 									action="?/replay"

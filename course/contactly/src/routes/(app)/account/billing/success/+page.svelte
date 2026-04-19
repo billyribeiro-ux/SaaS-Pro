@@ -51,7 +51,7 @@
 	data-testid="checkout-success"
 >
 	<div
-		class="rounded-lg border border-emerald-200 bg-emerald-50 px-6 py-8 text-center shadow-sm"
+		class="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center shadow-sm"
 		role="status"
 	>
 		<p class="text-xs font-semibold tracking-widest text-emerald-700 uppercase">
@@ -74,7 +74,7 @@
 	</div>
 
 	<dl
-		class="mt-8 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white shadow-sm"
+		class="mt-8 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
 		data-testid="checkout-success-summary"
 	>
 		<div class="grid grid-cols-1 gap-1 px-6 py-4 sm:grid-cols-3 sm:gap-4">

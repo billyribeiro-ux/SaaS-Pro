@@ -40,7 +40,9 @@
 
 	<main class="flex flex-1 items-start justify-center px-6 py-12 sm:items-center">
 		<div class="w-full max-w-md">
-			<div class="space-y-6 rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+			<div
+				class="space-y-6 rounded-2xl border border-slate-200/60 bg-white p-8 shadow-xl shadow-slate-200/50"
+			>
 				<div>
 					<h1 class="text-2xl font-bold text-slate-900">Choose a new password</h1>
 					<p class="mt-2 text-sm text-slate-600">

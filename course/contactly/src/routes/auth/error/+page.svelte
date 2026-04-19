@@ -10,9 +10,11 @@
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
-	<div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+	<div
+		class="w-full max-w-md rounded-2xl border border-slate-200/60 bg-white p-8 shadow-xl shadow-slate-200/50"
+	>
 		<div
-			class="mx-auto flex size-12 items-center justify-center rounded-full bg-red-50 text-red-600"
+			class="mx-auto flex size-14 items-center justify-center rounded-full bg-red-50 text-red-600 shadow-sm"
 			aria-hidden="true"
 		>
 			<svg

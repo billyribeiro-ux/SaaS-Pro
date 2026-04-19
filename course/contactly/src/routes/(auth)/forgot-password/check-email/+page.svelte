@@ -12,7 +12,7 @@
 
 <div class="space-y-6 text-center">
 	<div
-		class="bg-brand-50 text-brand-600 mx-auto inline-flex size-12 items-center justify-center rounded-full"
+		class="bg-brand-50 text-brand-600 mx-auto inline-flex size-14 items-center justify-center rounded-full shadow-sm"
 		aria-hidden="true"
 	>
 		<svg

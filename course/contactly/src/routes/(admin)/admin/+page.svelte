@@ -19,7 +19,9 @@
 </header>
 
 <ul class="grid gap-4 sm:grid-cols-2">
-	<li class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+	<li
+		class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+	>
 		<a href={resolve('/admin/webhooks')} class="block">
 			<h2 class="text-base font-semibold text-slate-900">Webhook health</h2>
 			<p class="mt-1 text-sm text-slate-600">
