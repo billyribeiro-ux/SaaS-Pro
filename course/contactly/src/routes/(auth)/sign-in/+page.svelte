@@ -210,10 +210,14 @@
 					{/snippet}
 				</Field>
 
-				<!--
-					"Forgot password?" link lands in Lesson 3.6 (Account
-					actions). Omitted now so we don't ship a dead link.
-				-->
+				<div class="flex items-center justify-end">
+					<a
+						href={resolve('/forgot-password')}
+						class="text-brand-700 hover:text-brand-600 text-sm font-medium"
+					>
+						Forgot password?
+					</a>
+				</div>
 
 				<Button
 					type="submit"

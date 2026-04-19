@@ -111,3 +111,94 @@ export const signInWithMagicLinkSchema = z.object({
 });
 
 export type SignInWithMagicLinkInput = z.infer<typeof signInWithMagicLinkSchema>;
+
+/**
+ * Update profile (Lesson 3.6). Right now only `full_name` is editable;
+ * email/password live on `auth.users` and need their own dedicated
+ * actions because Supabase requires confirmation flows for both.
+ */
+export const updateProfileSchema = z.object({
+	fullName: fullNameSchema
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+/**
+ * Change email. Supabase sends a confirmation link to the NEW address;
+ * the swap doesn't take effect until the user clicks it.
+ */
+export const changeEmailSchema = z.object({
+	email: emailSchema
+});
+
+export type ChangeEmailInput = z.infer<typeof changeEmailSchema>;
+
+/**
+ * Change password. We require the new password to clear the same
+ * strength bar as a freshly-created one (passwordSchema), and we
+ * require a confirm field for the same usability reason as on
+ * sign-up: typo defense in the absence of a "show password" toggle.
+ *
+ * We deliberately DO NOT ask for the current password. Supabase's
+ * `auth.updateUser` doesn't take one; the auth fact is "the user
+ * holds a valid session right now", which they prove by the cookie
+ * already in flight. If a session were stolen, requiring the old
+ * password wouldn't help — the attacker has session cookies, and a
+ * password input field can be filled with a phishing UI just as
+ * easily.
+ */
+export const changePasswordSchema = z
+	.object({
+		password: passwordSchema,
+		confirmPassword: z.string({ error: 'Please confirm your new password' })
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		error: 'Passwords must match',
+		path: ['confirmPassword']
+	});
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+/**
+ * Forgot-password. Same single-field shape as the magic-link form;
+ * the divergence happens server-side (`resetPasswordForEmail` vs
+ * `signInWithOtp`).
+ */
+export const forgotPasswordSchema = z.object({
+	email: emailSchema
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/**
+ * Reset-password — the form the user lands on AFTER clicking the
+ * recovery email link. Same strength rules as creating a new account.
+ */
+export const resetPasswordSchema = z
+	.object({
+		password: passwordSchema,
+		confirmPassword: z.string({ error: 'Please confirm your new password' })
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		error: 'Passwords must match',
+		path: ['confirmPassword']
+	});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/**
+ * Delete account. We require the user to type the literal string
+ * "DELETE" to confirm. UI affordances like a "Are you sure?" modal
+ * are great for happy-path users; the typed-confirmation is what
+ * stops "I clicked the wrong button on my phone" cases. The literal
+ * is locale-independent on purpose — translating the confirmation
+ * word breaks the muscle memory that protects against this exact
+ * mistake.
+ */
+export const deleteAccountSchema = z.object({
+	confirmation: z
+		.string({ error: 'Type DELETE to confirm' })
+		.refine((value) => value === 'DELETE', { error: 'Type the word DELETE exactly to confirm' })
+});
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
