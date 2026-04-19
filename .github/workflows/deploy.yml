@@ -112,12 +112,17 @@ jobs:
       - name: Push Supabase migrations
         run: pnpm exec supabase db push --password $SUPABASE_DB_PASSWORD
 
-      # Trigger a production deploy on Vercel. The action handles building
-      # via Vercel's remote build step, so we don't need to `pnpm build` here.
+      # Trigger a production deploy on Vercel using the official CLI.
+      # We pin to `vercel@latest` rather than a 3rd-party action because the
+      # popular `amondnet/vercel-action` ships an old CLI that Vercel's API
+      # has since rejected (requires >= v47.2.2). Vercel's remote builder
+      # handles the build, so no local `pnpm build` is needed.
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
