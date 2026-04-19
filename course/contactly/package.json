@@ -28,7 +28,9 @@
 		"db:diff": "supabase db diff -f",
 		"db:migration:new": "supabase migration new",
 		"types:generate": "supabase gen types typescript --local --schema public > src/lib/database.types.ts",
-		"seed:contacts": "tsx scripts/seed-contacts.ts"
+		"seed:contacts": "tsx scripts/seed-contacts.ts",
+		"stripe:listen": "stripe listen --forward-to http://localhost:5173/api/webhooks/stripe",
+		"stripe:trigger": "stripe trigger"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",
