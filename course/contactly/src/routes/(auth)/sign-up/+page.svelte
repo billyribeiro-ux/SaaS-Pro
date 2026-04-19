@@ -157,9 +157,6 @@
 	</form>
 
 	<p class="text-center text-xs text-slate-500">
-		By creating an account you agree to our
-		<a href={resolve('/terms')} class="underline hover:text-slate-700">Terms</a>
-		and
-		<a href={resolve('/privacy')} class="underline hover:text-slate-700">Privacy Policy</a>.
+		By creating an account you agree to our Terms and Privacy Policy.
 	</p>
 </div>

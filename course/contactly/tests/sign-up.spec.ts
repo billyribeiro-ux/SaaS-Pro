@@ -32,24 +32,28 @@ test('marketing CTA leads to sign-up form', async ({ page }) => {
 test('sign-up form rejects mismatched passwords client-side', async ({ page }) => {
 	await page.goto('/sign-up');
 
-	await page.getByLabel('Email', { exact: false }).fill('alice@example.com');
-	await page.getByLabel('Password', { exact: true }).fill('Sup3r-Secret-Pass');
-	await page.getByLabel('Confirm password', { exact: false }).fill('Different-Pass-99');
+	// `input[name=...]` selectors — robust against label ambiguity.
+	// "Password" is a substring of "Confirm password", and Playwright's
+	// label matching can fold the visual `*` indicator into the
+	// accessible name, so by-label gets fragile. Names are unique by
+	// schema definition.
+	await page.locator('input[name="email"]').fill('alice@example.com');
+	await page.locator('input[name="password"]').fill('Sup3r-Secret-Pass');
+	await page.locator('input[name="confirmPassword"]').fill('Different-Pass-99');
 	await page
 		.getByTestId('sign-up-form')
 		.getByRole('button', { name: /create account/i })
 		.click();
 
-	// The Zod refine attaches to confirmPassword.
 	await expect(page.getByText('Passwords must match')).toBeVisible();
 });
 
 test('sign-up form rejects short passwords client-side', async ({ page }) => {
 	await page.goto('/sign-up');
 
-	await page.getByLabel('Email', { exact: false }).fill('bob@example.com');
-	await page.getByLabel('Password', { exact: true }).fill('short1A');
-	await page.getByLabel('Confirm password', { exact: false }).fill('short1A');
+	await page.locator('input[name="email"]').fill('bob@example.com');
+	await page.locator('input[name="password"]').fill('short1A');
+	await page.locator('input[name="confirmPassword"]').fill('short1A');
 	await page
 		.getByTestId('sign-up-form')
 		.getByRole('button', { name: /create account/i })
