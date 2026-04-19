@@ -1,20 +1,137 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
-	server: {
-		port: 5173,
-		strictPort: false
-	},
-	// Vitest picks up from vite.config by default. Scope it to the
-	// colocated `src/**/*.test.ts` pattern so it never grabs
-	// Playwright's `tests/*.spec.ts` files (those are e2e, not unit).
-	test: {
-		include: ['src/**/*.{test,spec}.ts'],
-		exclude: ['tests/**', 'node_modules/**', 'build/**', '.svelte-kit/**'],
-		environment: 'node'
-	}
+/**
+ * Vite config (Modules 1+, with Module 11.2 source-map upload).
+ *
+ * SOURCE-MAP UPLOAD STRATEGY
+ * --------------------------
+ * Sentry needs the original-source mapping for stack traces to
+ * resolve back to TypeScript instead of minified `_d` / `_a`
+ * blobs. We hand that off to `@sentry/vite-plugin`:
+ *
+ *   1. Vite generates `*.map` files alongside every emitted chunk
+ *      (`build.sourcemap = 'hidden'` — see below).
+ *   2. The plugin uploads them tagged with the same `release`
+ *      string our Sentry SDK init uses (`resolveRelease()` from
+ *      `src/lib/sentry-shared.ts`).
+ *   3. The plugin then DELETES the `.map` files from the build
+ *      output so production never serves them. Source maps are
+ *      world-readable by definition; the only safe place for them
+ *      is Sentry's symbolicator.
+ *
+ * `'hidden'` rather than `true` because:
+ *   - `true` ⇒ each chunk gets a `//# sourceMappingURL=...` comment
+ *     pointing browsers at the `.map`. Disabled, since we delete
+ *     the files post-upload.
+ *   - `'hidden'` ⇒ the maps are still written to disk for the
+ *     plugin to pick up, but no browser-facing reference is
+ *     emitted. Net result: original-source stack traces in Sentry,
+ *     no leaked sources at the edge.
+ *
+ * GATING: ENV-DRIVEN, NOT FILE-DRIVEN
+ * -----------------------------------
+ * The plugin is added to the array unconditionally, but its
+ * `disable: true` flag is the master switch. We flip it on
+ * whenever `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT`
+ * are all set — the same triple that the env validator
+ * (`src/lib/server/env.ts`) groups together. Unset triple ⇒
+ * `disable: true` ⇒ no upload attempt, no extra build time, no
+ * "did you forget your token?" wall of red text in local dev.
+ *
+ * That gating happens via `loadEnv` rather than `process.env`
+ * directly. Vite doesn't merge `.env` files into `process.env`
+ * for its own config evaluation — using `loadEnv` is the
+ * documented escape hatch.
+ *
+ * RELEASE STRING SHARING
+ * ----------------------
+ * The plugin's `release.name` MUST match the runtime SDK's
+ * release string. We re-implement the same precedence chain
+ * as `resolveRelease()` here in pure JS rather than importing
+ * the TS module — this file runs under `tsx` and we want zero
+ * type-resolution surprises during a CI build. The unit suite
+ * pins the chain so the two implementations stay in lockstep.
+ */
+function resolveBuildRelease(env: Record<string, string>): string {
+	const explicit = env.PUBLIC_SENTRY_RELEASE?.trim();
+	if (explicit) return explicit;
+	const sha = env.VERCEL_GIT_COMMIT_SHA?.trim();
+	if (sha) return `contactly@${sha.slice(0, 12)}`;
+	return 'contactly@dev';
+}
+
+export default defineConfig(({ mode }) => {
+	// Merge mode-specific .env files (`.env`, `.env.local`,
+	// `.env.production`, …). Last arg `''` = surface every
+	// variable, not just `VITE_*`-prefixed ones — needed because
+	// our Sentry vars don't carry the Vite client-prefix.
+	const env = loadEnv(mode, process.cwd(), '');
+
+	const sentryEnabled =
+		Boolean(env.SENTRY_AUTH_TOKEN) && Boolean(env.SENTRY_ORG) && Boolean(env.SENTRY_PROJECT);
+
+	// `sentryVitePlugin(...)` returns an *array* of vite plugins
+	// (one for the rollup hook surface, one for vite-specific
+	// integration). Spread it into the plugins array — wrapping
+	// in a single Plugin would defeat the rollup-side machinery.
+	const sentryPlugins = sentryVitePlugin({
+		// Master switch. When false the plugin still wires its
+		// hooks but skips network + IO (its own
+		// `disable`-respecting code path).
+		disable: !sentryEnabled,
+		org: env.SENTRY_ORG,
+		project: env.SENTRY_PROJECT,
+		authToken: env.SENTRY_AUTH_TOKEN,
+		release: {
+			name: resolveBuildRelease(env),
+			// Don't auto-create or auto-finalize from the plugin.
+			// We let the runtime SDK be the source of truth on
+			// "this release went live"; the plugin's job is
+			// strictly artifact upload. This also avoids a noisy
+			// API call on every developer's first `pnpm run build`
+			// after enabling the plugin.
+			create: false,
+			finalize: false
+		},
+		sourcemaps: {
+			// Belt-and-braces: delete map files after upload so
+			// the deployed bundle never carries them. The glob
+			// matches every artifact path SvelteKit + Vercel emit.
+			filesToDeleteAfterUpload: ['./.svelte-kit/output/**/*.map', './.vercel/output/**/*.map']
+		},
+		// Be loud-but-not-fatal on plugin failure during CI. A
+		// 502 from Sentry's symbolicator should never tank a
+		// production deploy — the deploy itself is unaffected
+		// because the runtime SDK can lazy-symbolicate.
+		errorHandler: (err) => {
+			console.warn('[sentry-vite-plugin] upload skipped:', err.message);
+		},
+		telemetry: false
+	});
+
+	return {
+		plugins: [
+			tailwindcss(),
+			sveltekit(),
+			// MUST come after sveltekit() — the plugin needs the
+			// already-compiled output to walk for source maps.
+			...sentryPlugins
+		],
+		build: {
+			sourcemap: 'hidden'
+		},
+		server: {
+			port: 5173,
+			strictPort: false
+		},
+		test: {
+			include: ['src/**/*.{test,spec}.ts'],
+			exclude: ['tests/**', 'node_modules/**', 'build/**', '.svelte-kit/**'],
+			environment: 'node'
+		}
+	};
 });
