@@ -23,6 +23,21 @@
 </svelte:head>
 
 <div class="rounded-2xl border border-slate-200/80 bg-white/80 p-8 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+	{#if form?.success && form?.needsConfirmation}
+		<header class="text-center">
+			<h1 class="font-display text-2xl font-semibold tracking-tight">Check your email</h1>
+			<p class="mt-3 text-sm text-slate-600 dark:text-slate-400">
+				We sent a confirmation link to{' '}
+				<span class="font-medium text-slate-800 dark:text-slate-200">{form.email}</span>. Open it to finish
+				signing up, then you can sign in.
+			</p>
+		</header>
+		<p class="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+			<a href="/login" class="font-medium text-brand-700 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300">
+				Back to sign in
+			</a>
+		</p>
+	{:else}
 	<header class="text-center">
 		<h1 class="font-display text-2xl font-semibold tracking-tight">Create your account</h1>
 		<p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -136,4 +151,5 @@
 			Sign in
 		</a>
 	</p>
+	{/if}
 </div>

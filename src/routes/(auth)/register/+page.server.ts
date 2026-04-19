@@ -33,7 +33,7 @@ export const actions: Actions = {
 		}
 
 		const appUrl = PUBLIC_APP_URL || url.origin;
-		const { error } = await locals.supabase.auth.signUp({
+		const { data: signUpData, error } = await locals.supabase.auth.signUp({
 			email: parsed.data.email,
 			password: parsed.data.password,
 			options: {
@@ -48,6 +48,16 @@ export const actions: Actions = {
 				fullName: parsed.data.fullName,
 				error: error.message
 			});
+		}
+
+		// When email confirmation is required, Supabase returns no session until the user clicks the link.
+		if (!signUpData.session) {
+			return {
+				success: true as const,
+				needsConfirmation: true as const,
+				email: parsed.data.email,
+				fullName: parsed.data.fullName
+			};
 		}
 
 		throw redirect(303, '/dashboard');
