@@ -1,9 +1,9 @@
 ---
-title: '{@attach} directives & <svelte:boundary>'
+title: 'Bonus: {@attach} & <svelte:boundary>'
 module: 14
 lesson: 9
-moduleSlug: thank-you
-lessonSlug: attach-directives-async-boundaries
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-09-attach-directives-async-boundaries'
 description: 'Replace use: actions with the composable {@attach} directive, and wrap async UI in <svelte:boundary> for graceful pending and error states.'
 duration: 30
 preview: false

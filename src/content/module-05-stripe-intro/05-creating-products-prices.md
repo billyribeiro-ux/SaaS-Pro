@@ -1,7 +1,7 @@
 ---
 title: '5.5 - Creating Products & Prices'
 module: 5
-lesson: 6
+lesson: 5
 moduleSlug: 'module-05-stripe-intro'
 lessonSlug: '05-creating-products-prices'
 description: 'Create the Contactly product and its three pricing tiers in Stripe test mode.'

@@ -1,9 +1,9 @@
 ---
-title: 'Observability — trace every request'
+title: 'Bonus: Observability & Tracing'
 module: 14
 lesson: 10
-moduleSlug: thank-you
-lessonSlug: observability-tracing
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-10-observability-tracing'
 description: 'Turn on SvelteKit 2.31 OpenTelemetry tracing, ship spans to a free backend, and stop guessing why the dashboard is slow for one user.'
 duration: 25
 preview: false

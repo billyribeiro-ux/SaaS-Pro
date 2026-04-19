@@ -82,10 +82,11 @@ Before declaring a task done, run — **from the relevant app's directory** —
 the gates that touch the files you changed:
 
 ```bash
-pnpm run check     # svelte-check (TS + Svelte template types)
-pnpm run lint      # prettier --check && eslint
+pnpm run check             # svelte-check (TS + Svelte template types)
+pnpm run lint              # prettier --check && eslint
 pnpm exec vitest run
-pnpm run test:e2e  # only when UI/route surfaces changed
+pnpm run test:e2e          # only when UI/route surfaces changed
+pnpm run check:curriculum  # root only — cross-checks CURRICULUM ↔ src/content frontmatter
 ```
 
 CI gates (`.github/workflows/`) re-run the same checks on every PR. A

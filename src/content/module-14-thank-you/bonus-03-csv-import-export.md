@@ -1,3 +1,14 @@
+---
+title: 'Bonus: CSV Import & Export'
+module: 14
+lesson: 3
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-03-csv-import-export'
+description: 'Bulk import contacts from CSV and export them back out — streaming parser, validation, error reporting, and a server-side export endpoint.'
+duration: 20
+preview: false
+---
+
 # Bonus: CSV import and export for contacts
 
 A contact app without bulk import is a contact app nobody will migrate onto. Every existing user already has contacts in a spreadsheet, in their last CRM, or in their email. If we cannot get that data in — quickly, safely, and with a good error experience — they will not sign up.

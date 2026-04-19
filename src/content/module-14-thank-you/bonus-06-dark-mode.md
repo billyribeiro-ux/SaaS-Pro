@@ -1,3 +1,14 @@
+---
+title: 'Bonus: Dark Mode Done Right'
+module: 14
+lesson: 6
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-06-dark-mode'
+description: 'Ship a flicker-free dark mode using CSS custom properties, prefers-color-scheme, an inline pre-hydration script, and semantic Tailwind tokens.'
+duration: 22
+preview: false
+---
+
 # Bonus: Dark mode done right
 
 Dark mode is one of those features that users notice when it is bad and do not notice when it is good. A proper dark mode is not just "invert the colors" — it requires thought about contrast, elevation, semantic color tokens, and the awkward moment between page load and JS hydration where a wrongly-themed page flashes onto screen.

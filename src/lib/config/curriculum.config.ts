@@ -8,8 +8,8 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 		lessons: [
 			{ slug: '00-introduction', title: 'Introduction', duration: 3, preview: true },
 			{ slug: '01-what-were-building', title: "What We're Building", duration: 5, preview: true },
-			{ slug: '02-course-discord', title: 'Course Discord Access', duration: 2, preview: false },
-			{ slug: '03-resources', title: 'Resources', duration: 2, preview: false }
+			{ slug: '02-course-discord', title: 'Course Discord Access', duration: 2, preview: true },
+			{ slug: '03-resources', title: 'Resources', duration: 2, preview: true }
 		]
 	},
 	{
@@ -21,7 +21,7 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 				slug: '01-sveltekit-project-setup',
 				title: '1.1 - SvelteKit Project Setup',
 				duration: 12,
-				preview: false
+				preview: true
 			},
 			{
 				slug: '02-supabase-local-development',
@@ -85,21 +85,31 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 				duration: 15,
 				preview: false
 			},
-			{ slug: '02-user-login', title: '3.2 - User Login', duration: 12, preview: false },
+			{ slug: '02-user-login', title: '3.2 - User Login', duration: 18, preview: false },
 			{
 				slug: '03-protecting-auth-routes',
 				title: '3.3 - Protecting Auth Routes',
-				duration: 10,
+				duration: 16,
 				preview: false
 			},
 			{
 				slug: '04-user-logout-navigation',
 				title: '3.4 - User Logout & Navigation',
-				duration: 8,
+				duration: 18,
 				preview: false
 			},
-			{ slug: '05-account-page', title: '3.5 - Account Page', duration: 10, preview: false },
-			{ slug: '06-account-actions', title: '3.6 - Account Actions', duration: 12, preview: false }
+			{
+				slug: '05-account-page',
+				title: '3.5 - Account Page (Display Profile)',
+				duration: 20,
+				preview: false
+			},
+			{
+				slug: '06-account-actions',
+				title: '3.6 - Account Actions (Update Profile + Password)',
+				duration: 25,
+				preview: false
+			}
 		]
 	},
 	{
@@ -497,19 +507,19 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 			{
 				slug: 'bonus-08-shallow-routing-modals',
 				title: 'Bonus: Shallow Routing for Modals',
-				duration: 22,
+				duration: 30,
 				preview: false
 			},
 			{
 				slug: 'bonus-09-attach-directives-async-boundaries',
 				title: 'Bonus: {@attach} & <svelte:boundary>',
-				duration: 22,
+				duration: 30,
 				preview: false
 			},
 			{
 				slug: 'bonus-10-observability-tracing',
 				title: 'Bonus: Observability & Tracing',
-				duration: 18,
+				duration: 25,
 				preview: false
 			}
 		]

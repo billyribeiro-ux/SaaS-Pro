@@ -1,7 +1,7 @@
 ---
 title: '5.7 - Cleanup'
 module: 5
-lesson: 8
+lesson: 7
 moduleSlug: 'module-05-stripe-intro'
 lessonSlug: '07-cleanup'
 description: 'Review and tidy your Stripe test environment before building the integration.'

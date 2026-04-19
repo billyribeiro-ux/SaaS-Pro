@@ -1,3 +1,14 @@
+---
+title: 'Bonus: Sign in with Google (OAuth)'
+module: 14
+lesson: 1
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-01-google-oauth'
+description: 'Wire up "Continue with Google" end-to-end via Supabase Auth — OAuth fundamentals, redirect flow, callback handling, and account linking.'
+duration: 20
+preview: false
+---
+
 # Bonus: Sign in with Google (OAuth via Supabase Auth)
 
 You have a working email-and-password login system. That is great. But every serious SaaS you have ever used also offers "Continue with Google" — and for good reason. This lesson teaches you what OAuth is, why it exists, and how to wire Google sign-in into Contactly end-to-end.

@@ -1,7 +1,7 @@
 ---
 title: '5.4 - Products & Prices Overview'
 module: 5
-lesson: 5
+lesson: 4
 moduleSlug: 'module-05-stripe-intro'
 lessonSlug: '04-products-prices-overview'
 description: "Understand Stripe's product and pricing data model before creating your own."

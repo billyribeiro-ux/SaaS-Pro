@@ -1,7 +1,7 @@
 ---
 title: '4.8 - Seeding Contacts'
 module: 4
-lesson: 9
+lesson: 8
 moduleSlug: 'module-04-crud'
 lessonSlug: '08-seeding-contacts'
 description: 'Add 20 realistic contacts to your seed data so you have a full dataset to develop against.'

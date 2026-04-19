@@ -1,9 +1,9 @@
 ---
-title: 'Remote Functions — the 2026 way'
+title: 'Bonus: Remote Functions — the 2026 Way'
 module: 14
 lesson: 7
-moduleSlug: thank-you
-lessonSlug: remote-functions
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-07-remote-functions'
 description: 'Type-safe client-server RPC with $app/server. Replace load functions, form actions, and API endpoints with one unified pattern.'
 duration: 45
 preview: false

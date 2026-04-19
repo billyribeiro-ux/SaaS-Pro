@@ -1,7 +1,7 @@
 ---
 title: '6.4 - What Data to Store'
 module: 6
-lesson: 5
+lesson: 4
 moduleSlug: 'module-06-stripe-sveltekit'
 lessonSlug: '04-what-data-to-store'
 description: 'Decide what Stripe data to store in Supabase — avoiding rate limits and enabling fast server-side rendering.'

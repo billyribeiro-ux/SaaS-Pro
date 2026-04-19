@@ -1,7 +1,7 @@
 ---
 title: '6.3.1 - Webhook Script'
 module: 6
-lesson: 4
+lesson: 3
 moduleSlug: 'module-06-stripe-sveltekit'
 lessonSlug: '03-1-webhook-script'
 description: 'Add a pnpm script so you never have to remember the full stripe listen command.'

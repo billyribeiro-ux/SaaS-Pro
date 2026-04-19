@@ -1,7 +1,7 @@
 ---
 title: '5.3.1 - Stripe CLI WSL Note'
 module: 5
-lesson: 4
+lesson: 3
 moduleSlug: 'module-05-stripe-intro'
 lessonSlug: '03-1-stripe-cli-wsl-note'
 description: 'Windows Subsystem for Linux users: how to get Stripe CLI webhook forwarding working correctly.'

@@ -233,7 +233,42 @@ When you close one of these, delete the row.
 
 ---
 
-## 11. References
+## 11. Curriculum vs. git tags — two views, one project
+
+The repo carries **two intentionally distinct views** of the course's
+lesson timeline. Don't try to make them mirror each other:
+
+- **`src/lib/config/curriculum.config.ts`** — the lesson registry the
+  saas-pro **course platform** renders. Mirrors `src/content/module-*`
+  one-for-one and drives navigation, the `/learn` page, lesson titles,
+  durations, preview flags, and `meta` for the lesson viewer. This is
+  the **public-facing** lesson outline.
+- **`course/lesson-XX-YY-*` git tags** — checkpoint commits in the
+  contactly app's actual implementation history. Each tag reproduces
+  the contactly repo state at the end of one **build step**. The
+  numbering matches the lesson sequence as it was taught/built; some
+  modules (e.g. tags 8–12) carry granular sub-steps (cassette format,
+  cassette signing, etc.) that the curriculum collapses into a single
+  topic.
+
+The right mental model:
+
+> The CURRICULUM describes _what students will learn_. The git tags
+> describe _the discrete commits we shipped on the way to teaching it_.
+> They reference the same body of work at different granularities.
+
+Two automated guardrails enforce that each view is internally consistent:
+
+- `pnpm run check:curriculum` cross-checks `CURRICULUM` against
+  `src/content/**/*.md` frontmatter (titles, slugs, durations, preview
+  flags). Run it after editing either file. Fails CI if they drift.
+- `course/contactly` has its own ESLint / svelte-check / vitest /
+  Playwright gates that ensure each tagged commit actually compiled
+  and passed at that point in time.
+
+---
+
+## 12. References
 
 - [Root README](../README.md)
 - [Documentation index](./README.md)

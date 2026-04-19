@@ -1,3 +1,14 @@
+---
+title: 'Bonus: Full-Text Search with Postgres'
+module: 14
+lesson: 4
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-04-full-text-search'
+description: 'Sub-20ms search across 100k contacts with a Postgres tsvector column, GIN index, ts_rank ranking, and a debounced URL-driven UI.'
+duration: 20
+preview: false
+---
+
 # Bonus: Blazing-fast search with Postgres full-text search
 
 Contactly currently has no search. If a user has 500 contacts, they scroll. That is unacceptable. In this lesson we add search that is so fast it feels instant — under 20 milliseconds on 100,000 rows — using Postgres features you already have installed but have not touched yet.

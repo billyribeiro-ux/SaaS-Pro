@@ -6,7 +6,7 @@ moduleSlug: 'module-12-cicd'
 lessonSlug: '01-cicd-pipeline-overview'
 description: "Understand the CI/CD pipeline we're building — from git push to live production deploy."
 duration: 10
-preview: false
+preview: true
 ---
 
 ## Overview

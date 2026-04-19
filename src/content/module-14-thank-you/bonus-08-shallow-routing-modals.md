@@ -1,9 +1,9 @@
 ---
-title: 'Shallow routing — modals without full navigation'
+title: 'Bonus: Shallow Routing for Modals'
 module: 14
 lesson: 8
-moduleSlug: thank-you
-lessonSlug: shallow-routing-modals
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-08-shallow-routing-modals'
 description: 'pushState and replaceState give you URL-aware modals without unmounting your layout. Deep-linkable, back-button friendly, refresh-safe.'
 duration: 30
 preview: false

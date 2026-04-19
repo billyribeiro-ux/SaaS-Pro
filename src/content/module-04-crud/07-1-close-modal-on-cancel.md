@@ -1,7 +1,7 @@
 ---
 title: '4.7.1 - Close Modal on Cancel'
 module: 4
-lesson: 8
+lesson: 7
 moduleSlug: 'module-04-crud'
 lessonSlug: '07-1-close-modal-on-cancel'
 description: 'Wire up the modal close behavior — Cancel button, Escape key, and clicking the backdrop.'

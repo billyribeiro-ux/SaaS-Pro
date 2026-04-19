@@ -1,7 +1,7 @@
 ---
 title: '5.6 - Lookup Keys'
 module: 5
-lesson: 7
+lesson: 6
 moduleSlug: 'module-05-stripe-intro'
 lessonSlug: '06-lookup-keys'
 description: 'The most important Stripe concept in this course — lookup keys let you change prices without touching code.'

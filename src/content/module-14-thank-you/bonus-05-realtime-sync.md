@@ -1,3 +1,14 @@
+---
+title: 'Bonus: Real-Time Multi-Tab Sync'
+module: 14
+lesson: 5
+moduleSlug: 'module-14-thank-you'
+lessonSlug: 'bonus-05-realtime-sync'
+description: 'Subscribe to Supabase Realtime so contacts created or edited in one tab show up instantly in every other tab — without polling, without reloads.'
+duration: 18
+preview: false
+---
+
 # Bonus: Real-time multi-tab sync with Supabase Realtime
 
 Open Gmail in two tabs. Send yourself an email from one. Watch it appear in the other, instantly, without a refresh. That is the kind of thing users now expect — and it is what separates a "snappy" SaaS from a "feels-like-2010" SaaS.

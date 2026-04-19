@@ -1,7 +1,7 @@
 ---
-title: 'Bonus 2 - Contact Avatars with Supabase Storage'
+title: 'Bonus: Contact Avatars with Supabase Storage'
 module: 14
-lesson: 12
+lesson: 2
 moduleSlug: 'module-14-thank-you'
 lessonSlug: 'bonus-02-avatar-uploads-storage'
 description: 'Add per-contact profile photos using Supabase Storage, signed URLs, and the right RLS policies.'
