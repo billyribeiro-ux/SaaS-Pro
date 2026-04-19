@@ -41,7 +41,29 @@ const publicEnvSchema = z.object({
 		}),
 	PUBLIC_SUPABASE_ANON_KEY: z
 		.string({ error: 'PUBLIC_SUPABASE_ANON_KEY is required' })
-		.min(20, { error: 'PUBLIC_SUPABASE_ANON_KEY looks too short to be a real Supabase anon key' })
+		.min(20, { error: 'PUBLIC_SUPABASE_ANON_KEY looks too short to be a real Supabase anon key' }),
+	/**
+	 * Sentry DSN (Module 10.2). Optional — empty string disables
+	 * Sentry on both client and server, which is the right local-dev
+	 * default (no noise from `pnpm run dev` errors hitting the
+	 * production project). The DSN itself is not a secret; it's a
+	 * write-only ingestion url. Set in Vercel's project settings for
+	 * the deployed environments.
+	 *
+	 * Accept either an empty string (treated as "Sentry disabled") or
+	 * a real `https://…@…sentry.io/…` URL — anything else is a typo
+	 * and we want to fail loudly at boot rather than silently drop
+	 * every error report.
+	 */
+	PUBLIC_SENTRY_DSN: z
+		.string()
+		.optional()
+		.default('')
+		.refine((v) => v === '' || /^https:\/\/[^@]+@[^/]+\/\d+$/.test(v), {
+			error:
+				'PUBLIC_SENTRY_DSN must be a valid Sentry DSN ' +
+				'(`https://<key>@<host>/<project>`) or an empty string to disable.'
+		})
 });
 
 const result = publicEnvSchema.safeParse(rawEnv);

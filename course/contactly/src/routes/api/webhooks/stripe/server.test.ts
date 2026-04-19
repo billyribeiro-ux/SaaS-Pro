@@ -10,6 +10,13 @@ vi.mock('$lib/server/env', () => ({
 	}
 }));
 
+// Sentry is initialised at server-hook module load in production,
+// but the webhook receiver only calls `setTag`. Mocking the SDK
+// keeps these unit tests free of any Sentry import-side-effect.
+vi.mock('@sentry/sveltekit', () => ({
+	setTag: vi.fn()
+}));
+
 // Default: every event looks `fresh` so the dispatcher runs. Tests
 // that need a different storage outcome re-mock per case via
 // `vi.doMock`.

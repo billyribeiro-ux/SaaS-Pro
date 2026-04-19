@@ -1,25 +1,38 @@
 /**
  * Server hooks — runs once per request on the server.
  *
- * Two responsibilities right now:
+ * Responsibilities, in execution order:
  *
- *  1. Create a per-request Supabase server client and attach it to
- *     `event.locals.supabase`. Every server `load`, every form action,
- *     every `+server.ts` endpoint can do `event.locals.supabase.from(...)`
- *     and inherit the cookie-bound auth context of the requesting user.
+ *  0. (Module 10.2) Sentry server SDK initialisation at module load.
+ *     Wraps the rest of the request lifecycle via `Sentry.sentryHandle()`
+ *     so server-side errors get released-tagged events with breadcrumbs
+ *     and the request id we share with our structured logger.
  *
- *  2. Attach a `safeGetSession` helper to `event.locals`. The Supabase
- *     SDK's `getSession()` reads the session from the cookie WITHOUT
- *     verifying the JWT signature — so a malicious client could craft
- *     a forged cookie and `getSession()` would happily return a
- *     "session" for it. `safeGetSession` runs `getSession()` to get the
- *     cookie payload, then `getUser()` to round-trip the JWT through
- *     Supabase Auth (which validates the signature). If validation
- *     fails, we return null on both. EVERY auth check in the rest of
- *     the codebase goes through this helper, never `getSession()`
- *     directly.
+ *  1. (Module 10.1) Per-request structured logger attached as
+ *     `event.locals.logger`. Carries `req_id`, `route_id`, and (after
+ *     the auth check) `user_id` automatically so every line is
+ *     correlatable across log + Sentry surfaces.
  *
- *  3. Guard `transformPageChunk` so SvelteKit doesn't strip
+ *  2. Per-request Supabase server client on `event.locals.supabase`.
+ *     Every server `load`, every form action, every `+server.ts`
+ *     endpoint inherits the cookie-bound auth context of the
+ *     requesting user.
+ *
+ *  3. `safeGetSession` helper on `event.locals`. The Supabase SDK's
+ *     `getSession()` reads the cookie WITHOUT verifying the JWT
+ *     signature — so a malicious client could craft a forged cookie
+ *     and `getSession()` would happily return a "session" for it.
+ *     `safeGetSession` runs `getSession()` to get the cookie payload,
+ *     then `getUser()` to round-trip the JWT through Supabase Auth
+ *     (which validates the signature). EVERY auth check goes through
+ *     this helper, never `getSession()` directly.
+ *
+ *  4. (Module 10.2) `handleErrorWithSentry` exported as `handleError`
+ *     so uncaught errors land in Sentry with the SvelteKit-shaped
+ *     event context AND the same `req_id` / `route_id` tags as our
+ *     structured logger.
+ *
+ *  5. `filterSerializedResponseHeaders` so SvelteKit doesn't strip
  *     auth-related response headers we set in the cookie's `setAll`
  *     callback (the v0.10 cache-busting `Cache-Control` / `Expires` /
  *     `Pragma` headers — see the `cookies.setAll` block below).
@@ -29,8 +42,10 @@
  * triggers the Zod parse, and a misconfigured env crashes the server
  * loudly instead of letting the first request explode opaquely.
  */
+import { sequence } from '@sveltejs/kit/hooks';
 import { createServerClient } from '@supabase/ssr';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
+import { handleErrorWithSentry, init as sentryInit, sentryHandle, setTag } from '@sentry/sveltekit';
 import type { Database } from '$lib/database.types';
 import { publicEnv } from '$lib/env.public';
 // `serverEnv` isn't read here yet (no server-side code uses
@@ -39,10 +54,18 @@ import { publicEnv } from '$lib/env.public';
 // SUPABASE_SERVICE_ROLE_KEY is missing, we crash here, not three
 // lessons from now.
 import { serverEnv as _serverEnv } from '$lib/server/env';
-import { requestLogger } from '$lib/server/logger';
+import { logger as rootLogger, requestLogger } from '$lib/server/logger';
+import { baseInitOptions } from '$lib/sentry-shared';
 void _serverEnv;
 
-export const handle: Handle = async ({ event, resolve }) => {
+// Sentry initialisation at module load — runs once per Node process,
+// not per request. Empty DSN ⇒ `enabled: false`, so local dev with
+// no DSN configured is a true no-op.
+sentryInit({
+	...baseInitOptions(publicEnv.PUBLIC_SENTRY_DSN ?? '')
+});
+
+const handleApp: Handle = async ({ event, resolve }) => {
 	// Per-request structured logger. Stamped on `event.locals` so
 	// every `load`, action, and `+server.ts` can do
 	// `event.locals.logger.info(...)` and inherit `req_id` /
@@ -50,6 +73,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// service call. Wired before the Supabase client so any future
 	// breadcrumbs from the `setAll` cookie callback can use it too.
 	event.locals.logger = requestLogger(event);
+
+	// Cross-system correlation: Sentry sees the same `req_id` and
+	// `route_id` we put on every structured log line, so jumping
+	// from a Sentry event to the log query for that exact request
+	// is grep-with-a-known-string, not a fishing expedition.
+	const reqId = event.locals.logger.bindings().req_id;
+	if (typeof reqId === 'string') setTag('req_id', reqId);
+	if (event.route.id) setTag('route_id', event.route.id);
 
 	event.locals.supabase = createServerClient<Database>(
 		publicEnv.PUBLIC_SUPABASE_URL,
@@ -117,3 +148,41 @@ export const handle: Handle = async ({ event, resolve }) => {
 			name === 'content-range' || name === 'x-supabase-api-version'
 	});
 };
+
+/**
+ * `sentryHandle()` MUST come first in the sequence so it can
+ * instrument the request span around our handler. SvelteKit's
+ * docs are explicit about this; the SDK's instrumentation relies
+ * on its hook entry being the outermost wrapper.
+ */
+export const handle: Handle = sequence(sentryHandle(), handleApp);
+
+/**
+ * `handleError` is SvelteKit's centralised error-reporting hook,
+ * called for every uncaught throw in `load`, `actions`, or
+ * `+server.ts`. We wrap it with `handleErrorWithSentry` so:
+ *
+ *   - Every uncaught error reaches Sentry with the route + status
+ *     code already attached (Sentry's SDK does the wiring).
+ *   - We get the Sentry `event_id` back as the function's return
+ *     value, which becomes `error.message` in `+error.svelte`.
+ *
+ * The inner handler also logs via the structured logger using the
+ * same `req_id` Sentry tagged, so a single grep across both
+ * surfaces lines up. We do NOT throw here; SvelteKit invokes the
+ * hook precisely so it can render `+error.svelte` with whatever we
+ * return.
+ */
+export const handleError: HandleServerError = handleErrorWithSentry(
+	({ error, event, status, message }) => {
+		const log = event.locals.logger ?? rootLogger;
+		log.error(
+			{
+				err: error instanceof Error ? error.message : String(error),
+				status,
+				route_id: event.route.id ?? null
+			},
+			message ?? 'Uncaught server error'
+		);
+	}
+);

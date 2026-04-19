@@ -59,7 +59,9 @@ const STATUS_LABEL: Record<InvoiceRow['status'], string> = {
 
 /**
  * Map a stored invoice row to its presentation shape. Pure; left
- * exported in case a future test wants to lock the formatting.
+ * exported (with a `_` prefix per SvelteKit's `+page.server.ts`
+ * export allow-list) so a future test can lock the formatting
+ * without us copy-pasting the body into the test file.
  *
  * Currency formatting reuses `formatCurrency` (shared with the
  * pricing page and the success page) but with `'monthly'` as a
@@ -67,7 +69,7 @@ const STATUS_LABEL: Record<InvoiceRow['status'], string> = {
  * here, not "amount per period", since each invoice represents a
  * single billing event.
  */
-export function toBillingHistoryRow(row: InvoiceRow): BillingHistoryRow {
+export function _toBillingHistoryRow(row: InvoiceRow): BillingHistoryRow {
 	return {
 		id: row.id,
 		number: row.number,
@@ -89,7 +91,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	let loadError = false;
 	try {
 		const invoices = await listInvoicesForUser(user.id);
-		rows = invoices.map(toBillingHistoryRow);
+		rows = invoices.map(_toBillingHistoryRow);
 	} catch (err) {
 		// Same posture as the pricing page: a transient mirror outage
 		// shouldn't 500 the whole billing area. We render the page

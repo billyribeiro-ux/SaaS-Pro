@@ -31,6 +31,7 @@
  */
 import type { RequestHandler } from '@sveltejs/kit';
 import { json, error } from '@sveltejs/kit';
+import { setTag as sentrySetTag } from '@sentry/sveltekit';
 import { stripe } from '$lib/server/stripe';
 import { serverEnv } from '$lib/server/env';
 import { dispatchStripeEvent } from '$lib/server/stripe-events';
@@ -84,6 +85,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	// "find every log line for that one stuck event" a one-grep
 	// operation in production.
 	const eventLog = log.child({ event_id: event.id, event_type: event.type });
+
+	// Mirror those onto the Sentry scope so a failed webhook
+	// surfaces in Sentry already tagged for triage. `setTag` is
+	// the per-request scope API; the `sentryHandle()` wrapper in
+	// `hooks.server.ts` makes that scope this request's scope.
+	sentrySetTag('stripe_event_id', event.id);
+	sentrySetTag('stripe_event_type', event.type);
 
 	// Storage-layer idempotency (Module 6.4). The PK on
 	// `stripe_events.id` makes the duplicate check atomic — Postgres

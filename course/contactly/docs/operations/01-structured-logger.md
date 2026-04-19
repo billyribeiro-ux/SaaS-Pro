@@ -2,7 +2,7 @@
 
 > **Module 10 — Webhooks resilience & operational hygiene**
 > Previous: [Module 9 — Checkout & billing portal](../billing/10-invoice-mirror-and-history.md)
-> Next: 02 — Sentry server + client wiring (Lesson 10.2)
+> Next: [02 — Sentry server + client wiring](./02-sentry.md)
 
 ## Goal
 

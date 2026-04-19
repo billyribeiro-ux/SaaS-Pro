@@ -173,7 +173,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	let loadError = false;
 	try {
 		const invoices = await listInvoicesForUser(user.id);
-		rows = invoices.map(toBillingHistoryRow);
+		rows = invoices.map(_toBillingHistoryRow);
 	} catch (err) {
 		console.error('[billing/history] listInvoicesForUser failed', { user_id: user.id, err });
 		loadError = true;

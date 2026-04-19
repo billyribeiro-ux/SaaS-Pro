@@ -70,6 +70,7 @@
 		"vitest-browser-svelte": "^2.1.0"
 	},
 	"dependencies": {
+		"@sentry/sveltekit": "^10.49.0",
 		"@supabase/ssr": "^0.10.2",
 		"@supabase/supabase-js": "^2.103.3",
 		"clsx": "^2.1.1",
