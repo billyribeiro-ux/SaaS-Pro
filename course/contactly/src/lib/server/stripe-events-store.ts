@@ -26,6 +26,7 @@
 import type Stripe from 'stripe';
 import type { Json } from '$lib/database.types';
 import { withAdmin } from '$lib/server/supabase-admin';
+import { logger as rootLogger, type Logger } from '$lib/server/logger';
 
 /**
  * Result of attempting to persist a webhook event.
@@ -60,7 +61,10 @@ export type RecordResult = 'fresh' | 'retry' | 'already-processed' | 'failed';
  * for legacy clients that bypass the upsert path. The new path
  * shouldn't hit it.
  */
-export async function recordStripeEvent(event: Stripe.Event): Promise<RecordResult> {
+export async function recordStripeEvent(
+	event: Stripe.Event,
+	logger: Logger = rootLogger
+): Promise<RecordResult> {
 	try {
 		const { data: inserted, error: insertError } = await withAdmin(
 			'stripe-webhook.record',
@@ -82,12 +86,10 @@ export async function recordStripeEvent(event: Stripe.Event): Promise<RecordResu
 		);
 
 		if (insertError) {
-			console.error('[stripe-webhook] recordStripeEvent failed', {
-				id: event.id,
-				type: event.type,
-				pg_code: insertError.code,
-				message: insertError.message
-			});
+			logger.error(
+				{ pg_code: insertError.code, err: insertError.message },
+				'recordStripeEvent failed'
+			);
 			return 'failed';
 		}
 
@@ -107,21 +109,19 @@ export async function recordStripeEvent(event: Stripe.Event): Promise<RecordResu
 		);
 
 		if (readError) {
-			console.error('[stripe-webhook] recordStripeEvent read-back failed', {
-				id: event.id,
-				pg_code: readError.code,
-				message: readError.message
-			});
+			logger.error(
+				{ pg_code: readError.code, err: readError.message },
+				'recordStripeEvent read-back failed'
+			);
 			return 'failed';
 		}
 
 		return existing?.processed_at ? 'already-processed' : 'retry';
 	} catch (err) {
-		console.error('[stripe-webhook] recordStripeEvent threw', {
-			id: event.id,
-			type: event.type,
-			error: err instanceof Error ? err.message : String(err)
-		});
+		logger.error(
+			{ err: err instanceof Error ? err.message : String(err) },
+			'recordStripeEvent threw'
+		);
 		return 'failed';
 	}
 }
@@ -134,7 +134,10 @@ export async function recordStripeEvent(event: Stripe.Event): Promise<RecordResu
  * retry and (correctly) hit the duplicate path next time. Better:
  * log the audit-column miss and move on.
  */
-export async function markStripeEventProcessed(eventId: string): Promise<void> {
+export async function markStripeEventProcessed(
+	eventId: string,
+	logger: Logger = rootLogger
+): Promise<void> {
 	try {
 		const { error } = await withAdmin('stripe-webhook.mark-processed', 'system', async (admin) =>
 			admin
@@ -144,16 +147,12 @@ export async function markStripeEventProcessed(eventId: string): Promise<void> {
 				.is('processed_at', null)
 		);
 		if (error) {
-			console.warn('[stripe-webhook] markStripeEventProcessed failed', {
-				id: eventId,
-				pg_code: error.code,
-				message: error.message
-			});
+			logger.warn({ pg_code: error.code, err: error.message }, 'markStripeEventProcessed failed');
 		}
 	} catch (err) {
-		console.warn('[stripe-webhook] markStripeEventProcessed threw', {
-			id: eventId,
-			error: err instanceof Error ? err.message : String(err)
-		});
+		logger.warn(
+			{ err: err instanceof Error ? err.message : String(err) },
+			'markStripeEventProcessed threw'
+		);
 	}
 }

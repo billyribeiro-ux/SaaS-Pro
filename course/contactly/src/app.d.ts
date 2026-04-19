@@ -14,6 +14,7 @@
 // every page, so we type them here once and downstream pages inherit.
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
 import type { Database } from '$lib/database.types';
+import type { Logger } from '$lib/server/logger';
 
 declare global {
 	namespace App {
@@ -23,6 +24,13 @@ declare global {
 			safeGetSession: () => Promise<
 				{ session: Session; user: User } | { session: null; user: null }
 			>;
+			/**
+			 * Per-request structured logger (Module 10.1). Prefer this
+			 * over the module-level `logger` import in `load`, action,
+			 * and `+server.ts` paths — it carries `req_id`, `route_id`,
+			 * and (after the auth check below) `user_id` automatically.
+			 */
+			logger: Logger;
 		}
 		interface PageData {
 			session: Session | null;

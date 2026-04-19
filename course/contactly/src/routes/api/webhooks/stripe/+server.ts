@@ -36,13 +36,19 @@ import { serverEnv } from '$lib/server/env';
 import { dispatchStripeEvent } from '$lib/server/stripe-events';
 import { markStripeEventProcessed, recordStripeEvent } from '$lib/server/stripe-events-store';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	// `locals.logger` is the per-request logger (Module 10.1). For
+	// the webhook path we'll bind `event_id` / `event_type` as
+	// soon as we have them — until then, just `req_id` + `route_id`.
+	const log = locals.logger;
+
 	const signature = request.headers.get('stripe-signature');
 	if (!signature) {
 		// No `stripe-signature` header at all means this isn't a real
 		// Stripe delivery — almost certainly a curl/scanner probe.
 		// 400 (not 401) because there's no auth scheme to challenge;
 		// the request is just malformed.
+		log.warn('webhook missing stripe-signature header');
 		error(400, 'Missing stripe-signature header');
 	}
 
@@ -69,20 +75,23 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Don't leak the secret-derivation error string to the
 		// network — it's noisy and faintly attacker-useful. Log
 		// server-side, return a generic 400 to the caller.
-		console.warn('[stripe-webhook] signature verification failed:', message);
+		log.warn({ err: message }, 'webhook signature verification failed');
 		error(400, 'Invalid signature');
 	}
+
+	// Re-bind logger with Stripe-event context. Every line below
+	// inherits `event_id` + `event_type`, which is what makes
+	// "find every log line for that one stuck event" a one-grep
+	// operation in production.
+	const eventLog = log.child({ event_id: event.id, event_type: event.type });
 
 	// Storage-layer idempotency (Module 6.4). The PK on
 	// `stripe_events.id` makes the duplicate check atomic — Postgres
 	// arbitrates between two concurrent webhook deliveries for the
 	// same event.id without an application-level lock.
-	const recorded = await recordStripeEvent(event);
+	const recorded = await recordStripeEvent(event, eventLog);
 	if (recorded === 'already-processed') {
-		console.info('[stripe-webhook] duplicate event already-processed, skipping', {
-			id: event.id,
-			type: event.type
-		});
+		eventLog.info('duplicate event, already processed; skipping');
 		return json({ received: true, duplicate: true });
 	}
 	if (recorded === 'failed') {
@@ -102,27 +111,20 @@ export const POST: RequestHandler = async ({ request }) => {
 			// us events we never asked for; we ack 200 (so Stripe
 			// stops retrying) but log at info-level so the developer
 			// can spot misconfigured Dashboard subscriptions.
-			console.info('[stripe-webhook] unhandled event type', {
-				id: event.id,
-				type: result.type
-			});
+			eventLog.info('unhandled event type');
 		}
 		// Stamp `processed_at` so unprocessed-event monitoring (the
 		// `stripe_events_unprocessed_idx` partial index) can flag
 		// stuck events. Failure here is logged but not fatal — see
 		// markStripeEventProcessed for the rationale.
-		await markStripeEventProcessed(event.id);
+		await markStripeEventProcessed(event.id, eventLog);
 		// 200 is the "stop retrying" signal. Keep the body small —
 		// Stripe doesn't read it; `received: true` is purely so
 		// curl-against-the-endpoint debugging is informative.
 		return json({ received: true });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'unknown handler error';
-		console.error('[stripe-webhook] handler failed', {
-			id: event.id,
-			type: event.type,
-			error: message
-		});
+		eventLog.error({ err: message }, 'webhook handler failed');
 		// 500 — NOT 200 — so Stripe retries. The dispatcher is
 		// itself written to be idempotent (Module 6.2), and the
 		// stored `stripe_events` row will dedupe on the second

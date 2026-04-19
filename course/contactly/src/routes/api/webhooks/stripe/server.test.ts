@@ -52,19 +52,39 @@ function makeEventBody(type: string, id = 'evt_test_unit') {
 describe('POST /api/webhooks/stripe', () => {
 	beforeEach(() => {
 		vi.resetModules();
-		vi.spyOn(console, 'info').mockImplementation(() => {});
-		vi.spyOn(console, 'warn').mockImplementation(() => {});
-		vi.spyOn(console, 'error').mockImplementation(() => {});
 	});
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});
 
+	/**
+	 * Minimal `event.locals.logger` stub. The handler reads `info`,
+	 * `warn`, `error`, and `child` (which must return something with
+	 * the same shape). Returning `silentLogger` from `child` is safe
+	 * — re-binding `event_id` / `event_type` is a no-op for the
+	 * purposes of these routing tests.
+	 */
+	const silentLogger = {
+		info: () => {},
+		warn: () => {},
+		error: () => {},
+		debug: () => {},
+		trace: () => {},
+		fatal: () => {},
+		child: () => silentLogger
+	};
+
 	async function callPost(req: Request) {
 		const mod = await import('./+server');
 		// SvelteKit's RequestHandler is invoked with a partial event;
-		// the handler only reads `request`, so a minimal stub suffices.
-		return (mod.POST as (e: { request: Request }) => Promise<Response>)({ request: req });
+		// the handler only reads `request` + `locals.logger`, so a
+		// minimal stub suffices.
+		return (
+			mod.POST as unknown as (e: {
+				request: Request;
+				locals: { logger: typeof silentLogger };
+			}) => Promise<Response>
+		)({ request: req, locals: { logger: silentLogger } });
 	}
 
 	it('returns 400 when the stripe-signature header is missing', async () => {

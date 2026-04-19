@@ -39,9 +39,18 @@ import { publicEnv } from '$lib/env.public';
 // SUPABASE_SERVICE_ROLE_KEY is missing, we crash here, not three
 // lessons from now.
 import { serverEnv as _serverEnv } from '$lib/server/env';
+import { requestLogger } from '$lib/server/logger';
 void _serverEnv;
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// Per-request structured logger. Stamped on `event.locals` so
+	// every `load`, action, and `+server.ts` can do
+	// `event.locals.logger.info(...)` and inherit `req_id` /
+	// `route_id` without threading a logger argument through every
+	// service call. Wired before the Supabase client so any future
+	// breadcrumbs from the `setAll` cookie callback can use it too.
+	event.locals.logger = requestLogger(event);
+
 	event.locals.supabase = createServerClient<Database>(
 		publicEnv.PUBLIC_SUPABASE_URL,
 		publicEnv.PUBLIC_SUPABASE_ANON_KEY,
