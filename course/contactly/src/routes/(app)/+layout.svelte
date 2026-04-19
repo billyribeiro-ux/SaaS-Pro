@@ -19,7 +19,7 @@
 
 <div class="flex min-h-screen flex-col bg-slate-50">
 	{#if data.user}
-		<AppNav user={data.user} />
+		<AppNav user={data.user} entitlements={data.entitlements} />
 	{/if}
 	<main class="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
 		{@render children()}

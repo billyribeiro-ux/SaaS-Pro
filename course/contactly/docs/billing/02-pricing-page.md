@@ -96,11 +96,11 @@ the same source.
 
 ```html
 <div role="tablist" aria-label="Billing interval">
-	<button role="tab" aria-selected={interval === 'monthly'} onclick={() => (interval = 'monthly')}>
-		Monthly
+	<button role="tab" aria-selected="{interval" ="" ="" ="monthly" } onclick="{()" ="">
+		(interval = 'monthly')}> Monthly
 	</button>
-	<button role="tab" aria-selected={interval === 'yearly'} onclick={() => (interval = 'yearly')}>
-		Yearly <span>Save 17%</span>
+	<button role="tab" aria-selected="{interval" ="" ="" ="yearly" } onclick="{()" ="">
+		(interval = 'yearly')}> Yearly <span>Save 17%</span>
 	</button>
 </div>
 ```

@@ -25,9 +25,11 @@
 	import { page } from '$app/state';
 	import { cn } from '$lib/utils/cn';
 	import Button from '$lib/components/ui/Button.svelte';
+	import PlanBadge from '$lib/components/billing/PlanBadge.svelte';
+	import type { EntitlementSnapshot } from '$lib/server/billing/entitlements';
 
-	type Props = { user: User };
-	let { user }: Props = $props();
+	type Props = { user: User; entitlements: EntitlementSnapshot };
+	let { user, entitlements }: Props = $props();
 
 	// Primary nav. Highlight an item when the current path *starts*
 	// with its href so deep links (e.g. /contacts/123) keep the
@@ -86,6 +88,21 @@
 		</div>
 
 		<div class="flex items-center gap-3">
+			<!--
+				Plan badge is also a link to /account so a user noticing
+				"Trial" / "Past due" can act on it in one click. Keeping
+				the link in the same target as the email link means there
+				is exactly one billing/profile entry point in the nav.
+			-->
+			<a
+				href={resolve('/account')}
+				class="hidden sm:inline"
+				aria-label="Open account &mdash; current plan: {entitlements.badgeLabel}"
+				data-testid="app-plan-badge-link"
+			>
+				<PlanBadge {entitlements} size="sm" />
+			</a>
+
 			<a
 				href={resolve('/account')}
 				class="hidden max-w-[200px] truncate text-sm text-slate-600 hover:text-slate-900 sm:inline"
