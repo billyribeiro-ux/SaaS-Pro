@@ -50,7 +50,26 @@ export const CRITICAL_AGE_MS = 10 * 60 * 1000;
  */
 export const MAX_PER_TYPE_BUCKETS = 25;
 
+/**
+ * Cap on the number of individual stuck events surfaced in the
+ * snapshot's `stuckEvents` field. The admin dashboard needs the
+ * actual event IDs (so the per-row replay button has something to
+ * POST), but a 10k-row JSON payload would defeat the
+ * health-endpoint use case. 50 is the sweet spot — enough that an
+ * incident triage almost never needs to scroll, small enough that
+ * the JSON endpoint stays under a few KB.
+ */
+export const MAX_STUCK_EVENTS = 50;
+
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
+
+export interface StuckEvent {
+	id: string;
+	type: string;
+	receivedAt: string;
+	ageMs: number;
+	livemode: boolean;
+}
 
 export interface WebhookHealthSnapshot {
 	status: HealthStatus;
@@ -59,6 +78,7 @@ export interface WebhookHealthSnapshot {
 	oldestUnprocessedAt: string | null;
 	oldestUnprocessedAgeMs: number | null;
 	byEventType: Array<{ type: string; count: number }>;
+	stuckEvents: StuckEvent[];
 	thresholds: {
 		warnAgeMs: number;
 		criticalAgeMs: number;
@@ -105,10 +125,11 @@ export async function getWebhookHealth(
 	now: number = Date.now()
 ): Promise<WebhookHealthSnapshot> {
 	const measuredAt = new Date(now).toISOString();
-	const [count, oldest, perType] = await Promise.all([
+	const [count, oldest, perType, stuck] = await Promise.all([
 		readUnprocessedCount(logger),
 		readOldestUnprocessed(logger),
-		readPerTypeBuckets(logger)
+		readPerTypeBuckets(logger),
+		readStuckEvents(logger, now)
 	]);
 
 	const oldestUnprocessedAgeMs = oldest ? Math.max(0, now - new Date(oldest).getTime()) : null;
@@ -120,6 +141,7 @@ export async function getWebhookHealth(
 		oldestUnprocessedAt: oldest,
 		oldestUnprocessedAgeMs,
 		byEventType: perType,
+		stuckEvents: stuck,
 		thresholds: { warnAgeMs: WARN_AGE_MS, criticalAgeMs: CRITICAL_AGE_MS },
 		measuredAt
 	};
@@ -164,6 +186,32 @@ async function readOldestUnprocessed(logger: Logger): Promise<string | null> {
 		return null;
 	}
 	return data?.received_at ?? null;
+}
+
+async function readStuckEvents(logger: Logger, now: number): Promise<StuckEvent[]> {
+	const { data, error } = await withAdmin('webhook-health.stuck', 'system', async (admin) =>
+		admin
+			.from('stripe_events')
+			.select('id, type, received_at, livemode')
+			.is('processed_at', null)
+			.order('received_at', { ascending: true })
+			.limit(MAX_STUCK_EVENTS)
+	);
+	if (error) {
+		logger.error(
+			{ pg_code: error.code, err: error.message },
+			'webhook-health: stuck events read failed'
+		);
+		return [];
+	}
+	if (!data) return [];
+	return data.map((row) => ({
+		id: row.id,
+		type: row.type,
+		receivedAt: row.received_at,
+		ageMs: Math.max(0, now - new Date(row.received_at).getTime()),
+		livemode: row.livemode
+	}));
 }
 
 async function readPerTypeBuckets(logger: Logger): Promise<Array<{ type: string; count: number }>> {

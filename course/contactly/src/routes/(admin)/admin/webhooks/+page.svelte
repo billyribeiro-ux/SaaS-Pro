@@ -18,14 +18,17 @@
 	 * is the right pattern for an admin dashboard: every measurement
 	 * is server-of-record, no client-state sync to hold.
 	 */
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	type Props = { data: PageData };
-	let { data }: Props = $props();
+	type Props = { data: PageData; form: ActionData };
+	let { data, form }: Props = $props();
 
 	let snapshot = $derived(data.snapshot);
 	let loadError = $derived(data.loadError);
+	let pendingEventId = $state<string | null>(null);
+	let pendingBatch = $state(false);
 
 	const STATUS_STYLES: Record<string, string> = {
 		healthy: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -55,6 +58,14 @@
 		second: '2-digit',
 		timeZoneName: 'short'
 	});
+
+	const OUTCOME_STYLES: Record<string, string> = {
+		replayed: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+		'already-processed': 'bg-slate-50 text-slate-800 border-slate-200',
+		'dry-run': 'bg-sky-50 text-sky-800 border-sky-200',
+		'not-found': 'bg-amber-50 text-amber-800 border-amber-200',
+		failed: 'bg-rose-50 text-rose-800 border-rose-200'
+	};
 </script>
 
 <header class="mb-6 flex items-baseline justify-between">
@@ -156,6 +167,146 @@
 					{/each}
 				</tbody>
 			</table>
+		{/if}
+	</section>
+
+	<section class="mt-8 rounded-lg border border-slate-200 bg-white shadow-sm">
+		<header class="flex items-baseline justify-between border-b border-slate-200 px-5 py-3">
+			<div>
+				<h2 class="text-sm font-semibold text-slate-900">Stuck events</h2>
+				<p class="text-xs text-slate-500">
+					Top {snapshot.stuckEvents.length} unprocessed by age. Replay re-runs the dispatcher for the
+					row in place — Stripe is not contacted.
+				</p>
+			</div>
+			{#if snapshot.stuckEvents.length > 0}
+				<form
+					method="POST"
+					action="?/replayBatch"
+					use:enhance={() => {
+						pendingBatch = true;
+						return async ({ update }) => {
+							await update();
+							pendingBatch = false;
+						};
+					}}
+					data-testid="webhook-replay-batch-form"
+				>
+					<input type="hidden" name="dryRun" value="false" />
+					<button
+						type="submit"
+						disabled={pendingBatch}
+						class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+						data-testid="webhook-replay-batch-submit"
+					>
+						{pendingBatch ? 'Replaying…' : `Replay all (≤ ${data.batchReplayCap})`}
+					</button>
+				</form>
+			{/if}
+		</header>
+
+		{#if form?.kind === 'replayBatch'}
+			<div
+				class="border-b border-slate-200 bg-slate-50 px-5 py-3 text-sm"
+				data-testid="webhook-replay-batch-result"
+			>
+				<p class="font-medium text-slate-900">
+					Batch replay processed {form.requested} event{form.requested === 1 ? '' : 's'}.
+				</p>
+				{#if form.outcomes && form.outcomes.length > 0}
+					<ul class="mt-2 space-y-1 text-xs">
+						{#each form.outcomes as outcome (outcome.eventId)}
+							<li class="flex items-center gap-2">
+								<span
+									class={'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ' +
+										OUTCOME_STYLES[outcome.status]}
+								>
+									{outcome.status}
+								</span>
+								<code class="font-mono text-slate-700">{outcome.eventId}</code>
+								{#if outcome.status === 'failed'}
+									<span class="text-rose-700">— {outcome.error}</span>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		{/if}
+
+		{#if snapshot.stuckEvents.length === 0}
+			<p class="px-5 py-6 text-sm text-slate-600" data-testid="webhook-stuck-empty">
+				Nothing stuck. Excellent.
+			</p>
+		{:else}
+			<table class="w-full text-sm">
+				<thead class="bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+					<tr>
+						<th class="px-5 py-2 font-medium">Event ID</th>
+						<th class="px-5 py-2 font-medium">Type</th>
+						<th class="px-5 py-2 font-medium">Age</th>
+						<th class="px-5 py-2 text-right font-medium">Replay</th>
+					</tr>
+				</thead>
+				<tbody data-testid="webhook-stuck-events">
+					{#each snapshot.stuckEvents as event (event.id)}
+						<tr class="border-t border-slate-100">
+							<td class="px-5 py-2 font-mono text-xs text-slate-800">{event.id}</td>
+							<td class="px-5 py-2 font-mono text-xs text-slate-700">{event.type}</td>
+							<td class="px-5 py-2 text-slate-900 tabular-nums">{formatAge(event.ageMs)}</td>
+							<td class="px-5 py-2 text-right">
+								<form
+									method="POST"
+									action="?/replay"
+									use:enhance={() => {
+										pendingEventId = event.id;
+										return async ({ update }) => {
+											await update();
+											pendingEventId = null;
+										};
+									}}
+									data-testid="webhook-replay-form"
+								>
+									<input type="hidden" name="eventId" value={event.id} />
+									<input type="hidden" name="dryRun" value="false" />
+									<button
+										type="submit"
+										disabled={pendingEventId !== null}
+										class="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+										data-testid={`webhook-replay-${event.id}`}
+									>
+										{pendingEventId === event.id ? 'Replaying…' : 'Replay'}
+									</button>
+								</form>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
+
+		{#if form?.kind === 'replay'}
+			<footer
+				class="border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs"
+				data-testid="webhook-replay-result"
+			>
+				{#if form.outcome}
+					<div class="flex items-center gap-2">
+						<span
+							class={'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ' +
+								OUTCOME_STYLES[form.outcome.status]}
+						>
+							{form.outcome.status}
+						</span>
+						<code class="font-mono text-slate-700">{form.outcome.eventId}</code>
+						{#if form.outcome.status === 'failed' && 'error' in form.outcome}
+							<span class="text-rose-700">— {form.outcome.error}</span>
+						{/if}
+					</div>
+				{:else if 'error' in form && form.error}
+					<p class="text-rose-700">{form.error}</p>
+				{/if}
+			</footer>
 		{/if}
 	</section>
 {/if}

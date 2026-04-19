@@ -2,7 +2,7 @@
 
 > **Module 10 — Webhooks resilience & operational hygiene**
 > Previous: [02 — Sentry server + client](./02-sentry.md)
-> Next: 04 — Webhook replay tool (Lesson 10.4)
+> Next: [04 — Webhook replay tool](./04-webhook-replay.md)
 
 ## Goal
 
