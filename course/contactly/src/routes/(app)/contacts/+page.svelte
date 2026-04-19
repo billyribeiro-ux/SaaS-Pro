@@ -156,7 +156,7 @@
 			<h2 class="text-lg font-semibold text-slate-900">Your workspace is empty</h2>
 			<p class="mt-1 text-sm text-slate-600">Add your first contact to start building your CRM.</p>
 			<div class="mt-4">
-				<Button href={resolve('/(app)/contacts/new')}>New contact</Button>
+				<Button href={resolve('/contacts/new')}>New contact</Button>
 			</div>
 		{:else}
 			<h2 class="text-lg font-semibold text-slate-900">No matches</h2>
