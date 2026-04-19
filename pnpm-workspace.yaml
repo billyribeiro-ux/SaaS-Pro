@@ -1,3 +1,9 @@
+packages:
+  # The Contactly course project — the app students build lesson by lesson.
+  # Including it here lets `pnpm install` at the repo root resolve and
+  # dedupe both the SaaS-Pro platform and Contactly's deps in one pass.
+  - course/contactly
+
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - better-sqlite3
