@@ -15,6 +15,7 @@
 		"test:unit": "vitest",
 		"test": "pnpm run test:unit -- --run && pnpm run test:e2e",
 		"test:e2e": "playwright test",
+		"seed:stripe": "tsx --env-file=.env scripts/seed-stripe.ts",
 		"db:types": "supabase gen types typescript --local > src/lib/types/database.types.ts",
 		"db:start": "supabase start",
 		"db:stop": "supabase stop",

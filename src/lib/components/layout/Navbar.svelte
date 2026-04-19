@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { scrollY } from 'svelte/reactivity/window';
 	import { SITE } from '$config/site.config';
 	import Button from '$components/ui/Button.svelte';
 	import Menu from '$components/icons/Menu.svelte';
@@ -19,6 +20,7 @@
 	const links: readonly NavLink[] = [
 		{ href: '/', label: 'Home' },
 		{ href: '/pricing', label: 'Pricing' },
+		{ href: '/contacts', label: 'Contacts', requiresAuth: true },
 		{ href: '/learn', label: 'Course', requiresAuth: true },
 		{ href: '/admin', label: 'Admin', requiresAuth: true, adminOnly: true }
 	];
@@ -31,28 +33,10 @@
 		})
 	);
 
-	// Scroll-aware shell — translucent backdrop appears only after the user has moved
-	// past the hero. Using `$state` + `$effect` rather than a store keeps this local.
-	let scrolled = $state(false);
+	// Scroll-aware shell — use the built-in reactive window primitive so this
+	// remains declarative (no manual listeners needed).
+	let scrolled = $derived((scrollY.current ?? 0) > 8);
 	let mobileOpen = $state(false);
-
-	// Scroll position is DOM state — it can't be $derived. We subscribe in an effect,
-	// mirror it onto a rune, and tear down on destroy. Safe + idiomatic for this case.
-	$effect(() => {
-		function onScroll() {
-			scrolled = window.scrollY > 8;
-		}
-		onScroll();
-		window.addEventListener('scroll', onScroll, { passive: true });
-		return () => window.removeEventListener('scroll', onScroll);
-	});
-
-	// Close the mobile sheet on navigation. Reading page.url.pathname is the trigger;
-	// we intentionally assign a rune as a *side effect* of that change.
-	$effect(() => {
-		void page.url.pathname;
-		mobileOpen = false;
-	});
 </script>
 
 <header
@@ -142,6 +126,7 @@
 					{@const active = page.url.pathname === link.href}
 					<a
 						href={link.href}
+						onclick={() => (mobileOpen = false)}
 						class={cn(
 							'rounded-md px-3 py-2 text-sm transition-colors',
 							active
@@ -155,6 +140,7 @@
 				{#if !userEmail}
 					<a
 						href="/login"
+						onclick={() => (mobileOpen = false)}
 						class="mt-1 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
 					>
 						Sign in
