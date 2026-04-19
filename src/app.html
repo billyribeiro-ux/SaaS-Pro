@@ -5,8 +5,36 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
 		<meta name="color-scheme" content="light dark" />
-		<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-		<meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)" />
+		<meta name="theme-color" content="#ffffff" data-dynamic />
+		<!--
+			Theme bootstrap. Runs synchronously, before <body> is parsed, so the
+			.dark class is on <html> by the time CSS applies — no flash of wrong
+			theme on first paint. Reads the user's stored preference and falls
+			back to the OS setting when the user has chosen "system".
+		-->
+		<script>
+			(function () {
+				try {
+					var stored = localStorage.getItem('theme');
+					var theme =
+						stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+					var resolved =
+						theme === 'system'
+							? window.matchMedia('(prefers-color-scheme: dark)').matches
+								? 'dark'
+								: 'light'
+							: theme;
+					var root = document.documentElement;
+					if (resolved === 'dark') root.classList.add('dark');
+					root.style.colorScheme = resolved;
+					var meta = document.querySelector('meta[name="theme-color"][data-dynamic]');
+					if (meta) meta.setAttribute('content', resolved === 'dark' ? '#020617' : '#ffffff');
+				} catch (e) {
+					// Storage or matchMedia unavailable — leave the document in its
+					// default (light) state. The hydrated app will re-sync on mount.
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body

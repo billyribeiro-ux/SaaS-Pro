@@ -6,6 +6,7 @@
 	import Menu from '$components/icons/Menu.svelte';
 	import X from '$components/icons/X.svelte';
 	import Sparkles from '$components/icons/Sparkles.svelte';
+	import ThemeToggle from '$components/layout/ThemeToggle.svelte';
 	import { cn } from '$utils/cn';
 
 	type Props = {
@@ -85,6 +86,7 @@
 			</nav>
 		</div>
 		<div class="flex items-center gap-2">
+			<ThemeToggle class="hidden sm:inline-flex" />
 			{#if userEmail}
 				<a
 					href="/dashboard"
@@ -146,6 +148,12 @@
 						Sign in
 					</a>
 				{/if}
+				<div
+					class="mt-2 flex items-center justify-between rounded-md px-3 py-2 text-sm text-slate-600 dark:text-slate-300"
+				>
+					<span>Theme</span>
+					<ThemeToggle />
+				</div>
 			</nav>
 		</div>
 	{/if}
