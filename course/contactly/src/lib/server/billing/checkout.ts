@@ -26,9 +26,10 @@
  *     Stripe Tax can compute the correct line at checkout (ADR-006).
  *   - `billing_address_collection: 'required'` — required for tax
  *     calc and saved on the Customer for future invoices.
- *   - `subscription_data.trial_period_days: 14` — every paid plan has
- *     a 14-day trial (ADR-007). The serial-trial guard in Lesson 9.4
- *     makes this `0` if the user has used their trial.
+ *   - `subscription_data.trial_period_days` — 14 for first-time
+ *     trialers (ADR-007), 0 for users who have ever had a
+ *     trial-bearing subscription on this account. See
+ *     `trial-eligibility.ts` for the serial-trial guard.
  *   - `allow_promotion_codes: true` — operator-controlled; promotion
  *     codes are managed in the Stripe Dashboard.
  *   - `payment_method_collection: 'always'` — yes even with a trial.
@@ -67,6 +68,7 @@ import type Stripe from 'stripe';
 import { stripe, withIdempotencyKey } from '$lib/server/stripe';
 import { ensureStripeCustomer } from '$lib/server/billing/customers';
 import { getActiveSubscription } from '$lib/server/billing/subscriptions';
+import { trialDaysForNextCheckout } from '$lib/server/billing/trial-eligibility';
 import { withAdmin } from '$lib/server/supabase-admin';
 import {
 	type LookupKey,
@@ -241,10 +243,12 @@ export async function createSubscriptionCheckoutSession(
 	const customerId = await ensureStripeCustomer({ userId: user.id, email: user.email });
 
 	// === 4. Trial logic. ADR-007 says "every paid plan has a 14-day
-	// trial" — the serial-trial guard from Lesson 9.4 will replace
-	// this constant with a runtime check; for this lesson it's the
-	// flat 14.
-	const trialPeriodDays = 14;
+	// trial" — but we don't want users serial-trialing by signing
+	// up, cancelling, then signing up again. The eligibility module
+	// answers "has this user EVER had a trial-bearing subscription?"
+	// from the local mirror; if so, this checkout is no-trial. See
+	// `trial-eligibility.ts` for the full rule list.
+	const trialPeriodDays = await trialDaysForNextCheckout(user.id);
 
 	// === 5. Build params + create session with idempotency.
 	const params = buildSubscriptionCheckoutParams({
