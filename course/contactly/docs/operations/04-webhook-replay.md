@@ -2,7 +2,7 @@
 
 > **Module 10 — Webhooks resilience & operational hygiene**
 > Previous: [03 — Webhook backlog health](./03-webhook-health.md)
-> Next: 05 — Operational runbook (Lesson 10.5)
+> Next: [05 — Operational runbook](./05-runbook.md)
 
 ## Goal
 
