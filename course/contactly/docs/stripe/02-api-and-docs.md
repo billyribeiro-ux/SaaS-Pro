@@ -42,13 +42,13 @@ flowchart LR
   Portal -->|mutates| Subscriptions
 ```
 
-| Surface              | API resource(s)                                       | Built in lesson | Why we use this and not the alternative                                                                                                |
-| -------------------- | ----------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Customers**        | [`Customer`](https://docs.stripe.com/api/customers.md)| 7.3             | One Stripe Customer per Contactly user (ADR-002). Created lazily on first checkout, kept in sync via webhook.                          |
-| **Checkout**         | [Checkout Sessions](https://docs.stripe.com/api/checkout/sessions.md) `mode: 'subscription'` | 9.1 | Hosted page; we don't take card data. PCI scope = SAQ A. Free trial, tax, coupon, address collection are flags, not features we build. |
-| **Subscriptions**    | [`Subscription`](https://docs.stripe.com/api/subscriptions.md), [`SubscriptionItem`](https://docs.stripe.com/api/subscription_items.md), [`Invoice`](https://docs.stripe.com/api/invoices.md) | 7.4 | Stripe runs the renewal loop, dunning, proration. We mirror the state into our DB; we never compute `next_invoice_date` ourselves.    |
-| **Customer Portal**  | [Billing Portal Sessions](https://docs.stripe.com/api/customer_portal/sessions.md) | 9.7–9.8 | Self-service upgrade/downgrade/cancel/payment-method-update. Configured once in the Dashboard, opened on demand from the app.         |
-| **Webhooks**         | [`WebhookEndpoint`](https://docs.stripe.com/api/webhook_endpoints.md), [`Event`](https://docs.stripe.com/api/events.md) | 6.2–6.3 | The **only** trustworthy signal that something happened in Stripe. Polling is anti-pattern; signature verification is mandatory.       |
+| Surface             | API resource(s)                                                                                                                                                                               | Built in lesson | Why we use this and not the alternative                                                                                                |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Customers**       | [`Customer`](https://docs.stripe.com/api/customers.md)                                                                                                                                        | 7.3             | One Stripe Customer per Contactly user (ADR-002). Created lazily on first checkout, kept in sync via webhook.                          |
+| **Checkout**        | [Checkout Sessions](https://docs.stripe.com/api/checkout/sessions.md) `mode: 'subscription'`                                                                                                  | 9.1             | Hosted page; we don't take card data. PCI scope = SAQ A. Free trial, tax, coupon, address collection are flags, not features we build. |
+| **Subscriptions**   | [`Subscription`](https://docs.stripe.com/api/subscriptions.md), [`SubscriptionItem`](https://docs.stripe.com/api/subscription_items.md), [`Invoice`](https://docs.stripe.com/api/invoices.md) | 7.4             | Stripe runs the renewal loop, dunning, proration. We mirror the state into our DB; we never compute `next_invoice_date` ourselves.     |
+| **Customer Portal** | [Billing Portal Sessions](https://docs.stripe.com/api/customer_portal/sessions.md)                                                                                                            | 9.7–9.8         | Self-service upgrade/downgrade/cancel/payment-method-update. Configured once in the Dashboard, opened on demand from the app.          |
+| **Webhooks**        | [`WebhookEndpoint`](https://docs.stripe.com/api/webhook_endpoints.md), [`Event`](https://docs.stripe.com/api/events.md)                                                                       | 6.2–6.3         | The **only** trustworthy signal that something happened in Stripe. Polling is anti-pattern; signature verification is mandatory.       |
 
 What Contactly **does not use** (and why):
 
@@ -98,17 +98,17 @@ Three properties to internalize before Module 6:
 
 ## Reference URLs to bookmark
 
-| What                         | URL                                                         |
-| ---------------------------- | ----------------------------------------------------------- |
-| API reference (versioned)    | <https://docs.stripe.com/api>                               |
-| API changelog                | <https://docs.stripe.com/changelog>                         |
-| SaaS billing guide           | <https://docs.stripe.com/saas>                              |
-| Subscription design          | <https://docs.stripe.com/billing/subscriptions/design-an-integration> |
-| Webhook reference            | <https://docs.stripe.com/webhooks>                          |
-| Test cards                   | <https://docs.stripe.com/testing>                           |
-| Test clocks (time travel)    | <https://docs.stripe.com/billing/testing/test-clocks>       |
-| API key best practices       | <https://docs.stripe.com/keys-best-practices>               |
-| Go-live checklist            | <https://docs.stripe.com/get-started/checklist/go-live>     |
+| What                      | URL                                                                   |
+| ------------------------- | --------------------------------------------------------------------- |
+| API reference (versioned) | <https://docs.stripe.com/api>                                         |
+| API changelog             | <https://docs.stripe.com/changelog>                                   |
+| SaaS billing guide        | <https://docs.stripe.com/saas>                                        |
+| Subscription design       | <https://docs.stripe.com/billing/subscriptions/design-an-integration> |
+| Webhook reference         | <https://docs.stripe.com/webhooks>                                    |
+| Test cards                | <https://docs.stripe.com/testing>                                     |
+| Test clocks (time travel) | <https://docs.stripe.com/billing/testing/test-clocks>                 |
+| API key best practices    | <https://docs.stripe.com/keys-best-practices>                         |
+| Go-live checklist         | <https://docs.stripe.com/get-started/checklist/go-live>               |
 
 If your IDE has an MCP integration with the Stripe docs (the
 `stripe-best-practices` skill in this repo gates that), prefer the

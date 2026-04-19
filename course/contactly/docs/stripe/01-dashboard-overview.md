@@ -10,10 +10,10 @@
 
 The Dashboard has **two completely isolated environments**:
 
-| Mode      | URL prefix                                        | Purpose                                                                    |
-| --------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
-| Test mode | <https://dashboard.stripe.com/test/...>           | Safe sandbox. Test cards (`4242 4242 4242 4242`) work, real cards do not.  |
-| Live mode | <https://dashboard.stripe.com/...> (no `/test`)   | Real money. Real cards work, test cards do not.                            |
+| Mode      | URL prefix                                      | Purpose                                                                   |
+| --------- | ----------------------------------------------- | ------------------------------------------------------------------------- |
+| Test mode | <https://dashboard.stripe.com/test/...>         | Safe sandbox. Test cards (`4242 4242 4242 4242`) work, real cards do not. |
+| Live mode | <https://dashboard.stripe.com/...> (no `/test`) | Real money. Real cards work, test cards do not.                           |
 
 Both modes have separate API keys, separate products, separate
 customers, and separate webhook endpoints. **Toggle between them with
@@ -31,19 +31,19 @@ discussion.
 Every menu item under "Product catalog", "Customers", and "Billing" maps
 1:1 to an API resource we'll work with later in the course:
 
-| Dashboard section             | API resource                                        | Module |
-| ----------------------------- | --------------------------------------------------- | ------ |
-| Product catalog → **Products**  | `Product` ([API](https://docs.stripe.com/api/products.md)) | 5.5    |
-| Product catalog → **Pricing**   | `Price` ([API](https://docs.stripe.com/api/prices.md))     | 5.5    |
-| Product catalog → **Coupons**   | `Coupon` / `PromotionCode`                          | 13+    |
-| Customers                       | `Customer` ([API](https://docs.stripe.com/api/customers.md))| 7.3    |
-| Billing → **Subscriptions**     | `Subscription`                                      | 7.4    |
-| Billing → **Invoices**          | `Invoice`                                           | 7.4    |
-| Payments                        | `PaymentIntent`, `Charge`                           | (info) |
-| Developers → **Webhooks**       | `WebhookEndpoint`                                   | 6.2    |
-| Developers → **API keys**       | (no API resource — managed in Dashboard only)       | 5.3    |
-| Developers → **Logs**           | All API requests, the single best debugging tool   | 6.2    |
-| Developers → **Events**         | The event log webhooks consume from                 | 6.2    |
+| Dashboard section              | API resource                                                 | Module |
+| ------------------------------ | ------------------------------------------------------------ | ------ |
+| Product catalog → **Products** | `Product` ([API](https://docs.stripe.com/api/products.md))   | 5.5    |
+| Product catalog → **Pricing**  | `Price` ([API](https://docs.stripe.com/api/prices.md))       | 5.5    |
+| Product catalog → **Coupons**  | `Coupon` / `PromotionCode`                                   | 13+    |
+| Customers                      | `Customer` ([API](https://docs.stripe.com/api/customers.md)) | 7.3    |
+| Billing → **Subscriptions**    | `Subscription`                                               | 7.4    |
+| Billing → **Invoices**         | `Invoice`                                                    | 7.4    |
+| Payments                       | `PaymentIntent`, `Charge`                                    | (info) |
+| Developers → **Webhooks**      | `WebhookEndpoint`                                            | 6.2    |
+| Developers → **API keys**      | (no API resource — managed in Dashboard only)                | 5.3    |
+| Developers → **Logs**          | All API requests, the single best debugging tool             | 6.2    |
+| Developers → **Events**        | The event log webhooks consume from                          | 6.2    |
 
 Bookmark **Developers → Logs** before you do anything else. When a
 webhook misfires or an API call returns 400, that's where you read the
