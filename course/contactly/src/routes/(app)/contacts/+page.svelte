@@ -22,6 +22,13 @@
 		const end = Math.min(start + data.contacts.length - 1, count);
 		return { start, end, count };
 	});
+
+	// Lesson 8.5 — fail-closed contact cap.
+	// `capStatus === null` ⇒ tier is unlimited (Pro/Business) and
+	// there's nothing to render. Any other shape gets surfaced as a
+	// banner above the table so the wall is visible BEFORE the user
+	// clicks "New contact".
+	const capBlocked = $derived(data.capStatus !== null && !data.capStatus.allowed);
 </script>
 
 <svelte:head>
@@ -45,8 +52,42 @@
 			{/if}
 		</p>
 	</div>
-	<Button href={resolve('/contacts/new')} data-testid="new-contact-link">New contact</Button>
+	{#if capBlocked}
+		<Button
+			href={resolve('/pricing')}
+			data-testid="upgrade-cta"
+			title="Starter plan limit reached — upgrade to add more"
+		>
+			Upgrade to add more
+		</Button>
+	{:else}
+		<Button href={resolve('/contacts/new')} data-testid="new-contact-link">New contact</Button>
+	{/if}
 </header>
+
+{#if data.capStatus !== null && !data.capStatus.allowed && data.capStatus.reason === 'cap_reached'}
+	<aside
+		class="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+		role="alert"
+		data-testid="contacts-cap-banner"
+	>
+		<p class="font-semibold">You've reached your Starter plan limit.</p>
+		<p class="mt-1">
+			Your workspace is using
+			<span class="font-semibold">{data.capStatus.used}</span>
+			of {data.capStatus.limit} included contacts. Upgrade to Pro for unlimited contacts.
+		</p>
+	</aside>
+{:else if data.capStatus !== null && !data.capStatus.allowed && data.capStatus.reason === 'unknown'}
+	<aside
+		class="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+		role="alert"
+		data-testid="contacts-cap-unknown"
+	>
+		Could not verify your plan limits right now. Adding new contacts is paused until we can — try
+		refreshing.
+	</aside>
+{/if}
 
 <form method="GET" class="mt-6 flex items-center gap-2" data-testid="contacts-search">
 	<label for="contacts-q" class="sr-only">Search contacts</label>

@@ -17,6 +17,26 @@
 		delayMs: 350,
 		autoFocusOnError: 'detect'
 	});
+
+	// Pre-flight cap state (loaded server-side). We disable Save and
+	// show the upgrade banner BEFORE the user types if they've already
+	// hit the wall — far better UX than letting them fill out the
+	// form, hit submit, and only then learn they're out of room.
+	const capBlocked = $derived(data.capStatus !== null && !data.capStatus.allowed);
+	const capWarn = $derived(
+		data.capStatus !== null &&
+			data.capStatus.allowed &&
+			data.capStatus.limit !== null &&
+			data.capStatus.limit > 0 &&
+			(data.capStatus.remaining ?? 0) <= Math.max(1, Math.floor(data.capStatus.limit * 0.1))
+	);
+
+	const messageObj = $derived(
+		typeof $message === 'object' && $message !== null
+			? ($message as { type?: string; text?: string; code?: string })
+			: null
+	);
+	const isCapMessage = $derived(messageObj?.code === 'cap_reached');
 </script>
 
 <svelte:head>
@@ -34,13 +54,47 @@
 		<p class="mt-1 text-sm text-slate-600">Only the full name is required.</p>
 	</header>
 
+	{#if capBlocked && data.capStatus && !data.capStatus.allowed && data.capStatus.reason === 'cap_reached'}
+		<div
+			class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+			role="alert"
+			data-testid="contact-cap-banner"
+		>
+			<p class="font-semibold">You've reached your Starter plan limit.</p>
+			<p class="mt-1">
+				Your workspace is using {data.capStatus.used} of {data.capStatus.limit} included contacts. Upgrade
+				to Pro for unlimited contacts and to keep adding people.
+			</p>
+			<div class="mt-3">
+				<Button href={resolve('/pricing')} variant="primary">Upgrade to Pro</Button>
+			</div>
+		</div>
+	{:else if capWarn && data.capStatus && data.capStatus.allowed && data.capStatus.limit !== null}
+		<div
+			class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+			role="status"
+			data-testid="contact-cap-warning"
+		>
+			You have <span class="font-semibold">{data.capStatus.remaining}</span>
+			of {data.capStatus.limit} contacts remaining on Starter.
+			<a href={resolve('/pricing')} class="underline hover:no-underline">Upgrade for unlimited</a>.
+		</div>
+	{/if}
+
 	{#if $message}
 		<div
-			class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+			class={isCapMessage
+				? 'rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900'
+				: 'rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800'}
 			role="alert"
-			data-testid="contact-form-error"
+			data-testid={isCapMessage ? 'contact-cap-banner' : 'contact-form-error'}
 		>
-			{typeof $message === 'string' ? $message : $message.text}
+			<p>{typeof $message === 'string' ? $message : ($message.text ?? 'Something went wrong.')}</p>
+			{#if isCapMessage}
+				<div class="mt-3">
+					<Button href={resolve('/pricing')} variant="primary">Upgrade to Pro</Button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -144,7 +198,7 @@
 				type="submit"
 				variant="primary"
 				loading={$delayed}
-				disabled={$submitting}
+				disabled={$submitting || capBlocked}
 				data-testid="save-contact"
 			>
 				{$delayed ? 'Saving…' : 'Save contact'}

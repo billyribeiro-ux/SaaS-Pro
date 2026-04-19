@@ -17,6 +17,7 @@
  */
 import type { PageServerLoad } from './$types';
 import { getCurrentOrganization } from '$lib/server/organizations';
+import { checkContactCap } from '$lib/server/billing/contact-cap';
 
 const PAGE_SIZE = 25;
 
@@ -34,8 +35,21 @@ function escapeIlikePattern(input: string): string {
 }
 
 export const load: PageServerLoad = async ({ parent, url, locals: { supabase } }) => {
-	const { user } = await parent();
+	const { user, entitlements } = await parent();
 	const organization = await getCurrentOrganization(supabase, user);
+
+	// Cap status drives the "X of 50 contacts used" hint and the
+	// "Upgrade to add more" banner on the list page. Reading it
+	// here (instead of in the Svelte component) keeps the page
+	// SSR-rendered and ensures the New-contact button can be
+	// accurately disabled before the user clicks it.
+	//
+	// Skipped for unlimited tiers — there's no surface to render
+	// and no point in paying for the count query.
+	const capStatus =
+		entitlements.tier === 'starter'
+			? await checkContactCap({ supabase, organizationId: organization.id, tier: 'starter' })
+			: null;
 
 	const rawQuery = url.searchParams.get('q')?.trim() ?? '';
 	const query = rawQuery.slice(0, 100); // hard cap — no need to query for a 5KB string
@@ -78,7 +92,8 @@ export const load: PageServerLoad = async ({ parent, url, locals: { supabase } }
 			page,
 			pageSize: PAGE_SIZE,
 			totalPages: 1,
-			loadError: true
+			loadError: true,
+			capStatus
 		};
 	}
 
@@ -92,6 +107,7 @@ export const load: PageServerLoad = async ({ parent, url, locals: { supabase } }
 		page,
 		pageSize: PAGE_SIZE,
 		totalPages,
-		loadError: false
+		loadError: false,
+		capStatus
 	};
 };
