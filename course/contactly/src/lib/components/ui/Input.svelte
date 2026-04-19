@@ -12,10 +12,14 @@
 	import { cn } from '$lib/utils/cn';
 
 	// `value` is `$bindable` so callers can `bind:value={$form.email}` —
-	// the Superforms-recommended pattern. Default empty string keeps
-	// the input controlled from the start (no "uncontrolled to
-	// controlled" React-style warning equivalent in Svelte).
-	let { class: className, invalid = false, value = $bindable(''), ...rest }: InputProps = $props();
+	// the Superforms-recommended pattern. No default fallback: Superforms
+	// initializes `$form.field` to the schema's default (or undefined)
+	// and we want that exact value to flow through unchanged. Specifying
+	// a fallback like `''` makes Svelte 5 throw `props_invalid_value`
+	// when the bound value's runtime type disagrees with the fallback's
+	// (e.g. `undefined` from an optional field colliding with a `string`
+	// default).
+	let { class: className, invalid = false, value = $bindable(), ...rest }: InputProps = $props();
 
 	// `invalid` paints the error border AND sets `aria-invalid`. Callers
 	// pass it explicitly (`<Input invalid={!!$errors.email} ... />`) so
