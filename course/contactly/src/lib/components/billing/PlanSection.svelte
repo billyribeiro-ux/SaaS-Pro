@@ -165,9 +165,23 @@
 				Upgrade to Business
 			</Button>
 			<ManageBillingForm testid="plan-manage-billing-cta" />
+			<Button
+				href={resolve('/account/billing')}
+				variant="ghost"
+				data-testid="plan-billing-history-cta"
+			>
+				Billing history
+			</Button>
 		{:else}
 			<!-- Business is the top tier; the only billing action is "Manage". -->
 			<ManageBillingForm variant="primary" testid="plan-manage-billing-cta" />
+			<Button
+				href={resolve('/account/billing')}
+				variant="ghost"
+				data-testid="plan-billing-history-cta"
+			>
+				Billing history
+			</Button>
 		{/if}
 	</div>
 </section>

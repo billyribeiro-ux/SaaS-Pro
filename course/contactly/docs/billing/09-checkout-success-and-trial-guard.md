@@ -2,7 +2,7 @@
 
 > **Module 9 — Checkout & billing portal**
 > Previous: [08 — Billing portal](./08-billing-portal.md)
-> Next: 10 — Invoice mirror + billing history surface (Lesson 9.5)
+> Next: [10 — Invoice mirror + billing history](./10-invoice-mirror-and-history.md)
 
 ## Goal
 

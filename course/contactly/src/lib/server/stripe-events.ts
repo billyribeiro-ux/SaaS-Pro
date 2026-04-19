@@ -43,6 +43,13 @@ import {
 	handleSubscriptionTrialWillEnd,
 	upsertSubscription
 } from '$lib/server/billing/subscriptions';
+import {
+	handleInvoiceFinalized,
+	handleInvoiceMarkedUncollectible,
+	handleInvoicePaid,
+	handleInvoicePaymentFailed,
+	handleInvoiceVoided
+} from '$lib/server/billing/invoices';
 
 /**
  * The exhaustive set of Stripe event types Contactly listens for.
@@ -79,9 +86,14 @@ export const SUBSCRIBED_EVENTS = [
 	'customer.subscription.updated',
 	'customer.subscription.deleted',
 	'customer.subscription.trial_will_end',
-	// Invoice notifications (Modules 9.5 / 10).
+	// Invoice mirror (Module 9.5). All five route through
+	// `upsertInvoice` — Stripe sends the full invoice payload on
+	// each, so the per-event semantics live in the service layer.
+	'invoice.finalized',
 	'invoice.paid',
-	'invoice.payment_failed'
+	'invoice.payment_failed',
+	'invoice.voided',
+	'invoice.marked_uncollectible'
 ] as const;
 
 export type SubscribedEventType = (typeof SUBSCRIBED_EVENTS)[number];
@@ -179,23 +191,20 @@ const EVENT_HANDLERS: EventHandlers = {
 	'customer.subscription.trial_will_end': async (event) => {
 		await handleSubscriptionTrialWillEnd(event.data.object);
 	},
+	'invoice.finalized': async (event) => {
+		await handleInvoiceFinalized(event.data.object);
+	},
 	'invoice.paid': async (event) => {
-		const inv = event.data.object;
-		console.info('[stripe-webhook] invoice.paid', {
-			id: event.id,
-			invoice: inv.id,
-			customer: inv.customer,
-			amount_paid: inv.amount_paid
-		});
+		await handleInvoicePaid(event.data.object);
 	},
 	'invoice.payment_failed': async (event) => {
-		const inv = event.data.object;
-		console.info('[stripe-webhook] invoice.payment_failed', {
-			id: event.id,
-			invoice: inv.id,
-			customer: inv.customer,
-			attempt_count: inv.attempt_count
-		});
+		await handleInvoicePaymentFailed(event.data.object);
+	},
+	'invoice.voided': async (event) => {
+		await handleInvoiceVoided(event.data.object);
+	},
+	'invoice.marked_uncollectible': async (event) => {
+		await handleInvoiceMarkedUncollectible(event.data.object);
 	}
 };
 

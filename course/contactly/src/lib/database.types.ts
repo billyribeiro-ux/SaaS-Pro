@@ -425,6 +425,93 @@ export type Database = {
 					}
 				];
 			};
+			stripe_invoices: {
+				Row: {
+					id: string;
+					user_id: string;
+					stripe_customer_id: string;
+					subscription_id: string | null;
+					status: Database['public']['Enums']['stripe_invoice_status'];
+					currency: string;
+					amount_due: number;
+					amount_paid: number;
+					amount_remaining: number;
+					subtotal: number;
+					total: number;
+					tax: number | null;
+					number: string | null;
+					hosted_invoice_url: string | null;
+					invoice_pdf: string | null;
+					period_start: string | null;
+					period_end: string | null;
+					created_at_stripe: string | null;
+					paid_at: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id: string;
+					user_id: string;
+					stripe_customer_id: string;
+					subscription_id?: string | null;
+					status: Database['public']['Enums']['stripe_invoice_status'];
+					currency: string;
+					amount_due?: number;
+					amount_paid?: number;
+					amount_remaining?: number;
+					subtotal?: number;
+					total?: number;
+					tax?: number | null;
+					number?: string | null;
+					hosted_invoice_url?: string | null;
+					invoice_pdf?: string | null;
+					period_start?: string | null;
+					period_end?: string | null;
+					created_at_stripe?: string | null;
+					paid_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					user_id?: string;
+					stripe_customer_id?: string;
+					subscription_id?: string | null;
+					status?: Database['public']['Enums']['stripe_invoice_status'];
+					currency?: string;
+					amount_due?: number;
+					amount_paid?: number;
+					amount_remaining?: number;
+					subtotal?: number;
+					total?: number;
+					tax?: number | null;
+					number?: string | null;
+					hosted_invoice_url?: string | null;
+					invoice_pdf?: string | null;
+					period_start?: string | null;
+					period_end?: string | null;
+					created_at_stripe?: string | null;
+					paid_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'stripe_invoices_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'profiles';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'stripe_invoices_subscription_id_fkey';
+						columns: ['subscription_id'];
+						isOneToOne: false;
+						referencedRelation: 'stripe_subscriptions';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 		};
 		Views: {
 			[_ in never]: never;
@@ -452,6 +539,7 @@ export type Database = {
 				| 'canceled'
 				| 'unpaid'
 				| 'paused';
+			stripe_invoice_status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void';
 		};
 		CompositeTypes: {
 			[_ in never]: never;
