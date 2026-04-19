@@ -1,14 +1,14 @@
 # Contactly CI — the course-project test suite.
 #
 # The repo's root `deploy.yml` workflow targets the standalone marketing app
-# at the repo root. Contactly lives under `course/contactly/` as a separate
-# pnpm project and has its own typecheck + unit suite (and a growing
-# Playwright suite).
+# at the repo root. Contactly lives under `course/contactly/` as a workspace
+# package (see `pnpm-workspace.yaml`) and has its own typecheck + unit suite
+# (and a growing Playwright suite).
 #
-# This workflow runs on every push/PR that TOUCHES `course/contactly/**`
-# (or this workflow file itself). Lessons that don't touch contactly files
-# don't pay the cost. Lessons that do — including the Module 12 cassette
-# scenarios — get a green check before review.
+# This workflow runs on every push/PR that TOUCHES `course/contactly/**`,
+# the workspace lockfile, or this workflow file itself. Lessons that don't
+# touch contactly files don't pay the cost. Lessons that do — including the
+# Module 12 cassette scenarios — get a green check before review.
 name: Contactly CI
 
 on:
@@ -16,11 +16,15 @@ on:
     branches: [main]
     paths:
       - 'course/contactly/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/contactly-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'course/contactly/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/contactly-ci.yml'
 
 # Cancel in-flight runs on the same ref when a new push/PR arrives. PR
@@ -34,12 +38,6 @@ jobs:
   contactly:
     name: Lint, typecheck, unit tests
     runs-on: ubuntu-latest
-    # `working-directory` defaults so every run-step targets the contactly
-    # project without `cd course/contactly` boilerplate. Steps that need
-    # to operate elsewhere (none here today) override per-step.
-    defaults:
-      run:
-        working-directory: course/contactly
     # Placeholder env vars so `$env/static/*` modules type-check in CI
     # WITHOUT real secrets ever reaching the runner. The unit suite mocks
     # `$lib/server/env`, the Module 12 cassette tests mock the entire Stripe
@@ -68,29 +66,38 @@ jobs:
       # Pin Node to the same major Vercel deploys against (`nodejs22.x` in
       # `svelte.config.js`). Anything older changes Web Crypto availability
       # in undici and can introduce phantom Stripe signature mismatches.
+      #
+      # Contactly is a workspace package under the root `pnpm-workspace.yaml`
+      # — the lockfile lives at the repo root, not inside `course/contactly/`.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
-          cache-dependency-path: course/contactly/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
+      # Install at the workspace root so every package (root + contactly)
+      # resolves from the same lockfile in a single pass.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Sync SvelteKit
+        working-directory: course/contactly
         run: pnpm exec svelte-kit sync
 
       # Lint + typecheck + unit suite, in CI order. Each step's failure
       # is independently surfaced in the PR check list, so reviewers see
       # which gate failed without expanding the full log.
       - name: Lint
+        working-directory: course/contactly
         run: pnpm run lint
 
       - name: Type-check
+        working-directory: course/contactly
         run: pnpm run check
 
       - name: Unit tests
+        working-directory: course/contactly
         run: pnpm exec vitest run
 
   # ---------------------------------------------------------------------
@@ -107,9 +114,6 @@ jobs:
   cassette-validation:
     name: Validate Stripe webhook cassettes
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: course/contactly
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,7 +128,7 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-          cache-dependency-path: course/contactly/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -134,6 +138,7 @@ jobs:
       # `parseCassetteOrThrow`. A new cassette file added to the
       # directory is auto-included; no test-file edit needed.
       - name: Validate every cassette parses
+        working-directory: course/contactly
         run: |
           pnpm exec svelte-kit sync
           pnpm exec vitest run \
