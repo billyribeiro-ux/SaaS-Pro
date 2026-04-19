@@ -1,5 +1,16 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import type Stripe from 'stripe';
+
+// Mock the products service so the dispatch table doesn't actually
+// hit Supabase. We're testing the *routing*, not the side effects;
+// each service has its own dedicated test file.
+vi.mock('$lib/server/billing/products', () => ({
+	upsertStripeProduct: vi.fn().mockResolvedValue(undefined),
+	upsertStripePrice: vi.fn().mockResolvedValue(undefined),
+	deleteStripeProduct: vi.fn().mockResolvedValue(undefined),
+	deleteStripePrice: vi.fn().mockResolvedValue(undefined)
+}));
+
 import { SUBSCRIBED_EVENTS, dispatchStripeEvent, isSubscribedEvent } from './stripe-events';
 
 function fakeEvent<T extends string>(type: T, object: Record<string, unknown> = {}): Stripe.Event {

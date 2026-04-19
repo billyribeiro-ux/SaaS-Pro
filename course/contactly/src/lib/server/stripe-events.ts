@@ -13,16 +13,26 @@
  *    handler, runs it, and surfaces "unhandled" vs "handler-error"
  *    distinctly.
  *
+ * What's been added (Module 7+):
+ *  - product.* / price.* handlers wired to the products service       — Module 7.2
+ *  - customer.* handlers wired to the customers service                — Module 7.3
+ *  - customer.subscription.* handlers wired to the subscriptions svc   — Module 7.4
+ *
  * What's NOT here yet:
- *  - Storage idempotency on `stripe_events.id`           — Module 6.4
- *  - Real `stripe_customers` / `subscriptions` mirroring — Modules 7.3 / 7.4
- *  - Email side-effects (trial-ending, dunning)          — Modules 9.4 / 10
+ *  - Email side-effects (trial-ending, dunning)                        — Modules 9.4 / 10
  *
  * Each stub handler is the deliberate landing pad for the future
  * lesson that fills it in. Keep the signatures stable so those
  * lessons are pure additions, not refactors.
  */
 import type Stripe from 'stripe';
+
+import {
+	deleteStripePrice,
+	deleteStripeProduct,
+	upsertStripePrice,
+	upsertStripeProduct
+} from '$lib/server/billing/products';
 
 /**
  * The exhaustive set of Stripe event types Contactly listens for.
@@ -37,11 +47,23 @@ import type Stripe from 'stripe';
  * Dashboard isn't subscribed to never arrive at all (still safe).
  */
 export const SUBSCRIBED_EVENTS = [
+	// Catalog mirroring (Module 7.2). Both `created` and `updated`
+	// route through the same upsert; `deleted` archives the local
+	// row so the pricing page stops rendering it.
+	'product.created',
+	'product.updated',
+	'product.deleted',
+	'price.created',
+	'price.updated',
+	'price.deleted',
+	// Checkout completion (Module 9.1).
 	'checkout.session.completed',
+	// Subscription mirror (Module 7.4).
 	'customer.subscription.created',
 	'customer.subscription.updated',
 	'customer.subscription.deleted',
 	'customer.subscription.trial_will_end',
+	// Invoice notifications (Modules 9.5 / 10).
 	'invoice.paid',
 	'invoice.payment_failed'
 ] as const;
@@ -80,6 +102,24 @@ type EventHandlers = { [K in SubscribedEventType]: EventHandler };
  * supersedes it for production observability.
  */
 const EVENT_HANDLERS: EventHandlers = {
+	'product.created': async (event) => {
+		await upsertStripeProduct(event.data.object as Stripe.Product);
+	},
+	'product.updated': async (event) => {
+		await upsertStripeProduct(event.data.object as Stripe.Product);
+	},
+	'product.deleted': async (event) => {
+		await deleteStripeProduct((event.data.object as Stripe.Product).id);
+	},
+	'price.created': async (event) => {
+		await upsertStripePrice(event.data.object as Stripe.Price);
+	},
+	'price.updated': async (event) => {
+		await upsertStripePrice(event.data.object as Stripe.Price);
+	},
+	'price.deleted': async (event) => {
+		await deleteStripePrice((event.data.object as Stripe.Price).id);
+	},
 	'checkout.session.completed': async (event) => {
 		console.info('[stripe-webhook] checkout.session.completed', {
 			id: event.id,
