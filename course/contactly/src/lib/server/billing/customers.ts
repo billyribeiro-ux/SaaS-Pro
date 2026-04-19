@@ -101,11 +101,7 @@ export async function ensureStripeCustomer({
 /** Cache lookup. Encapsulated so call sites stay one-line. */
 async function readCachedCustomer(userId: string): Promise<string | null> {
 	const { data, error } = await withAdmin('billing.customers.read', 'system', async (admin) =>
-		admin
-			.from('stripe_customers')
-			.select('stripe_customer_id')
-			.eq('user_id', userId)
-			.maybeSingle()
+		admin.from('stripe_customers').select('stripe_customer_id').eq('user_id', userId).maybeSingle()
 	);
 	if (error) {
 		throw new Error(`[customers] readCachedCustomer failed for user ${userId}: ${error.message}`);
