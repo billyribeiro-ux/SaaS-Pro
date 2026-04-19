@@ -21,6 +21,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
+	import PlanSection from '$lib/components/billing/PlanSection.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -104,8 +105,11 @@
 <div class="space-y-8">
 	<header>
 		<h1 class="text-3xl font-bold tracking-tight text-slate-900">Account</h1>
-		<p class="mt-2 text-sm text-slate-600">Manage your profile, sign-in, and account.</p>
+		<p class="mt-2 text-sm text-slate-600">Manage your plan, profile, sign-in, and account.</p>
 	</header>
+
+	<!-- ============================== Plan ============================= -->
+	<PlanSection entitlements={data.entitlements} />
 
 	<!-- ============================ Profile ============================ -->
 	<section
