@@ -19,14 +19,14 @@ secret long before the slow Supabase migration step burns minutes.
 
 ## Required secrets
 
-| Secret                  | Source                                                    | Notes                                |
-| ----------------------- | --------------------------------------------------------- | ------------------------------------ |
-| `VERCEL_TOKEN`          | <https://vercel.com/account/tokens>                       | Classic personal token, team-scoped. |
-| `VERCEL_ORG_ID`         | `cat .vercel/project.json` after `pnpm dlx vercel link`   | Stable per team.                     |
-| `VERCEL_PROJECT_ID`     | `cat .vercel/project.json`                                | Stable per project.                  |
-| `SUPABASE_ACCESS_TOKEN` | <https://supabase.com/dashboard/account/tokens>           | Used by `supabase link` / `db push`. |
-| `SUPABASE_PROJECT_REF`  | Supabase project URL (`<ref>.supabase.co`)                | Stable per environment.              |
-| `SUPABASE_DB_PASSWORD`  | Supabase project, Settings, Database, Connection info     | The Postgres role password.          |
+| Secret                  | Source                                                  | Notes                                |
+| ----------------------- | ------------------------------------------------------- | ------------------------------------ |
+| `VERCEL_TOKEN`          | <https://vercel.com/account/tokens>                     | Classic personal token, team-scoped. |
+| `VERCEL_ORG_ID`         | `cat .vercel/project.json` after `pnpm dlx vercel link` | Stable per team.                     |
+| `VERCEL_PROJECT_ID`     | `cat .vercel/project.json`                              | Stable per project.                  |
+| `SUPABASE_ACCESS_TOKEN` | <https://supabase.com/dashboard/account/tokens>         | Used by `supabase link` / `db push`. |
+| `SUPABASE_PROJECT_REF`  | Supabase project URL (`<ref>.supabase.co`)              | Stable per environment.              |
+| `SUPABASE_DB_PASSWORD`  | Supabase project, Settings, Database, Connection info   | The Postgres role password.          |
 
 List them locally:
 
