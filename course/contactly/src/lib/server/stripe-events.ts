@@ -1,0 +1,166 @@
+/**
+ * Stripe webhook event dispatch.
+ *
+ * Splits the routing table out of `+server.ts` so the HTTP layer
+ * (signature verification, status codes, header parsing) and the
+ * business layer (what we do when we receive `invoice.paid`) can
+ * evolve and be tested independently.
+ *
+ * What's HERE (Module 6.3):
+ *  - The list of event types Contactly subscribes to.
+ *  - Stub handlers that just log `[stripe-webhook] received: …`.
+ *  - The `dispatchStripeEvent` orchestrator that picks the right
+ *    handler, runs it, and surfaces "unhandled" vs "handler-error"
+ *    distinctly.
+ *
+ * What's NOT here yet:
+ *  - Storage idempotency on `stripe_events.id`           — Module 6.4
+ *  - Real `stripe_customers` / `subscriptions` mirroring — Modules 7.3 / 7.4
+ *  - Email side-effects (trial-ending, dunning)          — Modules 9.4 / 10
+ *
+ * Each stub handler is the deliberate landing pad for the future
+ * lesson that fills it in. Keep the signatures stable so those
+ * lessons are pure additions, not refactors.
+ */
+import type Stripe from 'stripe';
+
+/**
+ * The exhaustive set of Stripe event types Contactly listens for.
+ *
+ * Adding to this list is a deliberate act: every entry must have a
+ * corresponding handler in `EVENT_HANDLERS` below, and `tsc` enforces
+ * that 1:1 via the index signature on `EventHandlers`.
+ *
+ * Keep this list aligned with the Dashboard endpoint configuration
+ * (Module 12.5) — events the Dashboard sends but we don't list here
+ * fall through to the "unhandled" path; events we list but the
+ * Dashboard isn't subscribed to never arrive at all (still safe).
+ */
+export const SUBSCRIBED_EVENTS = [
+	'checkout.session.completed',
+	'customer.subscription.created',
+	'customer.subscription.updated',
+	'customer.subscription.deleted',
+	'customer.subscription.trial_will_end',
+	'invoice.paid',
+	'invoice.payment_failed'
+] as const;
+
+export type SubscribedEventType = (typeof SUBSCRIBED_EVENTS)[number];
+
+/**
+ * Narrow `string`-typed `event.type` (which is the entire Stripe
+ * event-type union, ~250 strings) down to "is this one we care
+ * about" so the dispatcher can `switch` on a small enum.
+ */
+export function isSubscribedEvent(type: string): type is SubscribedEventType {
+	return (SUBSCRIBED_EVENTS as readonly string[]).includes(type);
+}
+
+/**
+ * The shape of every event handler.
+ *
+ * Returns void; throws on failure. The +server.ts handler converts a
+ * thrown error into a 500 (so Stripe retries with backoff) and a
+ * clean return into a 200.
+ */
+type EventHandler = (event: Stripe.Event) => Promise<void>;
+
+/**
+ * Type-level guard that the dispatch table covers every subscribed
+ * event. If you add a string to `SUBSCRIBED_EVENTS` without adding
+ * the corresponding entry below, `tsc` flags it.
+ */
+type EventHandlers = { [K in SubscribedEventType]: EventHandler };
+
+/**
+ * Module 6.4+ replaces these stub bodies with real DB writes. The
+ * `console.info` stays around for human-visible feedback during
+ * `pnpm run stripe:trigger` rehearsals; structured logging (Module 12)
+ * supersedes it for production observability.
+ */
+const EVENT_HANDLERS: EventHandlers = {
+	'checkout.session.completed': async (event) => {
+		console.info('[stripe-webhook] checkout.session.completed', {
+			id: event.id,
+			session: (event.data.object as Stripe.Checkout.Session).id,
+			customer: (event.data.object as Stripe.Checkout.Session).customer,
+			mode: (event.data.object as Stripe.Checkout.Session).mode
+		});
+	},
+	'customer.subscription.created': async (event) => {
+		const sub = event.data.object as Stripe.Subscription;
+		console.info('[stripe-webhook] customer.subscription.created', {
+			id: event.id,
+			subscription: sub.id,
+			status: sub.status,
+			customer: sub.customer
+		});
+	},
+	'customer.subscription.updated': async (event) => {
+		const sub = event.data.object as Stripe.Subscription;
+		console.info('[stripe-webhook] customer.subscription.updated', {
+			id: event.id,
+			subscription: sub.id,
+			status: sub.status,
+			cancel_at_period_end: sub.cancel_at_period_end
+		});
+	},
+	'customer.subscription.deleted': async (event) => {
+		const sub = event.data.object as Stripe.Subscription;
+		console.info('[stripe-webhook] customer.subscription.deleted', {
+			id: event.id,
+			subscription: sub.id,
+			status: sub.status
+		});
+	},
+	'customer.subscription.trial_will_end': async (event) => {
+		const sub = event.data.object as Stripe.Subscription;
+		console.info('[stripe-webhook] customer.subscription.trial_will_end', {
+			id: event.id,
+			subscription: sub.id,
+			trial_end: sub.trial_end
+		});
+	},
+	'invoice.paid': async (event) => {
+		const inv = event.data.object as Stripe.Invoice;
+		console.info('[stripe-webhook] invoice.paid', {
+			id: event.id,
+			invoice: inv.id,
+			customer: inv.customer,
+			amount_paid: inv.amount_paid
+		});
+	},
+	'invoice.payment_failed': async (event) => {
+		const inv = event.data.object as Stripe.Invoice;
+		console.info('[stripe-webhook] invoice.payment_failed', {
+			id: event.id,
+			invoice: inv.id,
+			customer: inv.customer,
+			attempt_count: inv.attempt_count
+		});
+	}
+};
+
+export type DispatchResult =
+	| { kind: 'handled'; type: SubscribedEventType }
+	| { kind: 'unhandled'; type: string };
+
+/**
+ * Route an authenticated, signature-verified Stripe event to its
+ * handler.
+ *
+ * Throws on handler failure — caller (+server.ts) catches and returns
+ * 500 so Stripe schedules a retry. Returns a `DispatchResult` so the
+ * caller can choose how to log (`handled` is info-level, `unhandled`
+ * is debug-level, never warn — silently ignoring an event we don't
+ * care about is the *intended* behavior, not an anomaly).
+ */
+export async function dispatchStripeEvent(event: Stripe.Event): Promise<DispatchResult> {
+	if (!isSubscribedEvent(event.type)) {
+		return { kind: 'unhandled', type: event.type };
+	}
+	const handler = EVENT_HANDLERS[event.type];
+	await handler(event);
+	return { kind: 'handled', type: event.type };
+}
