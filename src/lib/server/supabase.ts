@@ -1,15 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient, type CookieMethodsServer } from '@supabase/ssr';
 import type { RequestEvent } from '@sveltejs/kit';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { env as publicEnv } from '$env/dynamic/public';
+import { env as privateEnv } from '$env/dynamic/private';
 import type { Database } from '$types/database.types';
 
 // Admin client — bypasses RLS. Server-only; never expose to the browser.
 // Use for webhook handlers and service-role operations (e.g. syncing Stripe data).
+// Dynamic env so CI builds (Vercel, etc.) do not require `$env/static/private` at compile time.
 export const supabaseAdmin = createClient<Database>(
-	PUBLIC_SUPABASE_URL,
-	SUPABASE_SERVICE_ROLE_KEY,
+	publicEnv.PUBLIC_SUPABASE_URL!,
+	privateEnv.SUPABASE_SERVICE_ROLE_KEY!,
 	{
 		auth: {
 			autoRefreshToken: false,
@@ -30,7 +31,11 @@ export function createRequestSupabaseClient(event: RequestEvent) {
 		}
 	};
 
-	return createServerClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-		cookies
-	});
+	return createServerClient<Database>(
+		publicEnv.PUBLIC_SUPABASE_URL!,
+		publicEnv.PUBLIC_SUPABASE_ANON_KEY!,
+		{
+			cookies
+		}
+	);
 }

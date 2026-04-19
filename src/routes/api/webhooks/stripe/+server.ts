@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types';
 import type Stripe from 'stripe';
+import { env } from '$env/dynamic/private';
 import { stripe } from '$server/stripe';
 import { supabaseAdmin } from '$server/supabase';
-import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
 import { upsertPrice, upsertProduct } from '$server/billing/products.service';
 import {
 	markSubscriptionDeleted,
@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	let event: Stripe.Event;
 	try {
-		event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+		event = stripe.webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET!);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Unknown signature error';
 		console.warn('[stripe webhook] signature verification failed:', message);

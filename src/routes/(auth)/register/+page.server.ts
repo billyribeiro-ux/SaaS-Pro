@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import * as z from 'zod';
 import type { Actions, PageServerLoad } from './$types';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { SITE } from '$config/site.config';
 
 const registerSchema = z.object({
 	email: z.string().email(),
@@ -32,7 +32,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const appUrl = PUBLIC_APP_URL || url.origin;
+		const appUrl = SITE.url || url.origin;
 		const { data: signUpData, error } = await locals.supabase.auth.signUp({
 			email: parsed.data.email,
 			password: parsed.data.password,

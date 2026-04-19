@@ -7,7 +7,7 @@ import {
 	ALL_LOOKUP_KEYS,
 	PRICING_LOOKUP_KEYS
 } from '$config/pricing.config';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { SITE } from '$config/site.config';
 
 const bodySchema = z.object({
 	lookupKey: z.enum([
@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 		fullName: user.user_metadata?.full_name ?? null
 	});
 
-	const appUrl = PUBLIC_APP_URL || url.origin;
+	const appUrl = SITE.url || url.origin;
 	const mode: 'subscription' | 'payment' = price.type === 'recurring' ? 'subscription' : 'payment';
 
 	const session = await stripe.checkout.sessions.create({

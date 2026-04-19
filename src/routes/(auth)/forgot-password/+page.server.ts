@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import * as z from 'zod';
 import type { Actions } from './$types';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { SITE } from '$config/site.config';
 
 const schema = z.object({ email: z.string().email() });
 
@@ -17,7 +17,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const appUrl = PUBLIC_APP_URL || url.origin;
+		const appUrl = SITE.url || url.origin;
 		const { error } = await locals.supabase.auth.resetPasswordForEmail(parsed.data.email, {
 			redirectTo: `${appUrl}/auth/callback?next=/account`
 		});

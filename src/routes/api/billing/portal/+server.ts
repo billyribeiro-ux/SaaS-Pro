@@ -2,7 +2,7 @@ import { error, json, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { stripe } from '$server/stripe';
 import { supabaseAdmin } from '$server/supabase';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { SITE } from '$config/site.config';
 
 export const POST: RequestHandler = async ({ locals, url }) => {
 	const user = locals.user;
@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ locals, url }) => {
 		throw error(400, 'No Stripe customer on file.');
 	}
 
-	const appUrl = PUBLIC_APP_URL || url.origin;
+	const appUrl = SITE.url || url.origin;
 	const session = await stripe.billingPortal.sessions.create({
 		customer: customer.stripe_customer_id,
 		return_url: `${appUrl}/account`

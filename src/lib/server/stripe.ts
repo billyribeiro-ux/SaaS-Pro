@@ -1,9 +1,9 @@
 import Stripe from 'stripe';
-import { STRIPE_SECRET_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 // Stripe v22 requires `new Stripe()`. Pinning apiVersion keeps behavior stable
 // across SDK patch releases — upgrade deliberately, never implicitly.
-export const stripe = new Stripe(STRIPE_SECRET_KEY, {
+export const stripe = new Stripe(env.STRIPE_SECRET_KEY!, {
 	apiVersion: '2026-03-25.dahlia',
 	appInfo: {
 		name: 'saas-pro',
