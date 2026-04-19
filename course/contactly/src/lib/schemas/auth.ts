@@ -80,3 +80,34 @@ export const signUpSchema = z
 	});
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
+
+/**
+ * Sign-in with password.
+ *
+ * Note we do NOT re-apply `passwordSchema` here. That schema describes
+ * the rules for *creating* a new password (length, character classes).
+ * On sign-in we only need to confirm the user typed *something* — the
+ * actual correctness check is "does this match the stored hash" and
+ * Supabase owns that. Re-running the strength check would (a) leak
+ * the policy to attackers ("your input failed the policy" tells them
+ * what shape passwords have to be) and (b) lock out users whose
+ * passwords pre-date a future policy bump.
+ */
+export const signInWithPasswordSchema = z.object({
+	email: emailSchema,
+	password: z.string({ error: 'Password is required' }).min(1, { error: 'Password is required' })
+});
+
+export type SignInWithPasswordInput = z.infer<typeof signInWithPasswordSchema>;
+
+/**
+ * Sign-in with magic link. Just an email — Supabase emails the user a
+ * one-time token they click to authenticate. The link target hits our
+ * `/auth/confirm` endpoint exactly like the sign-up confirmation does
+ * (single OTP-verification path → one place to maintain).
+ */
+export const signInWithMagicLinkSchema = z.object({
+	email: emailSchema
+});
+
+export type SignInWithMagicLinkInput = z.infer<typeof signInWithMagicLinkSchema>;
