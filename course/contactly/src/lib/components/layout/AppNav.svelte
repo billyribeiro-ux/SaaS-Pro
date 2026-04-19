@@ -22,10 +22,22 @@
 	import type { User } from '@supabase/supabase-js';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { cn } from '$lib/utils/cn';
 	import Button from '$lib/components/ui/Button.svelte';
 
 	type Props = { user: User };
 	let { user }: Props = $props();
+
+	// Primary nav. Highlight an item when the current path *starts*
+	// with its href so deep links (e.g. /contacts/123) keep the
+	// "Contacts" tab active. Listed in render order — easy to reorder
+	// without touching markup.
+	type PrimaryLink = { label: string; href: '/dashboard' | '/contacts'; testid: string };
+	const primaryLinks: PrimaryLink[] = [
+		{ label: 'Dashboard', href: '/dashboard', testid: 'nav-dashboard' },
+		{ label: 'Contacts', href: '/contacts', testid: 'nav-contacts' }
+	];
 </script>
 
 <header class="border-b border-slate-200 bg-white">
@@ -33,18 +45,45 @@
 		class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6"
 		aria-label="App navigation"
 	>
-		<a
-			href={resolve('/dashboard')}
-			class="flex items-center gap-2 text-base font-bold text-slate-900"
-		>
-			<span
-				class="bg-brand-600 inline-flex size-7 items-center justify-center rounded-md text-sm font-bold text-white"
-				aria-hidden="true"
+		<div class="flex items-center gap-8">
+			<a
+				href={resolve('/dashboard')}
+				class="flex items-center gap-2 text-base font-bold text-slate-900"
 			>
-				C
-			</span>
-			Contactly
-		</a>
+				<span
+					class="bg-brand-600 inline-flex size-7 items-center justify-center rounded-md text-sm font-bold text-white"
+					aria-hidden="true"
+				>
+					C
+				</span>
+				Contactly
+			</a>
+
+			<ul class="hidden items-center gap-1 sm:flex">
+				{#each primaryLinks as link (link.href)}
+					{@const isActive =
+						link.href === '/dashboard'
+							? page.url.pathname === resolve('/dashboard')
+							: page.url.pathname === resolve(link.href) ||
+								page.url.pathname.startsWith(resolve(link.href) + '/')}
+					<li>
+						<a
+							href={resolve(link.href)}
+							data-testid={link.testid}
+							aria-current={isActive ? 'page' : undefined}
+							class={cn(
+								'inline-flex h-9 items-center rounded-md px-3 text-sm font-medium transition-colors',
+								isActive
+									? 'bg-brand-50 text-brand-700'
+									: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+							)}
+						>
+							{link.label}
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</div>
 
 		<div class="flex items-center gap-3">
 			<a
