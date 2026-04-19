@@ -20,6 +20,13 @@
 		</a>
 
 		<div class="flex items-center gap-3">
+			<a
+				href={resolve('/pricing')}
+				class="hidden text-sm font-medium text-slate-600 hover:text-slate-900 sm:inline"
+				data-testid="nav-pricing-link"
+			>
+				Pricing
+			</a>
 			{#if user}
 				<span class="hidden text-sm text-slate-600 sm:inline" data-testid="nav-user-email">
 					{user.email}
