@@ -78,6 +78,13 @@
 	// cancel_url our session-builder emits in Lesson 9.1.
 	const cancelled = $derived(page.url.searchParams.get('checkout') === 'cancelled');
 
+	// Refusal flash from /api/billing/portal: the user clicked
+	// "Manage billing" but has never had a Stripe customer (free-
+	// tier user, never opened Checkout). Sending them to the empty
+	// Portal would be a dead-end, so the endpoint 303s here with
+	// `?portal=no-customer`. (Lesson 9.3.)
+	const portalNoCustomer = $derived(page.url.searchParams.get('portal') === 'no-customer');
+
 	const ctaLabel = $derived(isAuthenticated ? 'Go to dashboard' : "Sign up — it's free");
 	const ctaHref = $derived(isAuthenticated ? resolve('/dashboard') : resolve('/sign-up'));
 </script>
@@ -120,6 +127,17 @@
 			data-testid="pricing-cancelled-flash"
 		>
 			Checkout was cancelled — no card was charged. Pick a plan to try again.
+		</div>
+	{/if}
+
+	{#if portalNoCustomer}
+		<div
+			class="mx-auto mt-8 max-w-2xl rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm text-slate-700"
+			role="status"
+			data-testid="pricing-portal-no-customer-flash"
+		>
+			You don't have a paid plan yet, so the billing portal isn't available. Pick a plan below to
+			get started.
 		</div>
 	{/if}
 

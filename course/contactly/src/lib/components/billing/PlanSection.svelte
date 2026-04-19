@@ -34,6 +34,7 @@
 	import { resolve } from '$app/paths';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PlanBadge from '$lib/components/billing/PlanBadge.svelte';
+	import ManageBillingForm from '$lib/components/billing/ManageBillingForm.svelte';
 
 	let { entitlements }: PlanSectionProps = $props();
 
@@ -150,6 +151,12 @@
 
 	<div class="mt-6 flex flex-wrap gap-3">
 		{#if entitlements.tier === 'starter'}
+			<!--
+				Starter has no Stripe customer (lazy-created on first
+				checkout, ADR-002), so opening the Portal would land
+				on an empty page. Send them to /pricing to choose a
+				plan instead.
+			-->
 			<Button href={resolve('/pricing')} variant="primary" data-testid="plan-upgrade-cta">
 				Upgrade
 			</Button>
@@ -157,31 +164,10 @@
 			<Button href={resolve('/pricing')} variant="primary" data-testid="plan-upgrade-cta">
 				Upgrade to Business
 			</Button>
-			<!--
-				"Manage billing" lands as a real Stripe Billing Portal
-				redirect in Module 9.3. For now the button is rendered
-				but disabled with a tooltip-style title so users know
-				it's coming.
-			-->
-			<Button
-				type="button"
-				variant="secondary"
-				disabled
-				title="Self-serve billing portal arrives in Module 9.3"
-				data-testid="plan-manage-billing-cta"
-			>
-				Manage billing
-			</Button>
+			<ManageBillingForm testid="plan-manage-billing-cta" />
 		{:else}
-			<Button
-				type="button"
-				variant="primary"
-				disabled
-				title="Self-serve billing portal arrives in Module 9.3"
-				data-testid="plan-manage-billing-cta"
-			>
-				Manage billing
-			</Button>
+			<!-- Business is the top tier; the only billing action is "Manage". -->
+			<ManageBillingForm variant="primary" testid="plan-manage-billing-cta" />
 		{/if}
 	</div>
 </section>
