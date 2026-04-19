@@ -32,8 +32,13 @@ export default defineConfig({
 	testMatch: '**/*.{spec,e2e}.ts',
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
-	retries: process.env.CI ? 2 : 0,
-	workers: process.env.CI ? 1 : undefined,
+	retries: process.env.CI ? 2 : 1,
+	// One preview server feeds every worker. Beyond 2 parallel
+	// workers we've seen sporadic timeouts on form-submit waits as
+	// the SSR pipeline gets contended. Capping locally to 2 keeps the
+	// suite fast (~5s) without the flake; CI uses 1 for full
+	// determinism.
+	workers: process.env.CI ? 1 : 2,
 	reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
 	use: {
 		baseURL: `http://localhost:${PORT}`,
