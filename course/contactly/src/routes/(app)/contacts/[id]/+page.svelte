@@ -1,10 +1,15 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/Button.svelte';
-	import type { PageData } from './$types';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: PageProps = $props();
+
+	let showDeleteModal = $state(false);
+	let deleting = $state(false);
 
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {
 		dateStyle: 'medium',
@@ -48,15 +53,34 @@
 				</p>
 			{/if}
 		</div>
-		<Button
-			href={resolve('/(app)/contacts/[id]/edit', { id: data.contact.id })}
-			variant="secondary"
-			data-testid="edit-contact-link"
-		>
-			Edit
-		</Button>
-		<!-- Delete action lands in lesson 4.7. -->
+		<div class="flex items-center gap-2">
+			<Button
+				href={resolve('/(app)/contacts/[id]/edit', { id: data.contact.id })}
+				variant="secondary"
+				data-testid="edit-contact-link"
+			>
+				Edit
+			</Button>
+			<Button
+				variant="danger"
+				type="button"
+				onclick={() => (showDeleteModal = true)}
+				data-testid="delete-contact-button"
+			>
+				Delete
+			</Button>
+		</div>
 	</header>
+
+	{#if form?.deleteError}
+		<div
+			class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+			role="alert"
+			data-testid="delete-error"
+		>
+			{form.deleteError}
+		</div>
+	{/if}
 
 	<dl class="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 sm:grid-cols-2">
 		<div>
@@ -117,3 +141,52 @@
 		{/if}
 	</footer>
 </div>
+
+<Modal
+	id="delete-contact"
+	title="Delete this contact?"
+	description="This permanently removes {data.contact
+		.full_name} and any notes you've kept on them. This can't be undone."
+	bind:open={showDeleteModal}
+	testid="delete-contact-modal"
+>
+	<form
+		method="POST"
+		action="?/delete"
+		use:enhance={() => {
+			deleting = true;
+			return async ({ update }) => {
+				// `update()` resolves the action promise (running the
+				// usual redirect/error/render flow). Whatever happens
+				// next, we no longer need the modal open or the
+				// "deleting…" state — the redirect closes the page,
+				// or the failure renders an error banner above.
+				await update();
+				deleting = false;
+				showDeleteModal = false;
+			};
+		}}
+		class="flex flex-col gap-3"
+	>
+		<div class="flex justify-end gap-3 pt-2">
+			<Button
+				type="button"
+				variant="ghost"
+				onclick={() => (showDeleteModal = false)}
+				disabled={deleting}
+				data-testid="cancel-delete"
+			>
+				Cancel
+			</Button>
+			<Button
+				type="submit"
+				variant="danger"
+				loading={deleting}
+				disabled={deleting}
+				data-testid="confirm-delete"
+			>
+				{deleting ? 'Deleting…' : 'Delete contact'}
+			</Button>
+		</div>
+	</form>
+</Modal>

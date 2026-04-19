@@ -18,8 +18,8 @@
  *      exists, but not for you" leaks the existence of other tenants'
  *      data. Always 404.
  */
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { error, fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
 	const { data: contact, error: dbError } = await supabase
@@ -39,4 +39,46 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 	}
 
 	return { contact };
+};
+
+export const actions: Actions = {
+	/**
+	 * Delete this contact.
+	 *
+	 * No service-role hop needed: the `contacts_delete_member` RLS
+	 * policy from 4.1 lets a member delete rows in their own org and
+	 * silently denies anything else. The action runs under the
+	 * caller's session, exactly as INSERT/UPDATE do.
+	 *
+	 * We sanity-check the affected-row count anyway. RLS-blocked
+	 * deletes return success with 0 rows affected (no error,
+	 * literally nothing happened) — distinguishing that from "row
+	 * gone before we got there" matters for the user-facing message
+	 * AND for not pretending we deleted something we couldn't touch.
+	 */
+	delete: async ({ params, locals: { supabase, safeGetSession } }) => {
+		const { user } = await safeGetSession();
+		if (!user) throw redirect(303, '/sign-in');
+
+		const { error: deleteError, count } = await supabase
+			.from('contacts')
+			.delete({ count: 'exact' })
+			.eq('id', params.id);
+
+		if (deleteError) {
+			console.error('[contact delete] failed:', deleteError);
+			return fail(500, { deleteError: 'Could not delete this contact. Please try again.' });
+		}
+
+		if (count === 0) {
+			// Either RLS blocked us (we don't belong to this row's org)
+			// or the row vanished between page load and form submit.
+			// Both surface the same way to the user — 404. We don't
+			// distinguish, because a "you can't touch this" message
+			// would leak that the row exists.
+			throw error(404, 'Contact not found');
+		}
+
+		throw redirect(303, '/contacts?deleted=1');
+	}
 };
