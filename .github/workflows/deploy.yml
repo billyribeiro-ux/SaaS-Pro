@@ -1,0 +1,111 @@
+# CI/CD pipeline for SaaS-Pro.
+#
+# On every pull request targeting main, run the `ci` job: typecheck + e2e tests.
+# On every push to main, run `ci`, then `deploy` if `ci` passes: push Supabase
+# migrations to the production project, then ship the app to Vercel.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # -------------------------------------------------------------------------
+  # ci: runs on PRs AND on pushes to main. `deploy` depends on this passing.
+  # -------------------------------------------------------------------------
+  ci:
+    name: Lint, typecheck, and test
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repo at the commit that triggered the workflow.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install pnpm first so setup-node's pnpm cache can find it.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Install Node 20 and enable pnpm's store cache across runs.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      # Install deps from the lockfile; fail if the lockfile is stale.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Generate SvelteKit's auto-generated types so svelte-check can run.
+      - name: Sync SvelteKit
+        run: pnpm exec svelte-kit sync
+
+      # Strict TypeScript + Svelte diagnostics across the project.
+      - name: Type-check
+        run: pnpm exec svelte-check --tsconfig ./tsconfig.json
+
+      # Pull down the Chromium binary (and its OS deps) for Playwright.
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Run the end-to-end suite against a SvelteKit dev/preview server
+      # (wired up inside playwright.config.ts).
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+
+  # -------------------------------------------------------------------------
+  # deploy: runs ONLY on push to main, after `ci` is green.
+  # Pushes database migrations to the production Supabase project, then
+  # triggers a production deployment on Vercel.
+  # -------------------------------------------------------------------------
+  deploy:
+    name: Deploy to production
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      # Supabase CLI picks these up automatically for non-interactive auth.
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      # Fresh checkout — jobs don't share filesystem.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Link this checkout to the production Supabase project so the CLI
+      # knows where to push migrations.
+      - name: Link Supabase project
+        run: pnpm exec supabase link --project-ref $SUPABASE_PROJECT_REF
+
+      # Apply any pending SQL migrations in supabase/migrations/ to prod.
+      - name: Push Supabase migrations
+        run: pnpm exec supabase db push --password $SUPABASE_DB_PASSWORD
+
+      # Trigger a production deploy on Vercel. The action handles building
+      # via Vercel's remote build step, so we don't need to `pnpm build` here.
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'

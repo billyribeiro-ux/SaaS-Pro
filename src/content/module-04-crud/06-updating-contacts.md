@@ -1,0 +1,462 @@
+---
+title: "4.6 - Updating Contacts"
+module: 4
+lesson: 6
+moduleSlug: "module-04-crud"
+lessonSlug: "06-updating-contacts"
+description: "Build the edit contact page — loading a single contact, pre-populating the form, and updating it."
+duration: 12
+preview: false
+---
+
+## Overview
+
+A CRUD app without **Update** is a notepad with extra steps. Last lesson you built Create; now you'll build **Edit** — the other half of data entry. Three new problems appear:
+
+1. **Identify the row.** The URL must say *which* contact. We use a **dynamic route parameter** — `/contacts/[id]/edit`.
+2. **Load existing data.** A `load` function fetches the row and pre-fills the form.
+3. **Authorize the edit.** The URL is a string; anyone can hand-craft `/contacts/bob-id/edit`. We rely on RLS from Lesson 4.1 *and* add a redundant `.eq('user_id', user.id)` — a **defense-in-depth** pattern every serious backend uses.
+
+## Prerequisites
+
+- Lesson 4.5 complete — you have `/contacts/new` creating rows with a Zod schema and form action.
+- Lesson 4.1 complete — the `contacts` table exists with RLS policies restricting SELECT/UPDATE/DELETE to `auth.uid() = user_id`.
+- Lesson 3.x complete — `locals.getUser()` returns the current user on the server.
+
+## What You'll Build
+
+- A dynamic route at `/contacts/[id]/edit` — every contact row gets its own edit URL.
+- A `load` function that fetches one contact by ID and throws 404 if it doesn't exist (or isn't yours).
+- A `+page.svelte` with all five fields pre-populated from the loaded contact.
+- A `default` form action that re-validates with Zod, updates the row scoped by both `id` and `user_id`, and redirects back to `/contacts` on success.
+- A clear mental model for **why** we add `.eq('user_id', user.id)` even when RLS would have caught it anyway.
+
+---
+
+## First Principles: Dynamic Routes
+
+Every route you've built so far has a fixed URL: `/login`, `/register`, `/contacts/new`. Those are **static routes** — one folder, one URL.
+
+Edit is different. The URL has to encode *which* record. You could use a query string (`/contacts/edit?id=42`), but SvelteKit prefers **dynamic route segments** baked into the file system.
+
+The rule: **a folder name wrapped in square brackets becomes a URL parameter.** A folder named `[id]` matches any single path segment and exposes it as `params.id` on the server.
+
+Here's the layout we want:
+
+```
+src/routes/(app)/contacts/
+├── +page.svelte              → /contacts
+├── +page.server.ts
+├── new/
+│   ├── +page.svelte          → /contacts/new
+│   └── +page.server.ts
+└── [id]/
+    └── edit/
+        ├── +page.svelte      → /contacts/anything-here/edit
+        └── +page.server.ts
+```
+
+Visiting `/contacts/42/edit` makes SvelteKit look up the tree: no literal `42` folder exists, but `[id]` matches any segment, so `params.id = "42"`. Then it walks into `edit/`, finds `+page.server.ts`, and runs `load` and actions with `params = { id: "42" }`.
+
+**Type detail:** `params.id` is **always a string**. URLs don't have integer types. Even if your database column is UUID or bigint, `params.id` arrives as `"42"` or `"abc-123-def"`. Supabase handles the coercion when you pass it to `.eq()`.
+
+The folder is `[id]/edit`, not `edit/[id]` — the id names a resource, the verb acts on it. REST convention.
+
+---
+
+## Setting Up the Folder
+
+From the project root, create the folder tree and empty files:
+
+```bash
+mkdir -p "src/routes/(app)/contacts/[id]/edit"
+touch "src/routes/(app)/contacts/[id]/edit/+page.svelte"
+touch "src/routes/(app)/contacts/[id]/edit/+page.server.ts"
+```
+
+The quotes protect the parentheses and brackets from your shell's glob expansion. SvelteKit can now see the route; visiting `/contacts/anything/edit` returns a blank page but no longer 404s at the routing layer.
+
+---
+
+## The Load Function
+
+Create `src/routes/(app)/contacts/[id]/edit/+page.server.ts` and start with the `load`:
+
+```typescript
+// src/routes/(app)/contacts/[id]/edit/+page.server.ts
+import { fail, redirect, error } from '@sveltejs/kit'
+import * as z from 'zod'
+import type { Actions, PageServerLoad } from './$types'
+
+export const load: PageServerLoad = async ({ locals, params }) => {
+  const user = await locals.getUser()
+  if (!user) error(401, 'Unauthorized')
+
+  const { data: contact, error: contactError } = await locals.supabase
+    .from('contacts')
+    .select('*')
+    .eq('id', params.id)
+    .single()
+
+  if (contactError || !contact) error(404, 'Contact not found')
+
+  return { contact }
+}
+```
+
+Every character here is load-bearing — let's walk through it.
+
+### The imports and types
+
+- **`fail`, `redirect`, `error`** — SvelteKit's flow-control helpers. You've seen the first two; **`error(status, message)`** is new. It throws an HTTP error that SvelteKit catches and renders as the nearest `+error.svelte`. Unlike `fail` (returns a payload to the same page), `error` **abandons the current page**.
+- **`import * as z from 'zod'`** — Zod v4 namespace import.
+- **`PageServerLoad` and `Actions`** — auto-generated by SvelteKit from the folder path. Because the folder contains `[id]`, `params.id` is typed as `string` (not `string | undefined`).
+
+### The auth check
+
+```typescript
+const user = await locals.getUser()
+if (!user) error(401, 'Unauthorized')
+```
+
+The `(app)` layout probably already redirects anonymous visitors, but we repeat the check here as **defense in depth**. Load functions can be hit directly via data endpoints (`/contacts/42/edit/__data.json`) without going through the layout, so trusting only the layout is a subtle way to leak data. Two lines, zero cost, existential downside if skipped.
+
+### The query
+
+```typescript
+const { data: contact, error: contactError } = await locals.supabase
+  .from('contacts')
+  .select('*')
+  .eq('id', params.id)
+  .single()
+```
+
+The star of the lesson. Three things to notice:
+
+- **`.eq('id', params.id)`** — filter to the exact row. Supabase builds a parameterized query under the hood, so there's no SQL injection risk from passing `params.id` directly.
+- **`.single()`** — tells PostgREST "I expect exactly one row." Zero or multiple rows returns an error we catch below.
+- **`select('*')`** — fetches every column. Fine for edit forms; for list views you'd name columns to minimize payload size.
+
+### `.single()` vs `.maybeSingle()`
+
+| Method | 0 rows | 1 row | 2+ rows |
+| --- | --- | --- | --- |
+| `.single()` | Error | Returns the row | Error |
+| `.maybeSingle()` | Returns `null` | Returns the row | Error |
+
+`.single()` treats "zero" as a bug; `.maybeSingle()` treats "zero" as a legitimate answer. For identifying a specific resource by id, always use `.single()` — the right UX for "no row" is a 404, not a form pre-populated with nulls. Save `.maybeSingle()` for optional lookups like "does this user have a profile picture?" where `null` is a normal answer.
+
+### The 404 and the RLS insight
+
+```typescript
+if (contactError || !contact) error(404, 'Contact not found')
+```
+
+The error branch triggers when `.single()` saw zero rows (id doesn't exist, *or* RLS filtered out a row that belongs to another user) or — defensively — multiple rows.
+
+Here's the key insight, echoing the "opaque login error" from Module 3: **RLS makes "not yours" indistinguishable from "doesn't exist."**
+
+If Alice visits `/contacts/bob-id/edit`, her query runs as Alice. The SELECT policy `auth.uid() = user_id` filters Bob's row out *inside the database*. Alice's client sees zero rows, `.single()` errors, we return 404. Alice can't tell whether Bob's id exists or whether any guessed id exists. That's correct — and a UX bonus, because the same error page handles "doesn't exist" and "not yours."
+
+Whatever you return from `load` is available in the page as `data`. We'll destructure it as `data.contact` in `+page.svelte`.
+
+---
+
+## The Form Action
+
+Append the schema and action to `+page.server.ts`:
+
+```typescript
+const updateContactSchema = z.object({
+  first_name: z.string().min(1, 'First name is required').max(100),
+  last_name: z.string().min(1, 'Last name is required').max(100),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  phone: z.string().max(50).optional().or(z.literal('')),
+  company: z.string().max(200).optional().or(z.literal(''))
+})
+
+export const actions: Actions = {
+  default: async ({ request, locals, params }) => {
+    const user = await locals.getUser()
+    if (!user) error(401, 'Unauthorized')
+
+    const formData = await request.formData()
+    const result = updateContactSchema.safeParse({
+      first_name: formData.get('first_name'),
+      last_name: formData.get('last_name'),
+      email: formData.get('email') || '',
+      phone: formData.get('phone') || '',
+      company: formData.get('company') || ''
+    })
+
+    if (!result.success) {
+      return fail(400, { error: result.error.issues[0]?.message })
+    }
+
+    const { error: updateError } = await locals.supabase
+      .from('contacts')
+      .update({
+        ...result.data,
+        email: result.data.email || null,
+        phone: result.data.phone || null,
+        company: result.data.company || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+
+    if (updateError) return fail(500, { error: 'Failed to update contact' })
+
+    redirect(303, '/contacts')
+  }
+}
+```
+
+Most of this should feel familiar from 4.5. The interesting bits are the two `.eq()` calls and the `updated_at` assignment.
+
+### The schema is identical to Create — why?
+
+An update shouldn't loosen the rules that a create had to pass. If first name was required on creation, it's required on update. Copying the schema signals that intent clearly. (In larger codebases you'd extract it to `$lib/schemas/contact.ts`; Module 5 covers that refactor.)
+
+### Empty string → null
+
+HTML form inputs always submit strings, never `null`. Clearing the email field posts `email=""`, not `null`. Our database column accepts `null`, and `""` ≠ `null` semantically (`""` is "user said nothing"; `null` is "no value"). We want **null for absent** in the database.
+
+`''` is falsy, so `result.data.email || null` evaluates to `null` whenever the user cleared the field. Learn the pattern; use it everywhere.
+
+### The belt-and-suspenders `.eq('user_id', user.id)`
+
+```typescript
+.eq('id', params.id)
+.eq('user_id', user.id)
+```
+
+You don't *need* both to identify the row — `id` is a primary key, and RLS would stop Alice from updating Bob's row anyway. So why add `.eq('user_id', user.id)`? Four reasons, in order of importance:
+
+1. **Defense against client-swap regressions.** Six months from now, a teammate swaps `locals.supabase` for `supabaseAdmin` to run a quick migration (Lesson 4.4). `supabaseAdmin` **bypasses RLS**. Without this explicit filter, Alice's request could now update Bob's row. With it, the query still self-limits to the owner. The code is **correct no matter which client runs it.** Load-bearing line.
+2. **Documents intent.** Readers see "this mutation is scoped to the owner" without having to cross-reference the RLS migration file.
+3. **Query-plan performance.** The `user_id` index (from Lesson 4.1) gets used *before* the RLS policy's implicit check. Milliseconds today; index-scan vs. seq-scan at millions of rows.
+4. **Explain-plan clarity.** Filters in the query appear directly; RLS-injected filters show up as harder-to-read subquery expressions during incident triage.
+
+Every layer assumes the layer above might fail. RLS assumes the app has bugs; the app assumes RLS might get dropped; the `load` auth check assumes the layout's guard might get refactored. Each layer independently enforces the rule. You sleep better.
+
+### `updated_at = new Date().toISOString()`
+
+Our migration from 4.1 has `updated_at timestamptz not null default now()`, but that default only fires on INSERT. On UPDATE the column keeps its old value unless we explicitly set it. Some codebases use a `BEFORE UPDATE` trigger; we haven't installed one, so the app writes it. `new Date().toISOString()` produces a UTC ISO-8601 string like `"2026-04-18T14:32:07.123Z"`, which Postgres parses straight into `timestamptz`. (Module 11 promotes this to a trigger for ironclad accuracy.)
+
+### Redirect on success
+
+`redirect(303, '/contacts')` — same POST/Redirect/GET pattern from earlier lessons. The contacts list's `load` re-runs on navigation, so the user sees the edit reflected.
+
+---
+
+## The Edit Form UI
+
+Create `src/routes/(app)/contacts/[id]/edit/+page.svelte`:
+
+```svelte
+<!-- src/routes/(app)/contacts/[id]/edit/+page.svelte -->
+<script lang="ts">
+  import { enhance } from '$app/forms'
+  import type { PageData, ActionData } from './$types'
+
+  let { data, form }: { data: PageData; form: ActionData } = $props()
+</script>
+
+<div class="max-w-2xl mx-auto p-6">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit contact</h1>
+    <p class="text-gray-500 mb-6">
+      Update the details for {data.contact.first_name} {data.contact.last_name}.
+    </p>
+
+    <form method="POST" use:enhance>
+      {#if form?.error}
+        <div
+          class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm"
+        >
+          {form.error}
+        </div>
+      {/if}
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label
+              for="first_name"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              First name
+            </label>
+            <input
+              id="first_name"
+              name="first_name"
+              type="text"
+              required
+              value={data.contact.first_name}
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label
+              for="last_name"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Last name
+            </label>
+            <input
+              id="last_name"
+              name="last_name"
+              type="text"
+              required
+              value={data.contact.last_name}
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={data.contact.email ?? ''}
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="ada@example.com"
+          />
+        </div>
+
+        <div>
+          <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+            Phone
+          </label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            value={data.contact.phone ?? ''}
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="+1 555 555 5555"
+          />
+        </div>
+
+        <div>
+          <label for="company" class="block text-sm font-medium text-gray-700 mb-1">
+            Company
+          </label>
+          <input
+            id="company"
+            name="company"
+            type="text"
+            value={data.contact.company ?? ''}
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Analytical Engines Inc."
+          />
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+          >
+            Save changes
+          </button>
+          <a
+            href="/contacts"
+            class="text-gray-600 hover:text-gray-900 font-medium text-sm"
+          >
+            Cancel
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+```
+
+### Walkthrough
+
+**The props.** A page component receives two special props from SvelteKit: `data` (whatever `load` returned — here `data.contact`) and `form` (the action result, `null` on fresh loads, populated after a `fail()`). Both are typed via auto-generated `PageData` and `ActionData`; adding a field to `load` updates `PageData` and TypeScript shows you everywhere that needs changes.
+
+**Pre-populating required fields.** `first_name` and `last_name` are `not null` in the database, so `data.contact.first_name` is always a string — no fallback needed. `value={...}` tells Svelte to render that string into the attribute.
+
+**Pre-populating nullable fields.** Use `value={data.contact.email ?? ''}`. Setting `value={null}` gives weird results across browsers. `?? ''` produces a clean empty input. Use `??` (not `||`) because it's semantic: "fall back only if null/undefined" is exactly the contract we want.
+
+**The form tag and error banner.** Same pattern as Create: POST to the current URL, `use:enhance` for progressive enhancement, conditional `{#if form?.error}` banner. **No hidden `<input name="id">` needed** — the id travels via the URL, which is more RESTful and avoids the "what if the client tampers with the hidden id?" vector (and even if they did, `.eq('user_id', user.id)` protects Bob).
+
+**Save + Cancel.** Use a `<button type="submit">` for Save and an `<a href="/contacts">` for Cancel. A `<button>` without `type="button"` defaults to `type="submit"` — so a Cancel button would submit the form. An anchor navigates cleanly and degrades gracefully without JS.
+
+---
+
+## Wiring Up the List
+
+For users to reach this page, the contacts list needs an Edit link per row. Open `src/routes/(app)/contacts/+page.svelte` and add:
+
+```svelte
+<a href="/contacts/{contact.id}/edit" class="text-blue-600 hover:underline text-sm">
+  Edit
+</a>
+```
+
+The curly braces inside the `href` are Svelte's attribute interpolation — the expression evaluates and drops into the string. No backticks needed.
+
+---
+
+## Testing the Flow
+
+Boot the dev server (`pnpm dev`) and click **Edit** on any contact. The URL becomes `/contacts/<uuid>/edit` and the form pre-populates.
+
+- **Happy path.** Change the first name, hit **Save changes**, get redirected to `/contacts`, see the new name in the list.
+- **Validation.** Clear first name, save — HTML `required` blocks it; if you remove `required` in DevTools, the server's Zod check responds with "First name is required."
+- **Clearing an optional field.** Delete the email value, save, check Supabase Studio — the `email` column is `null`, not `""`.
+- **Access control.** Copy a contact's id from the URL, log in as another user, visit `/contacts/<that-id>/edit` — you get a 404 page. RLS filtered the row; `.single()` errored; we threw 404. The other user can't tell whether the id exists. That's the correct security property.
+- **Not-found.** While logged in, visit `/contacts/does-not-exist/edit` — same 404. Zero rows behaves the same as "not yours."
+- **Timestamp check.** In Supabase Studio, confirm `updated_at` bumped to roughly "now" after a successful save.
+
+---
+
+## Common Mistakes
+
+- **Treating `params.id` as a number.** It's always a `string`. `params.id === 42` is always false. Supabase handles string-to-int/UUID coercion in `.eq()` automatically. If you need a number, wrap with `Number(params.id)` and `Number.isInteger()`.
+- **Using `.maybeSingle()` when you meant `.single()`.** `maybeSingle()` returns `null` for zero rows with no error, so your not-found check won't trigger. Use `.single()` for primary-key lookups where missing is a 404.
+- **Forgetting to convert empty strings to null.** Without `|| null`, the database stores `""`. Later queries like `WHERE email IS NULL` miss those rows and reporting silently breaks. Empty string from the form → null in the database. Always.
+- **Omitting `.eq('user_id', user.id)` because "RLS has got me."** It does — today. Six months from now someone swaps in `supabaseAdmin` and the invariant quietly breaks. Make the rule a property of *your code*, not of the policy migration.
+- **Forgetting `updated_at`.** You lose audit-log precision. Bump it on every update, whether via app code or a trigger.
+- **Putting the id in a hidden form field instead of the URL.** You'd then have to re-validate the hidden id server-side (it's tamperable), and the URL no longer tells you which contact is being edited — breaking history and bookmarking.
+- **Writing `<button>Cancel</button>` without `type="button"`.** Defaults to `type="submit"`, so Cancel would submit the form. Use `<a href="/contacts">` for navigation.
+- **Validating auth in the Svelte component body instead of `load`.** The component runs on both server and client; auth checks must live in server-only code.
+
+---
+
+## Principal Engineer Notes
+
+1. **Defense in depth is cheaper than incident response.** The redundant `.eq('user_id', user.id)` costs four tokens and milliseconds of planner time; a data leak costs trust, reputation, and legal exposure. The economics always favor the redundant check. The same principle shows up later as input re-validation in queued jobs, idempotency keys on webhook endpoints, and server-side rate limits that duplicate CDN rate limits.
+
+2. **Optimistic concurrency control — when "last writer wins" isn't enough.** Today if Alice and Bob both open the edit page, Alice saves at 10:01, Bob saves at 10:02, Bob silently overwrites Alice. For multi-user SaaS you'll need **OCC**: add a `version` integer column, include it as a hidden field in the form, and in the UPDATE add `.eq('version', submittedVersion)` while incrementing. If the update affected zero rows, the version was stale — reject with "this record was edited since you opened it; refresh and retry." Postgres and Supabase support this pattern natively.
+
+3. **Idempotent updates.** Double-clicking Save fires two updates. For state-replacing writes like ours, both are identical (harmless). For state-composing writes (increment a counter, append to a list), duplicates are catastrophic. Industry fix: **idempotency keys** — the client generates a UUID per submission, the server records seen keys and skips duplicates. Module 8 builds this for Stripe webhooks, where idempotency is non-negotiable.
+
+4. **`.single()` vs `.maybeSingle()` is about contracts.** `.single()` is an assertion: "this must exist; if not, something's wrong." `.maybeSingle()` is a query: "tell me if this exists." Use the first for identity lookups where missing is exceptional, the second for optional lookups where missing is normal. Confusing the two is one of the most common review comments on junior PRs.
+
+5. **Why not HTTP PATCH?** REST purists might ask. Two reasons. First, **progressive enhancement**: `<form method="PATCH">` is invalid HTML and browsers degrade it silently to GET. Second, SvelteKit's form action model was deliberately designed around POST, matching what browsers can do without JavaScript. When the network is flaky and the JS bundle is stale, you'll thank the POST default.
+
+6. **404 vs. 403 is a security property, not a taste choice.** A 403 confirms the resource exists — enabling resource-enumeration attacks where an adversary scrapes ids that return 403 and catalogs private data even without reading it. Returning 404 reveals nothing. Same principle as "Invalid email or password" in login flows.
+
+---
+
+## Summary
+
+- Built an edit page at `/contacts/[id]/edit` with `[id]` as a dynamic route segment exposed as `params.id`.
+- Wrote a `load` that fetches one contact via `.eq('id', params.id).single()` and throws 404 if the row is missing or not owned.
+- Internalized that RLS makes "not yours" indistinguishable from "not found" — which is the correct security property.
+- Pre-populated fields from `data.contact.*`, using `?? ''` for nullable columns.
+- Built an update action that re-validates with Zod, converts empty strings to null, and sets `updated_at`.
+- Added the belt-and-suspenders `.eq('user_id', user.id)` — defense in depth, readable intent, planner performance, log clarity.
+
+## What's Next
+
+Lesson 4.7 closes the CRUD loop with **Delete**. You'll learn the POST-with-a-button pattern, confirmation-dialog UX, and the Principal-Engineer debate between **hard deletes** (row is gone forever) and **soft deletes** (a `deleted_at` column filtering rows out of queries). By the end, Contactly is a fully functional contact manager — ready for search, pagination, and bulk operations in Module 5.
