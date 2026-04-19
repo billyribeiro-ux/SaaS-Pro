@@ -38,10 +38,16 @@
 	 *   should propagate back to the parent's state so the next render
 	 *   doesn't re-open the dialog. The `close` event from
 	 *   <dialog> fires after either path.
+	 *
+	 * Why `{@attach openController}` instead of `bind:this` + `$effect`?
+	 *   Svelte 5.29+ attachments are reactive by construction — the
+	 *   factory captures `open` and the inner function re-runs whenever
+	 *   that state changes, so we don't need a separate ref + effect to
+	 *   wire showModal/close. Half the moving parts, same behavior.
 	 */
-	let { open = $bindable(false), title, description, id, children, testid }: ModalProps = $props();
+	import type { Attachment } from 'svelte/attachments';
 
-	let dialog: HTMLDialogElement | null = $state(null);
+	let { open = $bindable(false), title, description, id, children, testid }: ModalProps = $props();
 
 	// Remember whatever element opened the modal so we can put focus
 	// back there on close. Without this, a screen-reader user (and
@@ -50,13 +56,18 @@
 	// call this out as a requirement.
 	let returnFocusTo: HTMLElement | null = null;
 
+	// We need the live element reference for the click-vs-backdrop
+	// check inside `handleBackdropClick`. The attachment captures it
+	// as a side effect when it runs.
+	let dialogEl: HTMLDialogElement | null = null;
+
 	// $derived so any future "modal id changes at runtime" use case
 	// stays correct — also silences `state_referenced_locally`.
 	const titleId = $derived(`${id}-title`);
 	const descId = $derived(description ? `${id}-desc` : undefined);
 
-	$effect(() => {
-		if (!dialog) return;
+	const openController: Attachment<HTMLDialogElement> = (dialog) => {
+		dialogEl = dialog;
 		if (open && !dialog.open) {
 			// Capture the element that triggered open *before* the
 			// browser steals focus to the dialog.
@@ -66,7 +77,10 @@
 		} else if (!open && dialog.open) {
 			dialog.close();
 		}
-	});
+		return () => {
+			if (dialogEl === dialog) dialogEl = null;
+		};
+	};
 
 	function handleClose() {
 		// Esc / form-method=dialog cancellation — keep the prop in sync.
@@ -88,14 +102,14 @@
 	 * dismiss only in the second case.
 	 */
 	function handleBackdropClick(event: MouseEvent) {
-		if (event.target === dialog) {
+		if (event.target === dialogEl) {
 			open = false;
 		}
 	}
 </script>
 
 <dialog
-	bind:this={dialog}
+	{@attach openController}
 	{id}
 	aria-labelledby={titleId}
 	aria-describedby={descId}

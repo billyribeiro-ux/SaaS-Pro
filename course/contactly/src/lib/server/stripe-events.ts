@@ -96,20 +96,28 @@ export function isSubscribedEvent(type: string): type is SubscribedEventType {
 }
 
 /**
- * The shape of every event handler.
+ * Per-event-type handler shape.
+ *
+ * `Extract<Stripe.Event, { type: K }>` uses Stripe SDK v22's
+ * discriminated `Stripe.Event` union to give each handler the exact
+ * event variant for its key — so `event.data.object` is correctly
+ * typed (`Stripe.Product`, `Stripe.Subscription`, etc.) without any
+ * casts at the call site.
  *
  * Returns void; throws on failure. The +server.ts handler converts a
  * thrown error into a 500 (so Stripe retries with backoff) and a
  * clean return into a 200.
  */
-type EventHandler = (event: Stripe.Event) => Promise<void>;
+type HandlerFor<K extends SubscribedEventType> = (
+	event: Extract<Stripe.Event, { type: K }>
+) => Promise<void>;
 
 /**
  * Type-level guard that the dispatch table covers every subscribed
  * event. If you add a string to `SUBSCRIBED_EVENTS` without adding
  * the corresponding entry below, `tsc` flags it.
  */
-type EventHandlers = { [K in SubscribedEventType]: EventHandler };
+type EventHandlers = { [K in SubscribedEventType]: HandlerFor<K> };
 
 /**
  * Module 6.4+ replaces these stub bodies with real DB writes. The
@@ -119,58 +127,60 @@ type EventHandlers = { [K in SubscribedEventType]: EventHandler };
  */
 const EVENT_HANDLERS: EventHandlers = {
 	'product.created': async (event) => {
-		await upsertStripeProduct(event.data.object as Stripe.Product);
+		await upsertStripeProduct(event.data.object);
 	},
 	'product.updated': async (event) => {
-		await upsertStripeProduct(event.data.object as Stripe.Product);
+		await upsertStripeProduct(event.data.object);
 	},
 	'product.deleted': async (event) => {
-		await deleteStripeProduct((event.data.object as Stripe.Product).id);
+		await deleteStripeProduct(event.data.object.id);
 	},
 	'price.created': async (event) => {
-		await upsertStripePrice(event.data.object as Stripe.Price);
+		await upsertStripePrice(event.data.object);
 	},
 	'price.updated': async (event) => {
-		await upsertStripePrice(event.data.object as Stripe.Price);
+		await upsertStripePrice(event.data.object);
 	},
 	'price.deleted': async (event) => {
-		await deleteStripePrice((event.data.object as Stripe.Price).id);
+		await deleteStripePrice(event.data.object.id);
 	},
 	'customer.created': async (event) => {
-		await handleCustomerCreated(event.data.object as Stripe.Customer);
+		await handleCustomerCreated(event.data.object);
 	},
 	'customer.updated': async (event) => {
-		await handleCustomerUpdated(event.data.object as Stripe.Customer);
+		await handleCustomerUpdated(event.data.object);
 	},
 	'customer.deleted': async (event) => {
-		// `event.data.object` for `customer.deleted` is a DeletedCustomer
-		// (Stripe sets `deleted: true` and only the id is meaningful), but
-		// the union over all event objects in the SDK type doesn't narrow
-		// here — go through `unknown` to be explicit about the cast.
-		await handleCustomerDeleted(event.data.object as unknown as Stripe.DeletedCustomer);
+		// At runtime Stripe sends a `DeletedCustomer` payload (id +
+		// `deleted: true`), but the SDK types `data.object` as
+		// `Stripe.Customer` for ergonomics in the discriminated union.
+		// `handleCustomerDeleted` accepts either shape — only `.id` is
+		// read, which is present on both.
+		await handleCustomerDeleted(event.data.object);
 	},
 	'checkout.session.completed': async (event) => {
+		const session = event.data.object;
 		console.info('[stripe-webhook] checkout.session.completed', {
 			id: event.id,
-			session: (event.data.object as Stripe.Checkout.Session).id,
-			customer: (event.data.object as Stripe.Checkout.Session).customer,
-			mode: (event.data.object as Stripe.Checkout.Session).mode
+			session: session.id,
+			customer: session.customer,
+			mode: session.mode
 		});
 	},
 	'customer.subscription.created': async (event) => {
-		await upsertSubscription(event.data.object as Stripe.Subscription);
+		await upsertSubscription(event.data.object);
 	},
 	'customer.subscription.updated': async (event) => {
-		await upsertSubscription(event.data.object as Stripe.Subscription);
+		await upsertSubscription(event.data.object);
 	},
 	'customer.subscription.deleted': async (event) => {
-		await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+		await handleSubscriptionDeleted(event.data.object);
 	},
 	'customer.subscription.trial_will_end': async (event) => {
-		await handleSubscriptionTrialWillEnd(event.data.object as Stripe.Subscription);
+		await handleSubscriptionTrialWillEnd(event.data.object);
 	},
 	'invoice.paid': async (event) => {
-		const inv = event.data.object as Stripe.Invoice;
+		const inv = event.data.object;
 		console.info('[stripe-webhook] invoice.paid', {
 			id: event.id,
 			invoice: inv.id,
@@ -179,7 +189,7 @@ const EVENT_HANDLERS: EventHandlers = {
 		});
 	},
 	'invoice.payment_failed': async (event) => {
-		const inv = event.data.object as Stripe.Invoice;
+		const inv = event.data.object;
 		console.info('[stripe-webhook] invoice.payment_failed', {
 			id: event.id,
 			invoice: inv.id,
@@ -207,7 +217,12 @@ export async function dispatchStripeEvent(event: Stripe.Event): Promise<Dispatch
 	if (!isSubscribedEvent(event.type)) {
 		return { kind: 'unhandled', type: event.type };
 	}
-	const handler = EVENT_HANDLERS[event.type];
-	await handler(event);
+	// Indexing `EVENT_HANDLERS` with a narrowed `event.type` collapses
+	// the per-key handler types back into their union — TS can't see
+	// that the event we hold matches the one this entry expects, even
+	// though by construction it does. The cast is the runtime no-op
+	// required to bridge that type gap.
+	const handler = EVENT_HANDLERS[event.type] as HandlerFor<typeof event.type>;
+	await handler(event as Extract<Stripe.Event, { type: typeof event.type }>);
 	return { kind: 'handled', type: event.type };
 }

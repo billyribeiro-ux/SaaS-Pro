@@ -148,7 +148,7 @@ async function upsertCustomerRow(input: {
  */
 function userIdFromCustomer(customer: Stripe.Customer | Stripe.DeletedCustomer): string | null {
 	if (customer.deleted === true) return null;
-	const userId = (customer as Stripe.Customer).metadata?.user_id;
+	const userId = customer.metadata?.user_id;
 	return typeof userId === 'string' && userId.length > 0 ? userId : null;
 }
 
@@ -211,7 +211,9 @@ export async function handleCustomerUpdated(customer: Stripe.Customer): Promise<
  *     `stripe_customer_id` string directly, which still works for
  *     read-only display even after the mapping is gone.
  */
-export async function handleCustomerDeleted(customer: Stripe.DeletedCustomer): Promise<void> {
+export async function handleCustomerDeleted(
+	customer: Stripe.Customer | Stripe.DeletedCustomer
+): Promise<void> {
 	const { error } = await withAdmin('billing.customers.delete', 'system', async (admin) =>
 		admin.from('stripe_customers').delete().eq('stripe_customer_id', customer.id)
 	);
