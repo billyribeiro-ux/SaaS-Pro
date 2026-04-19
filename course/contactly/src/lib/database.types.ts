@@ -73,6 +73,126 @@ export type Database = {
 					}
 				];
 			};
+			organizations: {
+				Row: {
+					id: string;
+					name: string;
+					slug: string;
+					is_personal: boolean;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					name: string;
+					slug: string;
+					is_personal?: boolean;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					name?: string;
+					slug?: string;
+					is_personal?: boolean;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			organization_members: {
+				Row: {
+					organization_id: string;
+					user_id: string;
+					role: Database['public']['Enums']['organization_member_role'];
+					created_at: string;
+				};
+				Insert: {
+					organization_id: string;
+					user_id: string;
+					role?: Database['public']['Enums']['organization_member_role'];
+					created_at?: string;
+				};
+				Update: {
+					organization_id?: string;
+					user_id?: string;
+					role?: Database['public']['Enums']['organization_member_role'];
+					created_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'organization_members_organization_id_fkey';
+						columns: ['organization_id'];
+						isOneToOne: false;
+						referencedRelation: 'organizations';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'organization_members_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'profiles';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			contacts: {
+				Row: {
+					id: string;
+					organization_id: string;
+					created_by: string | null;
+					full_name: string;
+					email: string | null;
+					phone: string | null;
+					company: string | null;
+					job_title: string | null;
+					notes: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					organization_id: string;
+					created_by?: string | null;
+					full_name: string;
+					email?: string | null;
+					phone?: string | null;
+					company?: string | null;
+					job_title?: string | null;
+					notes?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					organization_id?: string;
+					created_by?: string | null;
+					full_name?: string;
+					email?: string | null;
+					phone?: string | null;
+					company?: string | null;
+					job_title?: string | null;
+					notes?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'contacts_organization_id_fkey';
+						columns: ['organization_id'];
+						isOneToOne: false;
+						referencedRelation: 'organizations';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'contacts_created_by_fkey';
+						columns: ['created_by'];
+						isOneToOne: false;
+						referencedRelation: 'profiles';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 		};
 		Views: {
 			[_ in never]: never;
@@ -81,12 +201,14 @@ export type Database = {
 			// `handle_new_user` and `set_updated_at` are SECURITY DEFINER
 			// trigger functions revoked from PUBLIC, so they don't appear
 			// in the PostgREST API surface and `supabase gen types` will
-			// not include them either. Listed here as a comment so future
-			// readers know why this object is empty.
+			// not include them either. `is_organization_member` IS
+			// callable through PostgREST in principle but we always invoke
+			// it from inside SQL policies, never from the JS client, so
+			// we omit it from the type here too.
 			[_ in never]: never;
 		};
 		Enums: {
-			[_ in never]: never;
+			organization_member_role: 'owner' | 'admin' | 'member';
 		};
 		CompositeTypes: {
 			[_ in never]: never;
