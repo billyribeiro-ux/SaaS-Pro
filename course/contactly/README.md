@@ -113,6 +113,16 @@ Each lesson lands a verified, tagged commit:
   Hand-written `src/lib/database.types.ts` that mirrors the migrations
   exactly so `pnpm run check` is green without Docker; regenerated
   from the live schema with `pnpm run types:generate`.
+- **Lesson 2.3 — Server-side Supabase + safeGetSession.**
+  `src/hooks.server.ts` instantiates a per-request `createServerClient`
+  with the v0.10 `getAll` / `setAll(cookies, headers)` cookie API and
+  attaches `event.locals.supabase` + `event.locals.safeGetSession`
+  (which validates the JWT via `getUser()` instead of trusting the raw
+  cookie). `src/routes/+layout.server.ts` exposes `{ session, user,
+  cookies }` to every page. `src/app.d.ts` types `App.Locals` so the
+  whole codebase gets autocomplete on these. Playwright's web server
+  now seeds demo Supabase env so e2e tests boot cleanly without
+  requiring a local `.env`.
 
 ## Course progression
 
