@@ -53,9 +53,11 @@
 	 */
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import type { BillingInterval } from '$lib/billing/lookup-keys';
 	import type { PricingCard, CatalogPrice } from '$lib/billing/catalog';
 	import Button from '$lib/components/ui/Button.svelte';
+	import UpgradeCheckoutForm from '$lib/components/billing/UpgradeCheckoutForm.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let { data }: { data: PageData } = $props();
@@ -69,8 +71,15 @@
 		return interval === 'monthly' ? card.prices.monthly : card.prices.yearly;
 	}
 
-	const ctaLabel = $derived(data.user ? 'Go to dashboard' : "Sign up — it's free");
-	const ctaHref = $derived(data.user ? resolve('/dashboard') : resolve('/sign-up'));
+	const isAuthenticated = $derived(Boolean(data.user));
+
+	// Show a flash if the user just bounced back from a cancelled
+	// Stripe Checkout. Keyed on `?checkout=cancelled` which is the
+	// cancel_url our session-builder emits in Lesson 9.1.
+	const cancelled = $derived(page.url.searchParams.get('checkout') === 'cancelled');
+
+	const ctaLabel = $derived(isAuthenticated ? 'Go to dashboard' : "Sign up — it's free");
+	const ctaHref = $derived(isAuthenticated ? resolve('/dashboard') : resolve('/sign-up'));
 </script>
 
 <svelte:head>
@@ -101,6 +110,16 @@
 		>
 			Live prices are temporarily unavailable. The plan ladder below is current; the dollar
 			headlines will reappear shortly.
+		</div>
+	{/if}
+
+	{#if cancelled}
+		<div
+			class="mx-auto mt-8 max-w-2xl rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm text-slate-700"
+			role="status"
+			data-testid="pricing-cancelled-flash"
+		>
+			Checkout was cancelled — no card was charged. Pick a plan to try again.
 		</div>
 	{/if}
 
@@ -248,15 +267,68 @@
 		</ul>
 
 		<div class="mt-8">
-			<Button
-				href={ctaHref}
-				variant={card.recommended ? 'primary' : 'secondary'}
-				size="md"
-				class="w-full"
-				data-testid={`pricing-cta-${card.tier}`}
-			>
-				{ctaLabel}
-			</Button>
+			{#if card.tier === 'starter'}
+				<!--
+					Starter is the absence of a Stripe subscription
+					(ADR-007), so its CTA is always a navigation, never
+					a checkout submission. Anonymous → /sign-up; signed
+					in → /dashboard.
+				-->
+				<Button
+					href={ctaHref}
+					variant={card.recommended ? 'primary' : 'secondary'}
+					size="md"
+					class="w-full"
+					data-testid={`pricing-cta-${card.tier}`}
+				>
+					{ctaLabel}
+				</Button>
+			{:else if !isAuthenticated}
+				<!--
+					Anonymous visitor on a paid card. We don't open
+					Checkout for an unauthenticated user (Stripe needs
+					a Customer ID, which needs a Contactly user). Send
+					them through sign-up; the `next` brings them right
+					back to /pricing where they can re-click and this
+					branch becomes the form-submit branch below.
+				-->
+				<Button
+					href={`${resolve('/sign-up')}?next=${encodeURIComponent('/pricing')}`}
+					variant={card.recommended ? 'primary' : 'secondary'}
+					size="md"
+					class="w-full"
+					data-testid={`pricing-cta-${card.tier}`}
+				>
+					Start 14-day trial
+				</Button>
+			{:else if price}
+				<!--
+					Authenticated user, real price loaded. POST to the
+					checkout endpoint (Lesson 9.1). The endpoint
+					handles "already subscribed" by 303-ing the user
+					to /account?upgrade=needs-portal — so a Pro user
+					clicking "Business" lands at the Billing Portal
+					CTA without us having to query their tier here.
+				-->
+				<UpgradeCheckoutForm
+					lookupKey={price.lookupKey}
+					variant={card.recommended ? 'primary' : 'secondary'}
+					testid={`pricing-cta-${card.tier}`}
+				/>
+			{:else}
+				<!-- Authenticated but the price didn't load (DB outage). Mirror
+					the empty-headline state with a disabled CTA. -->
+				<Button
+					type="button"
+					variant="secondary"
+					disabled
+					size="md"
+					class="w-full"
+					data-testid={`pricing-cta-${card.tier}`}
+				>
+					Currently unavailable
+				</Button>
+			{/if}
 		</div>
 	</article>
 {/snippet}

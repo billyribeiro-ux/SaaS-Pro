@@ -11,6 +11,7 @@
 	 */
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
+	import { page } from '$app/state';
 	import type { PageProps } from './$types';
 	import {
 		changeEmailSchema,
@@ -32,6 +33,16 @@
 			day: 'numeric'
 		})
 	);
+
+	// Flash banners surfaced from query-string redirects we own.
+	//
+	//  - `?upgrade=needs-portal` lands here when the checkout
+	//    endpoint refuses a session because the user already has an
+	//    active subscription. We tell them to use Manage billing.
+	//  - `?checkout=cancelled` lands when a user backs out of Stripe
+	//    Checkout and their cancel_url goes back via /account.
+	const upgradeFlash = $derived(page.url.searchParams.get('upgrade') === 'needs-portal');
+	const checkoutCancelledFlash = $derived(page.url.searchParams.get('checkout') === 'cancelled');
 
 	// One Superforms instance per section. Destructured to get the
 	// individual stores so we can use `$xxxForm` / `$xxxErrors` /
@@ -107,6 +118,27 @@
 		<h1 class="text-3xl font-bold tracking-tight text-slate-900">Account</h1>
 		<p class="mt-2 text-sm text-slate-600">Manage your plan, profile, sign-in, and account.</p>
 	</header>
+
+	{#if upgradeFlash}
+		<div
+			class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+			role="status"
+			data-testid="account-upgrade-flash"
+		>
+			You already have an active subscription — use <span class="font-semibold">Manage billing</span
+			>
+			below to change plans or update your payment method.
+		</div>
+	{/if}
+	{#if checkoutCancelledFlash}
+		<div
+			class="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+			role="status"
+			data-testid="account-checkout-cancelled-flash"
+		>
+			Checkout was cancelled — no card was charged.
+		</div>
+	{/if}
 
 	<!-- ============================== Plan ============================= -->
 	<PlanSection entitlements={data.entitlements} />
