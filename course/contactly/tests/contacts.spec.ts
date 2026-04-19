@@ -38,6 +38,17 @@ test('GET /contacts/<some-uuid> without a session redirects (4.5 detail route ex
 	expect(location).toBe('/sign-in?next=%2Fcontacts%2F00000000-0000-4000-8000-00000000abcd');
 });
 
+test('GET /contacts/<id>/edit without a session redirects (4.6 edit route exists)', async ({
+	request
+}) => {
+	const response = await request.get('/contacts/00000000-0000-4000-8000-00000000abcd/edit', {
+		maxRedirects: 0
+	});
+	expect(response.status()).toBe(303);
+	const location = response.headers()['location'];
+	expect(location).toBe('/sign-in?next=%2Fcontacts%2F00000000-0000-4000-8000-00000000abcd%2Fedit');
+});
+
 test('GET /contacts?q=foo without a session preserves the query in next', async ({ request }) => {
 	const response = await request.get('/contacts?q=foo', { maxRedirects: 0 });
 	expect(response.status()).toBe(303);

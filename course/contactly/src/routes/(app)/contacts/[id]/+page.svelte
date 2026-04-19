@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import Button from '$lib/components/ui/Button.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -25,16 +27,35 @@
 		</a>
 	</nav>
 
-	<header>
-		<h1 class="text-2xl font-bold text-slate-900" data-testid="contact-name">
-			{data.contact.full_name}
-		</h1>
-		{#if data.contact.job_title || data.contact.company}
-			<p class="mt-1 text-sm text-slate-600">
-				{[data.contact.job_title, data.contact.company].filter(Boolean).join(' · ')}
-			</p>
-		{/if}
-		<!-- Edit/delete action buttons land in lessons 4.6 / 4.7. -->
+	{#if page.url.searchParams.get('saved')}
+		<div
+			class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
+			role="status"
+			data-testid="contact-saved-flash"
+		>
+			Contact saved.
+		</div>
+	{/if}
+
+	<header class="flex items-start justify-between gap-4">
+		<div>
+			<h1 class="text-2xl font-bold text-slate-900" data-testid="contact-name">
+				{data.contact.full_name}
+			</h1>
+			{#if data.contact.job_title || data.contact.company}
+				<p class="mt-1 text-sm text-slate-600">
+					{[data.contact.job_title, data.contact.company].filter(Boolean).join(' · ')}
+				</p>
+			{/if}
+		</div>
+		<Button
+			href={resolve('/(app)/contacts/[id]/edit', { id: data.contact.id })}
+			variant="secondary"
+			data-testid="edit-contact-link"
+		>
+			Edit
+		</Button>
+		<!-- Delete action lands in lesson 4.7. -->
 	</header>
 
 	<dl class="grid gap-4 rounded-lg border border-slate-200 bg-white p-6 sm:grid-cols-2">
