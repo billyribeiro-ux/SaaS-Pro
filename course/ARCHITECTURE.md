@@ -153,6 +153,49 @@ both domestic and international expansion.
 
 ---
 
+## ADR-007: Pricing model
+
+**Decision.** Three tiers, two billing intervals on the paid tiers:
+
+| Tier         | Monthly | Yearly | Lookup keys                                                         |
+| ------------ | ------- | ------ | ------------------------------------------------------------------- |
+| **Starter**  | Free    | Free   | _no Stripe price; entitlement is the absence of a subscription_     |
+| **Pro**      | $19     | $190   | `contactly_pro_monthly`, `contactly_pro_yearly`                     |
+| **Business** | $49     | $490   | `contactly_business_monthly`, `contactly_business_yearly`           |
+
+Yearly = 10× monthly (~17% discount). Both paid tiers include a 14-day
+free trial; trial state is enforced via the `subscription_trials` audit
+table (Module 9.4) so a user cannot serially restart trials by
+cancelling and re-subscribing.
+
+**Stripe modeling.**
+
+- Two **Products** (`prod_pro`, `prod_business`) — each with two
+  recurring **Prices** (monthly + yearly). Starter is *not* a Stripe
+  resource; it's the implied state when no active subscription exists.
+- Code references prices by their **lookup key**, never the live
+  `price_xxx` ID. Lookup keys are stable across test/live mode and
+  across re-seeds; price IDs change every time we run the fixtures
+  script.
+- All prices are billed in `USD` for v1. Multi-currency support is a
+  Module 13+ enhancement.
+- `tax_behavior: 'exclusive'` on every price — Stripe Tax (ADR-006)
+  computes the tax line at checkout, the headline price the customer
+  sees on the pricing page is the pre-tax sticker.
+
+**Why these specific numbers.** Round, memorable, and cleanly demonstrate
+plan-comparison UX without the cognitive overhead of `$19.99`-style
+psychological pricing (which is a separate marketing concern). 10×
+yearly is the canonical SaaS discount that students will see at
+GitHub, Linear, Vercel, Notion, etc.
+
+**Implementation guard.** A `src/lib/billing/lookup-keys.ts` module
+exports a typed `LOOKUP_KEYS` const and a `LookupKey` union. Any code
+that references a price MUST import from this module — `// @ts-expect-error`
+on a string literal price ID is a code-review block.
+
+---
+
 ## Versioning
 
 This document uses ADR (Architecture Decision Record) numbering. Decisions
