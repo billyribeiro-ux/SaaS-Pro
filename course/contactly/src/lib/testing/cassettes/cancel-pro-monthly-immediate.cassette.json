@@ -1,0 +1,111 @@
+{
+	"version": 1,
+	"name": "cancel-pro-monthly-immediate",
+	"description": "Customer on an active Pro-monthly subscription cancels immediately from the Customer Portal. Stripe sends an `updated` flipping `cancel_at_period_end=true`, then a `deleted` when the period actually ends. Two webhooks total — the canonical 'cancel now' shape (vs. 'cancel at period end' which would skip the second event for ~30 days).",
+	"recordedAt": "2026-04-19T18:30:00.000Z",
+	"stripeApiVersion": "2026-03-25.dahlia",
+	"events": [
+		{
+			"offsetMs": 0,
+			"event": {
+				"id": "evt_test_cancel_001_subscription_updated_cancelling",
+				"object": "event",
+				"type": "customer.subscription.updated",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1746300000,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": "req_test_cancel_portal",
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "sub_test_cancel",
+						"object": "subscription",
+						"customer": "cus_test_cancel",
+						"status": "active",
+						"current_period_start": 1746209600,
+						"current_period_end": 1748801600,
+						"cancel_at_period_end": true,
+						"canceled_at": 1746300000,
+						"cancel_at": 1748801600,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000cafe"
+						},
+						"items": {
+							"object": "list",
+							"data": [
+								{
+									"id": "si_test_cancel",
+									"object": "subscription_item",
+									"price": {
+										"id": "price_test_pro_monthly",
+										"object": "price",
+										"product": "prod_test_pro",
+										"lookup_key": "contactly_pro_monthly",
+										"recurring": { "interval": "month", "interval_count": 1 },
+										"unit_amount": 1900,
+										"currency": "usd"
+									},
+									"quantity": 1
+								}
+							]
+						}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 2592000000,
+			"event": {
+				"id": "evt_test_cancel_002_subscription_deleted",
+				"object": "event",
+				"type": "customer.subscription.deleted",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1748892000,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "sub_test_cancel",
+						"object": "subscription",
+						"customer": "cus_test_cancel",
+						"status": "canceled",
+						"current_period_start": 1746209600,
+						"current_period_end": 1748801600,
+						"cancel_at_period_end": true,
+						"canceled_at": 1746300000,
+						"ended_at": 1748801600,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000cafe"
+						},
+						"items": {
+							"object": "list",
+							"data": [
+								{
+									"id": "si_test_cancel",
+									"object": "subscription_item",
+									"price": {
+										"id": "price_test_pro_monthly",
+										"object": "price",
+										"product": "prod_test_pro",
+										"lookup_key": "contactly_pro_monthly",
+										"recurring": { "interval": "month", "interval_count": 1 },
+										"unit_amount": 1900,
+										"currency": "usd"
+									},
+									"quantity": 1
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+	]
+}

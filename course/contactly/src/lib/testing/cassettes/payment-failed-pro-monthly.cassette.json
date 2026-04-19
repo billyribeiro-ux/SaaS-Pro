@@ -1,0 +1,135 @@
+{
+	"version": 1,
+	"name": "payment-failed-pro-monthly",
+	"description": "First-renewal-after-trial payment fails (e.g. expired card). Stripe issues `invoice.finalized`, attempts capture, fires `invoice.payment_failed`, then flips the subscription into `past_due`. Three webhooks total — the realistic shape of an involuntary churn entering the dunning funnel.",
+	"recordedAt": "2026-04-19T18:45:00.000Z",
+	"stripeApiVersion": "2026-03-25.dahlia",
+	"events": [
+		{
+			"offsetMs": 0,
+			"event": {
+				"id": "evt_test_fail_001_invoice_finalized",
+				"object": "event",
+				"type": "invoice.finalized",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1748801600,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "in_test_fail_001",
+						"object": "invoice",
+						"customer": "cus_test_fail",
+						"subscription": "sub_test_fail",
+						"status": "open",
+						"amount_due": 1900,
+						"amount_paid": 0,
+						"amount_remaining": 1900,
+						"currency": "usd",
+						"hosted_invoice_url": "https://invoice.stripe.com/i/test_fail_001",
+						"invoice_pdf": "https://pay.stripe.com/invoice/test_fail_001/pdf",
+						"number": "CONTACTLY-0042",
+						"created": 1748801600,
+						"period_start": 1746209600,
+						"period_end": 1748801600,
+						"attempt_count": 1,
+						"next_payment_attempt": 1749406400,
+						"metadata": {}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 1500,
+			"event": {
+				"id": "evt_test_fail_002_invoice_payment_failed",
+				"object": "event",
+				"type": "invoice.payment_failed",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1748801601,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "in_test_fail_001",
+						"object": "invoice",
+						"customer": "cus_test_fail",
+						"subscription": "sub_test_fail",
+						"status": "open",
+						"amount_due": 1900,
+						"amount_paid": 0,
+						"amount_remaining": 1900,
+						"currency": "usd",
+						"hosted_invoice_url": "https://invoice.stripe.com/i/test_fail_001",
+						"invoice_pdf": "https://pay.stripe.com/invoice/test_fail_001/pdf",
+						"number": "CONTACTLY-0042",
+						"created": 1748801600,
+						"period_start": 1746209600,
+						"period_end": 1748801600,
+						"attempt_count": 1,
+						"next_payment_attempt": 1749406400,
+						"last_finalization_error": null,
+						"metadata": {}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 2500,
+			"event": {
+				"id": "evt_test_fail_003_subscription_updated_past_due",
+				"object": "event",
+				"type": "customer.subscription.updated",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1748801602,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "sub_test_fail",
+						"object": "subscription",
+						"customer": "cus_test_fail",
+						"status": "past_due",
+						"current_period_start": 1746209600,
+						"current_period_end": 1748801600,
+						"cancel_at_period_end": false,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000dead"
+						},
+						"items": {
+							"object": "list",
+							"data": [
+								{
+									"id": "si_test_fail",
+									"object": "subscription_item",
+									"price": {
+										"id": "price_test_pro_monthly",
+										"object": "price",
+										"product": "prod_test_pro",
+										"lookup_key": "contactly_pro_monthly",
+										"recurring": { "interval": "month", "interval_count": 1 },
+										"unit_amount": 1900,
+										"currency": "usd"
+									},
+									"quantity": 1
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+	]
+}

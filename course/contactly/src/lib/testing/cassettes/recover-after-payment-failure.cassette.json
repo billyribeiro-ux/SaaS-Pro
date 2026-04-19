@@ -1,0 +1,96 @@
+{
+	"version": 1,
+	"name": "recover-after-payment-failure",
+	"description": "Customer in `past_due` updates their card and Smart Retries succeeds. Stripe fires `invoice.paid` (the previously-failed invoice settles) and then `customer.subscription.updated` flipping the sub back to `active`. Two webhooks total — the canonical 'recovered from dunning' shape that closes the loop on the `payment-failed-pro-monthly` cassette.",
+	"recordedAt": "2026-04-19T19:00:00.000Z",
+	"stripeApiVersion": "2026-03-25.dahlia",
+	"events": [
+		{
+			"offsetMs": 0,
+			"event": {
+				"id": "evt_test_recover_001_invoice_paid",
+				"object": "event",
+				"type": "invoice.paid",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1749406400,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": "req_test_recover_retry",
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "in_test_fail_001",
+						"object": "invoice",
+						"customer": "cus_test_fail",
+						"subscription": "sub_test_fail",
+						"status": "paid",
+						"amount_due": 1900,
+						"amount_paid": 1900,
+						"amount_remaining": 0,
+						"currency": "usd",
+						"hosted_invoice_url": "https://invoice.stripe.com/i/test_fail_001",
+						"invoice_pdf": "https://pay.stripe.com/invoice/test_fail_001/pdf",
+						"number": "CONTACTLY-0042",
+						"created": 1748801600,
+						"period_start": 1746209600,
+						"period_end": 1748801600,
+						"attempt_count": 2,
+						"next_payment_attempt": null,
+						"metadata": {}
+					}
+				}
+			}
+		},
+		{
+			"offsetMs": 1000,
+			"event": {
+				"id": "evt_test_recover_002_subscription_updated_active",
+				"object": "event",
+				"type": "customer.subscription.updated",
+				"api_version": "2026-03-25.dahlia",
+				"created": 1749406401,
+				"livemode": false,
+				"pending_webhooks": 1,
+				"request": {
+					"id": null,
+					"idempotency_key": null
+				},
+				"data": {
+					"object": {
+						"id": "sub_test_fail",
+						"object": "subscription",
+						"customer": "cus_test_fail",
+						"status": "active",
+						"current_period_start": 1748801600,
+						"current_period_end": 1751393600,
+						"cancel_at_period_end": false,
+						"metadata": {
+							"contactly_user_id": "00000000-0000-0000-0000-00000000dead"
+						},
+						"items": {
+							"object": "list",
+							"data": [
+								{
+									"id": "si_test_fail",
+									"object": "subscription_item",
+									"price": {
+										"id": "price_test_pro_monthly",
+										"object": "price",
+										"product": "prod_test_pro",
+										"lookup_key": "contactly_pro_monthly",
+										"recurring": { "interval": "month", "interval_count": 1 },
+										"unit_amount": 1900,
+										"currency": "usd"
+									},
+									"quantity": 1
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+	]
+}
