@@ -69,6 +69,10 @@ Then open <http://localhost:5173>. Supabase Studio is at
 | `pnpm run db:push`          | Apply pending local migrations to the **linked** project    |
 | `pnpm run db:diff`          | Capture schema drift into a new migration                   |
 | `pnpm run types:generate`   | Regenerate `src/lib/database.types.ts` from the live schema |
+| `pnpm run seed:contacts`    | Generate N faker-based contacts for the `demo@contactly.test` org |
+| `pnpm run stripe:listen`    | Forward Stripe test events to `localhost:5173/api/webhooks/stripe` |
+| `pnpm run stripe:trigger`   | Fire a test Stripe event on demand (Module 6+)              |
+| `pnpm run stripe:fixtures`  | Create the Contactly product catalog in your Stripe account |
 
 ### Local Supabase ports
 

@@ -1,0 +1,130 @@
+{
+	"_description": "Seed Contactly's Stripe product catalog. Run via `pnpm run stripe:fixtures`. See docs/stripe/04-products-and-prices.md for the model and docs/stripe/05-creating-products-and-prices.md for the runtime. Product IDs are user-specified for reproducibility; re-running this file after it has already succeeded will fail with 'resource_already_exists', which is the intended behavior. Use `pnpm run stripe:cleanup` (Lesson 5.7) to archive the catalog if you want to re-seed from scratch.",
+	"_source_of_truth": "ADR-007 in course/ARCHITECTURE.md",
+	"fixtures": [
+		{
+			"name": "product_pro",
+			"path": "/v1/products",
+			"method": "post",
+			"params": {
+				"id": "prod_contactly_pro",
+				"name": "Contactly Pro",
+				"description": "For individual professionals who need more than the free tier. Up to 10,000 contacts, advanced search, and priority email support.",
+				"tax_code": "txcd_10103001",
+				"metadata": {
+					"tier": "pro",
+					"tier_rank": "1",
+					"app": "contactly"
+				}
+			}
+		},
+		{
+			"name": "price_pro_monthly",
+			"path": "/v1/prices",
+			"method": "post",
+			"params": {
+				"product": "${product_pro:id}",
+				"currency": "usd",
+				"unit_amount": 1900,
+				"recurring": {
+					"interval": "month",
+					"interval_count": 1,
+					"usage_type": "licensed"
+				},
+				"tax_behavior": "exclusive",
+				"lookup_key": "contactly_pro_monthly",
+				"transfer_lookup_key": true,
+				"nickname": "Contactly Pro — Monthly",
+				"metadata": {
+					"tier": "pro",
+					"interval": "monthly"
+				}
+			}
+		},
+		{
+			"name": "price_pro_yearly",
+			"path": "/v1/prices",
+			"method": "post",
+			"params": {
+				"product": "${product_pro:id}",
+				"currency": "usd",
+				"unit_amount": 19000,
+				"recurring": {
+					"interval": "year",
+					"interval_count": 1,
+					"usage_type": "licensed"
+				},
+				"tax_behavior": "exclusive",
+				"lookup_key": "contactly_pro_yearly",
+				"transfer_lookup_key": true,
+				"nickname": "Contactly Pro — Yearly (save 17%)",
+				"metadata": {
+					"tier": "pro",
+					"interval": "yearly"
+				}
+			}
+		},
+		{
+			"name": "product_business",
+			"path": "/v1/products",
+			"method": "post",
+			"params": {
+				"id": "prod_contactly_business",
+				"name": "Contactly Business",
+				"description": "For small teams. Unlimited contacts, shared workspaces with role-based access, audit log, and priority chat support.",
+				"tax_code": "txcd_10103001",
+				"metadata": {
+					"tier": "business",
+					"tier_rank": "2",
+					"app": "contactly"
+				}
+			}
+		},
+		{
+			"name": "price_business_monthly",
+			"path": "/v1/prices",
+			"method": "post",
+			"params": {
+				"product": "${product_business:id}",
+				"currency": "usd",
+				"unit_amount": 4900,
+				"recurring": {
+					"interval": "month",
+					"interval_count": 1,
+					"usage_type": "licensed"
+				},
+				"tax_behavior": "exclusive",
+				"lookup_key": "contactly_business_monthly",
+				"transfer_lookup_key": true,
+				"nickname": "Contactly Business — Monthly",
+				"metadata": {
+					"tier": "business",
+					"interval": "monthly"
+				}
+			}
+		},
+		{
+			"name": "price_business_yearly",
+			"path": "/v1/prices",
+			"method": "post",
+			"params": {
+				"product": "${product_business:id}",
+				"currency": "usd",
+				"unit_amount": 49000,
+				"recurring": {
+					"interval": "year",
+					"interval_count": 1,
+					"usage_type": "licensed"
+				},
+				"tax_behavior": "exclusive",
+				"lookup_key": "contactly_business_yearly",
+				"transfer_lookup_key": true,
+				"nickname": "Contactly Business — Yearly (save 17%)",
+				"metadata": {
+					"tier": "business",
+					"interval": "yearly"
+				}
+			}
+		}
+	]
+}
