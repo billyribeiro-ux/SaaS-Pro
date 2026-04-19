@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { stripe } from '$server/stripe';
 import { supabaseAdmin } from '$server/supabase';
 import { getSubscriptionTier } from '$utils/access';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { SITE } from '$config/site.config';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user!;
@@ -51,7 +51,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'No Stripe customer on file. Subscribe first.' });
 		}
 
-		const appUrl = PUBLIC_APP_URL || url.origin;
+		const appUrl = SITE.url || url.origin;
 		const session = await stripe.billingPortal.sessions.create({
 			customer: customer.stripe_customer_id,
 			return_url: `${appUrl}/account`

@@ -2,3 +2,5 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - better-sqlite3
   - esbuild
+  # Downloads the Supabase CLI binary; required for `pnpm run db:*` and `pnpm exec supabase`.
+  - supabase

@@ -4,7 +4,11 @@ import { supabaseAdmin } from '$server/supabase';
 // Collects per-module progress for the sidebar.
 // Shape: { [moduleSlug]: { [lessonSlug]: completed } }
 export const load: LayoutServerLoad = async ({ locals }) => {
-	const user = locals.user!;
+	// Sibling layouts run in parallel with (app)/+layout.server.ts. When that
+	// layout's redirect to /login is still in flight, this loader can fire with
+	// `locals.user === null`. Return an empty payload instead of dereferencing.
+	const user = locals.user;
+	if (!user) return { progress: {} };
 
 	const { data, error } = await supabaseAdmin
 		.from('lesson_progress')

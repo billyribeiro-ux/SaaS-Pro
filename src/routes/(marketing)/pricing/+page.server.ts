@@ -14,7 +14,7 @@ import {
 import { getSubscriptionTier } from '$utils/access';
 import type { PriceWithProduct, ResolvedPricing } from '$types/billing.types';
 import type { PriceInterval, PriceType } from '$types/database.types';
-import { PUBLIC_APP_URL } from '$env/static/public';
+import { SITE } from '$config/site.config';
 
 const checkoutSchema = z.object({
 	lookupKey: z.enum([
@@ -135,7 +135,7 @@ export const actions: Actions = {
 		});
 
 		const mode: 'subscription' | 'payment' = price.type === 'recurring' ? 'subscription' : 'payment';
-		const appUrl = PUBLIC_APP_URL || url.origin;
+		const appUrl = SITE.url || url.origin;
 
 		const session = await stripe.checkout.sessions.create({
 			mode,
