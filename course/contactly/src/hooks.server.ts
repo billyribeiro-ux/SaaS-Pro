@@ -48,6 +48,8 @@ import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { handleErrorWithSentry, init as sentryInit, sentryHandle, setTag } from '@sentry/sveltekit';
 import type { Database } from '$lib/database.types';
 import { publicEnv } from '$lib/env.public';
+import { resolveEnvironment } from '$lib/release';
+import { applySecurityHeaders } from '$lib/server/security-headers';
 // `serverEnv` isn't read here yet (no server-side code uses
 // SUPABASE_SERVICE_ROLE_KEY until Module 4's admin client). The import
 // exists to force boot-time validation of server env vars too — if
@@ -64,6 +66,12 @@ void _serverEnv;
 sentryInit({
 	...baseInitOptions(publicEnv.PUBLIC_SENTRY_DSN ?? '')
 });
+
+// Cache the resolved environment at module load. It can't change
+// across the life of a Node process — a deploy is a fresh process,
+// not a runtime mutation — so reading it once removes the
+// per-request `process.env` lookup from the security-headers path.
+const ENVIRONMENT = resolveEnvironment();
 
 const handleApp: Handle = async ({ event, resolve }) => {
 	// Per-request structured logger. Stamped on `event.locals` so
@@ -150,12 +158,35 @@ const handleApp: Handle = async ({ event, resolve }) => {
 };
 
 /**
+ * Apply the production security header table (Module 11.4) to
+ * every outgoing response. Lives in its own `Handle` so:
+ *
+ *   - The header logic can be swapped or feature-flagged without
+ *     touching `handleApp` (which is busy with auth + Supabase).
+ *   - Routes that need to override a specific header (for
+ *     example, a future webhook receiver that wants to allow
+ *     framing for an embedded UI) can do so by setting the
+ *     header on the response themselves — `applySecurityHeaders`
+ *     uses `if (!has)` writes, so explicit per-route values win.
+ */
+const securityHeadersHandle: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	applySecurityHeaders(response, ENVIRONMENT);
+	return response;
+};
+
+/**
  * `sentryHandle()` MUST come first in the sequence so it can
  * instrument the request span around our handler. SvelteKit's
  * docs are explicit about this; the SDK's instrumentation relies
  * on its hook entry being the outermost wrapper.
+ *
+ * `securityHeadersHandle` comes last so it sees the *final*
+ * response object — a SvelteKit redirect, a Supabase cookie
+ * refresh, a custom 503 — and can layer headers onto it without
+ * being short-circuited by an earlier handler returning early.
  */
-export const handle: Handle = sequence(sentryHandle(), handleApp);
+export const handle: Handle = sequence(sentryHandle(), handleApp, securityHeadersHandle);
 
 /**
  * `handleError` is SvelteKit's centralised error-reporting hook,
