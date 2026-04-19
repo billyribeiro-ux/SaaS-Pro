@@ -23,7 +23,7 @@ By the end you'll have:
 ## Prerequisites
 
 - Module 1 complete — `public.profiles` table exists with a trigger that creates a profile row on every new `auth.users` insert.
-- Module 2 complete — a per-request Supabase server client is available as `event.locals.supabase`, and `event.locals.user` is populated by `locals.getUser()` in `hooks.server.ts`.
+- Module 2 complete — a per-request Supabase server client is available as `event.locals.supabase`, and `event.locals.getUser()` is wired up in `hooks.server.ts` (it calls `supabase.auth.getUser()`, which validates the JWT against Supabase's auth server).
 - Lesson 3.3 complete — the `(app)` route group has a layout guard redirecting unauthenticated users.
 - Lesson 3.4 complete — the Navbar and `signout` action are in place.
 
@@ -70,11 +70,11 @@ import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const user = locals.user;
+  const user = await locals.getUser();
   if (!user) {
     // Belt-and-suspenders: the (app) layout guard already redirects,
     // but we repeat the check here so TypeScript narrows `user` to non-null.
-    throw redirect(303, '/login');
+    redirect(303, '/login');
   }
 
   const { data: profile, error: dbError } = await locals.supabase
@@ -86,7 +86,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (dbError) {
     // Something is genuinely wrong — the profile row should always exist
     // thanks to the handle_new_user() trigger. Surface a 500 so we notice.
-    throw error(500, 'Could not load your profile. Please try again.');
+    error(500, 'Could not load your profile. Please try again.');
   }
 
   return {
@@ -97,7 +97,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
   signout: async ({ locals }) => {
     await locals.supabase.auth.signOut();
-    throw redirect(303, '/');
+    redirect(303, '/');
   }
 };
 ```
@@ -121,15 +121,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 ### The user check
 
 ```typescript
-const user = locals.user;
+const user = await locals.getUser();
 if (!user) {
-  throw redirect(303, '/login');
+  redirect(303, '/login');
 }
 ```
 
 The `(app)` layout's `+layout.server.ts` already guards the whole group — unauthenticated requests never reach this `load`. So why re-check?
 
-- **TypeScript narrowing.** `locals.user` is typed as `User | null` globally. After the `if (!user)` guard, TypeScript knows `user` is non-null for the rest of the function. Without this, every downstream `user.id` access would need `!` or `?.` noise.
+- **TypeScript narrowing.** `locals.getUser()` returns `Promise<User | null>`. After the `if (!user)` guard, TypeScript knows `user` is non-null for the rest of the function. Without this, every downstream `user.id` access would need `!` or `?.` noise.
 - **Defense in depth.** If someone refactors the layout guard tomorrow and breaks it by mistake, this check still keeps unauthenticated requests out of the query. A double-barrier costs nothing and protects against regressions.
 - **Explicit intent.** Reading the file in isolation, a reviewer sees "this page requires a user" without having to go trace the layout chain.
 
@@ -197,11 +197,11 @@ The mental model: **RLS is a guard, the explicit filter is a statement of intent
 
 ```typescript
 if (dbError) {
-  throw error(500, 'Could not load your profile. Please try again.');
+  error(500, 'Could not load your profile. Please try again.');
 }
 ```
 
-`error()` (imported from `@sveltejs/kit`) throws an error that SvelteKit renders using the nearest `+error.svelte` boundary. Unlike `fail()` (which we use in form actions for recoverable validation errors), `error()` is for *unexpected* problems — something's broken, show a dedicated error page.
+`error()` (imported from `@sveltejs/kit`) throws internally, so calling it halts the load function and SvelteKit renders the nearest `+error.svelte` boundary. Unlike `fail()` (which we use in form actions for recoverable validation errors), `error()` is for *unexpected* problems — something's broken, show a dedicated error page. (Pre-SvelteKit 2 you had to write `throw error(...)` yourself; both still work, but the modern form omits `throw`.)
 
 - **Why 500?** We don't know exactly what went wrong, but we do know it's our fault: the DB should have returned the row. 500 Internal Server Error is the honest status.
 - **Why a user-friendly message?** In production, you should *never* surface raw DB errors to users. They can leak table names, column names, and — in some cases — values. A generic "please try again" is right. You can still log the real `dbError` to your monitoring system:
@@ -209,7 +209,7 @@ if (dbError) {
   ```typescript
   if (dbError) {
     console.error('profile load failed', { userId: user.id, dbError });
-    throw error(500, 'Could not load your profile. Please try again.');
+    error(500, 'Could not load your profile. Please try again.');
   }
   ```
 
@@ -441,7 +441,7 @@ If you had `src/routes/+error.svelte`, you'd see that instead — we'll style a 
 - **Skipping the `.eq('id', user.id)` filter because "RLS will handle it."** RLS *will* handle it, but you're discarding readability, defense-in-depth, and explicit intent. Always pair the two.
 - **Using `new Date(profile.created_at).toString()` or a hand-rolled format**. `toLocaleDateString` gives you locale-aware, professional-looking dates for free.
 - **Not typing the page props**. `let { data } = $props()` without a type annotation compiles but loses autocomplete. Always annotate with `PageData`.
-- **Displaying the raw email from `locals.user.email` instead of `profile.email`**. Almost always these agree, but there are corner cases (email change pending, trigger behind the auth.users row). Prefer the source of truth you're modeling — the `profiles` table.
+- **Displaying the raw email from `user.email` (the Supabase auth user) instead of `profile.email`**. Almost always these agree, but there are corner cases (email change pending, trigger behind the auth.users row). Prefer the source of truth you're modeling — the `profiles` table.
 - **Forgetting `svelte:head`**. The browser tab shows "Contactly" (or worse, the URL) on every page. A title per page is a small-effort high-value UX improvement.
 
 ---
@@ -450,7 +450,7 @@ If you had `src/routes/+error.svelte`, you'd see that instead — we'll style a 
 
 1. **RLS is defense in depth, not the fence.** Never design a system where the *only* thing preventing unauthorized access is an RLS policy. Explicit filters in the query, auth checks in the load function, and RLS — three independent layers. Any one of them failing should not expose data. The same principle applies to *writes*: explicit `update({...}).eq('id', user.id)` even though an RLS update policy exists.
 
-2. **Load functions are the right boundary for auth checks.** Notice we check `locals.user` here even though the layout guard already does. That's intentional. Each load function should be defensible in isolation — if someone copy-pastes the query into a different route, the safety checks come with it. This is how senior engineers think about "boundary-safe" code: every entry point protects itself.
+2. **Load functions are the right boundary for auth checks.** Notice we call `locals.getUser()` here even though the layout guard already does. That's intentional. Each load function should be defensible in isolation — if someone copy-pastes the query into a different route, the safety checks come with it. This is how senior engineers think about "boundary-safe" code: every entry point protects itself.
 
 3. **Hand-rolled date formatting is a code smell.** If you ever see `.split('T')[0]` or `d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()` in a professional codebase, something is wrong. `Intl.DateTimeFormat` (which `toLocaleDateString` wraps) is a browser-native API that handles months/days/locales/timezones/right-to-left scripts correctly. Trust it.
 

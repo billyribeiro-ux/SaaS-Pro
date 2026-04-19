@@ -94,7 +94,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 
   if (!user) {
     const redirectTo = encodeURIComponent(url.pathname + url.search)
-    throw redirect(303, `/login?redirectTo=${redirectTo}`)
+    redirect(303, `/login?redirectTo=${redirectTo}`)
   }
 
   return { user }
@@ -113,11 +113,11 @@ This calls the `getUser` helper we wired up in Lesson 2.3 via `hooks.server.ts`.
 
 The **"validates against Supabase"** part is crucial. We covered it in 2.3 and again in 3.2. Using `getSession()` here instead of `getUser()` would be a serious bug — `getSession()` trusts whatever's in the cookie without verifying it. An attacker who can forge a session cookie would slip right past.
 
-### `if (!user) { throw redirect(...) }`
+### `if (!user) { redirect(...) }`
 
-If there's no user, we throw a redirect. We learned in 3.1 that `throw redirect(...)` is how SvelteKit receives redirect signals — it's caught internally by the framework.
+If there's no user, we redirect. In SvelteKit 2+, `redirect()` throws internally — you call it like a normal function and the framework catches the signal. (Pre-2.0 you had to write `throw redirect(...)` yourself. If you see old code with `throw`, it still works, but the modern form is cleaner.)
 
-Crucially, `throw redirect` **stops execution of this load function AND all load functions nested below it**. The `+page.server.ts` at `/dashboard/contacts` never runs. No database queries happen. No data is leaked. No wasted compute.
+Crucially, `redirect()` **stops execution of this load function AND all load functions nested below it**. The `+page.server.ts` at `/dashboard/contacts` never runs. No database queries happen. No data is leaked. No wasted compute.
 
 ### `return { user }`
 
@@ -133,7 +133,7 @@ If we got here, the user is authenticated. We return the user object so child pa
 
 ```typescript
 const redirectTo = encodeURIComponent(url.pathname + url.search)
-throw redirect(303, `/login?redirectTo=${redirectTo}`)
+redirect(303, `/login?redirectTo=${redirectTo}`)
 ```
 
 This is a subtle but important line. Let's unpack.
@@ -305,7 +305,7 @@ If you put the `getUser()` check at the page level, you have to remember to add 
 // src/routes/(app)/dashboard/+page.server.ts
 export const load = async ({ locals }) => {
   const user = await locals.getUser()
-  if (!user) throw redirect(303, '/login')
+  if (!user) redirect(303, '/login')
   // ...
 }
 ```
@@ -319,7 +319,7 @@ We keep harping on this because it's the most common real-world bug:
 ```typescript
 // ❌ DON'T
 const { data: { session } } = await locals.supabase.auth.getSession()
-if (!session) throw redirect(303, '/login')
+if (!session) redirect(303, '/login')
 ```
 
 `getSession` trusts cookies. `getUser` verifies against Supabase. Use `getUser`.
@@ -328,7 +328,7 @@ if (!session) throw redirect(303, '/login')
 
 ```typescript
 // ❌ DON'T
-throw redirect(303, `/login?redirectTo=${url.pathname + url.search}`)
+redirect(303, `/login?redirectTo=${url.pathname + url.search}`)
 ```
 
 If the user was visiting `/dashboard/contacts?filter=active`, the redirect URL becomes `/login?redirectTo=/dashboard/contacts?filter=active`. That second `?` and the `&` (if present) will be parsed as additional query params on the login URL itself, and `redirectTo` will be just `/dashboard/contacts`. Encoding prevents this.
@@ -365,7 +365,7 @@ Always do auth checks server-side. SvelteKit lets you co-locate them in `+layout
 ```typescript
 // ❌ DON'T
 const token = cookies.get('sb-access-token')
-if (!token) throw redirect(303, '/login')
+if (!token) redirect(303, '/login')
 ```
 
 The cookie might exist but be expired, forged, or for a different project. You need Supabase to validate it. `locals.getUser()` does that. Don't read cookies directly for auth decisions.

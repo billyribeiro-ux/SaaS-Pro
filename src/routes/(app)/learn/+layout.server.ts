@@ -9,7 +9,10 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	const { data, error } = await supabaseAdmin
 		.from('lesson_progress')
 		.select('module_slug, lesson_slug, completed')
-		.eq('user_id', user.id);
+		.eq('user_id', user.id)
+		// Bounded read: curriculum is ~150 lessons — 1000 row cap is ample and
+		// prevents a pathological row count from inflating the layout payload.
+		.limit(1000);
 
 	if (error) {
 		throw new Error(`[learn layout] progress load failed: ${error.message}`);

@@ -8,8 +8,8 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 		lessons: [
 			{ slug: '00-introduction', title: 'Introduction', duration: 3, preview: true },
 			{ slug: '01-what-were-building', title: "What We're Building", duration: 5, preview: true },
-			{ slug: '02-course-discord', title: 'Course Discord Access', duration: 2, preview: true },
-			{ slug: '03-resources', title: 'Resources', duration: 2, preview: true }
+			{ slug: '02-course-discord', title: 'Course Discord Access', duration: 2, preview: false },
+			{ slug: '03-resources', title: 'Resources', duration: 2, preview: false }
 		]
 	},
 	{
@@ -17,7 +17,7 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 		title: 'Module 1: Project Setup',
 		moduleNumber: 1,
 		lessons: [
-			{ slug: '01-sveltekit-project-setup', title: '1.1 - SvelteKit Project Setup', duration: 12, preview: true },
+			{ slug: '01-sveltekit-project-setup', title: '1.1 - SvelteKit Project Setup', duration: 12, preview: false },
 			{ slug: '02-supabase-local-development', title: '1.2 - Supabase Local Development', duration: 15, preview: false },
 			{ slug: '03-protected-auth-schema', title: '1.3 - Protected Auth Schema', duration: 10, preview: false },
 			{ slug: '04-profiles-table-rls', title: '1.4 - Profiles Table & RLS', duration: 12, preview: false }
@@ -153,7 +153,7 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 		title: 'Module 12: CI/CD Pipeline & Production',
 		moduleNumber: 12,
 		lessons: [
-			{ slug: '01-cicd-pipeline-overview', title: '12.1 - CI/CD Pipeline Overview', duration: 10, preview: false },
+			{ slug: '01-cicd-pipeline-overview', title: '12.1 - CI/CD Pipeline Overview', duration: 10, preview: true },
 			{ slug: '02-supabase-to-production', title: '12.2 - Supabase to Production', duration: 15, preview: false },
 			{ slug: '03-creating-vercel-project', title: '12.3 - Creating Vercel Project', duration: 10, preview: false },
 			{ slug: '04-github-actions-workflow', title: '12.4 - GitHub Actions Workflow', duration: 20, preview: false },
@@ -175,7 +175,19 @@ export const CURRICULUM: readonly ModuleMeta[] = [
 		slug: 'module-14-thank-you',
 		title: 'Thank You',
 		moduleNumber: 14,
-		lessons: [{ slug: '00-thank-you', title: 'Thank You', duration: 3, preview: false }]
+		lessons: [
+			{ slug: '00-thank-you', title: 'Thank You', duration: 3, preview: false },
+			{ slug: 'bonus-01-google-oauth', title: 'Bonus: Sign in with Google (OAuth)', duration: 20, preview: false },
+			{ slug: 'bonus-02-avatar-uploads-storage', title: 'Bonus: Contact Avatars with Supabase Storage', duration: 25, preview: false },
+			{ slug: 'bonus-03-csv-import-export', title: 'Bonus: CSV Import & Export', duration: 20, preview: false },
+			{ slug: 'bonus-04-full-text-search', title: 'Bonus: Full-Text Search with Postgres', duration: 20, preview: false },
+			{ slug: 'bonus-05-realtime-sync', title: 'Bonus: Real-Time Multi-Tab Sync', duration: 18, preview: false },
+			{ slug: 'bonus-06-dark-mode', title: 'Bonus: Dark Mode Done Right', duration: 22, preview: false },
+			{ slug: 'bonus-07-remote-functions', title: 'Bonus: Remote Functions — the 2026 Way', duration: 45, preview: false },
+			{ slug: 'bonus-08-shallow-routing-modals', title: 'Bonus: Shallow Routing for Modals', duration: 22, preview: false },
+			{ slug: 'bonus-09-attach-directives-async-boundaries', title: 'Bonus: {@attach} & <svelte:boundary>', duration: 22, preview: false },
+			{ slug: 'bonus-10-observability-tracing', title: 'Bonus: Observability & Tracing', duration: 18, preview: false }
+		]
 	}
 ] as const;
 

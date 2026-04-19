@@ -18,6 +18,18 @@ jobs:
   ci:
     name: Lint, typecheck, and test
     runs-on: ubuntu-latest
+    # Placeholder values so `$env/static/*` type-checks pass in CI. Production
+    # deployment uses real values injected by Vercel's environment settings —
+    # these are only visible to the type-checker and Playwright's dev server,
+    # which does not hit Supabase or Stripe in the CI suite.
+    env:
+      PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      PUBLIC_APP_NAME: Contactly
+      PUBLIC_APP_URL: http://localhost:5173
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
     steps:
       # Check out the repo at the commit that triggered the workflow.
       - name: Checkout

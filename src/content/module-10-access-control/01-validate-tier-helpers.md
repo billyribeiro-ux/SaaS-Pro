@@ -105,7 +105,7 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
     .eq('user_id', userId)
     .in('status', ACTIVE_STATUSES)
     .limit(1)
-    .single()
+    .maybeSingle()
 
   return !!data
 }
@@ -117,7 +117,7 @@ export async function getSubscriptionStatus(userId: string): Promise<string | nu
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   return data?.status ?? null
 }
@@ -180,7 +180,7 @@ Reading it top to bottom:
 - **`.eq('user_id', userId)`** — filter to rows belonging to this user. Remember: no RLS is in play (we're admin), so this `eq` is our only tenant filter. Getting it wrong means tenant leakage.
 - **`.in('status', ACTIVE_STATUSES)`** — filter to the two statuses that grant access. Postgres turns this into `status IN ('active', 'trialing')`.
 - **`.limit(1)`** — at most one row. We don't care if the user has two subscriptions; we only need to know whether they have any that grants access.
-- **`.single()`** — tell Supabase to return the row as an object, not as a one-element array. If zero rows match, `data` is `null`. If one row matches, `data` is that row.
+- **`.maybeSingle()`** — return the row as an object (not a one-element array), and tolerate zero results. If zero rows match, `data` is `null` and no error is thrown. If one row matches, `data` is that row. The cousin `.single()` would throw a `PGRST116` error for zero rows — that's the right choice when a row is guaranteed (e.g., primary-key lookup), and the wrong choice here where "user has no subscription yet" is a valid, common state.
 
 ### Line 14: `return !!data`
 
@@ -283,7 +283,7 @@ Remove the `console.log` before committing. The structured `return` is fine — 
 - **Forgetting to include `'trialing'`.** If your entitlement rule is `status = 'active'` only, trial users can't access paid features. That breaks the trial experience and kills conversion. Always include `trialing` unless you have a very specific reason not to.
 - **Using `locals.supabase` "because it feels safer."** Without RLS policies that explicitly allow the user to select their own subscription row, the query returns nothing and `hasActiveSubscription` returns `false` for every user. The service-role key is the correct tool here; protect the boundary via the function's signature and code review.
 - **Returning `null` instead of `false` on error.** Callers end up writing `if (subscribed === true)` instead of `if (subscribed)`, and the type surface gets worse, not better. Fail-closed: always return `false` on unknowns.
-- **Using `.maybeSingle()` when you mean `.single()` with `limit(1)`.** Both work for the zero-or-one-row case; `.single()` with an explicit `.limit(1)` is the idiom we use throughout Contactly. Pick a style, stick with it.
+- **Using `.single()` where a row is not guaranteed.** `.single()` throws `PGRST116` when zero rows match — which is exactly the state an unsubscribed user lives in. `.maybeSingle()` returns `data: null` and no error for zero rows, so the `return !!data` fallback works. Rule of thumb: `.single()` only when you're doing a primary-key lookup and you're certain the row exists; `.maybeSingle()` for every "maybe one row" read.
 - **Caching the result in a module-level variable.** "Let me avoid the DB round-trip by memoizing." In a serverless environment (Vercel, Cloudflare Workers) that lives for the duration of a single request. In a long-lived Node server it's a correctness bug — Alice's subscription status gets cached and served to Bob's next request. If you want caching, do it right (see Principal Engineer Notes).
 
 ---
@@ -324,7 +324,7 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
     .eq('user_id', userId)
     .in('status', ACTIVE_STATUSES)
     .limit(1)
-    .single()
+    .maybeSingle()
 
   const value = !!data
   cache.set(userId, { value, expiresAt: Date.now() + 60_000 })

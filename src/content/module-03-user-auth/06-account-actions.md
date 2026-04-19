@@ -184,12 +184,12 @@ Now we add the action. We append to the `actions` object you already have from L
 export const actions: Actions = {
   signout: async ({ locals }) => {
     await locals.supabase.auth.signOut();
-    throw redirect(303, '/');
+    redirect(303, '/');
   },
 
   updateProfile: async ({ request, locals }) => {
-    const user = locals.user;
-    if (!user) throw redirect(303, '/login');
+    const user = await locals.getUser();
+    if (!user) redirect(303, '/login');
 
     const formData = await request.formData();
     const raw = { full_name: formData.get('full_name') };
@@ -232,8 +232,8 @@ export const actions: Actions = {
 #### Re-checking the user
 
 ```typescript
-const user = locals.user;
-if (!user) throw redirect(303, '/login');
+const user = await locals.getUser();
+if (!user) redirect(303, '/login');
 ```
 
 Same pattern as the `load`. Each action defends its own boundary.
@@ -293,7 +293,7 @@ return {
 
 A plain return (not wrapped in `fail()`) with status 200. The page sees this on the `form` prop with `form.success === true` and can show a success toast/banner.
 
-**Important:** we *do not* `throw redirect(...)` here. Why not? Because we want the user to stay on the page and see their updated data. The load function re-runs after a successful action (SvelteKit calls `invalidateAll()` by default when `use:enhance` is active), so the new `full_name` is reflected.
+**Important:** we *do not* call `redirect(...)` here. Why not? Because we want the user to stay on the page and see their updated data. The load function re-runs after a successful action (SvelteKit calls `invalidateAll()` by default when `use:enhance` is active), so the new `full_name` is reflected.
 
 ---
 
@@ -305,8 +305,8 @@ Append to the same `actions` object:
 // Continuing src/routes/(app)/account/+page.server.ts
 
 updatePassword: async ({ request, locals }) => {
-  const user = locals.user;
-  if (!user) throw redirect(303, '/login');
+  const user = await locals.getUser();
+  if (!user) redirect(303, '/login');
 
   const formData = await request.formData();
   const raw = {

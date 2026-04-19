@@ -1,3 +1,14 @@
-# allow crawling everything by default
+# Crawl the marketing surface + free previews. Keep signed-in app views,
+# auth flows, and API routes out of the index — they're useless to search
+# engines and leak request-shaped URLs.
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /account
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+
+Sitemap: https://saas-pro.dev/sitemap.xml

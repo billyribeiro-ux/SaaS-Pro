@@ -22,7 +22,8 @@ create policy "Users can insert own progress"
 
 create policy "Users can update own progress"
 	on public.lesson_progress for update
-	using (auth.uid() = user_id);
+	using (auth.uid() = user_id)
+	with check (auth.uid() = user_id);
 
 create index lesson_progress_user_module_idx
 	on public.lesson_progress(user_id, module_slug);

@@ -72,10 +72,15 @@ async function loadLivePrices(): Promise<PriceWithProduct[]> {
 		});
 	} catch (error) {
 		console.error('[pricing] Stripe list failed, falling back to DB:', error);
+		// Explicit column list: keeps the payload tight and ensures a new column
+		// on `prices` or `products` doesn't silently get shipped to the client.
 		const { data } = await supabaseAdmin
 			.from('prices')
-			.select('*, product:products(*)')
-			.in('lookup_key', [...ALL_LOOKUP_KEYS]);
+			.select(
+				'id, product_id, active, currency, type, unit_amount, interval, interval_count, lookup_key, metadata, created_at, updated_at, product:products(id, name, description, active, metadata, created_at, updated_at)'
+			)
+			.in('lookup_key', [...ALL_LOOKUP_KEYS])
+			.limit(ALL_LOOKUP_KEYS.length);
 		return (data ?? []) as unknown as PriceWithProduct[];
 	}
 }
@@ -95,15 +100,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	checkout: async ({ request, locals, url }) => {
+		// Parse once, branch on auth after — avoids double-reading the stream
+		// and tightens the type of `lookupKey` so we never interpolate `File` or null.
+		const form = await request.formData();
+		const rawLookupKey = form.get('lookupKey');
+		const lookupKeyStr = typeof rawLookupKey === 'string' ? rawLookupKey : '';
+
 		const user = locals.user;
 		if (!user) {
-			const form = await request.formData();
-			const lookupKey = form.get('lookupKey');
-			throw redirect(303, `/login?next=${encodeURIComponent('/pricing')}&lookup_key=${lookupKey ?? ''}`);
+			const qs = new URLSearchParams({ next: '/pricing', lookup_key: lookupKeyStr });
+			throw redirect(303, `/login?${qs.toString()}`);
 		}
 
-		const form = await request.formData();
-		const parsed = checkoutSchema.safeParse({ lookupKey: form.get('lookupKey') });
+		const parsed = checkoutSchema.safeParse({ lookupKey: lookupKeyStr });
 		if (!parsed.success) {
 			return fail(400, { error: 'Invalid pricing tier selected.' });
 		}

@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import type Stripe from 'stripe';
 import { stripe } from '$server/stripe';
+import { supabaseAdmin } from '$server/supabase';
 import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
 import { upsertPrice, upsertProduct } from '$server/billing/products.service';
 import {
@@ -52,6 +53,23 @@ export const POST: RequestHandler = async ({ request }) => {
 		return new Response('ok', { status: 200 });
 	}
 
+	// Idempotency: Stripe delivers at-least-once. A unique insert on event.id
+	// means the second delivery trips the PK constraint and we ack without
+	// re-running the handler. `stripe_events` isn't in the generated types yet,
+	// so we escape the schema-aware builder for this one call.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const insertResult = await (supabaseAdmin as any)
+		.from('stripe_events')
+		.insert({ id: event.id, type: event.type });
+	if (insertResult.error) {
+		// Postgres unique_violation (23505) — already processed, ack cleanly.
+		if ((insertResult.error as { code?: string }).code === '23505') {
+			return new Response('ok', { status: 200 });
+		}
+		console.error('[stripe webhook] idempotency insert failed:', insertResult.error);
+		// Don't block processing on ledger failure — retries are safe at the handler layer.
+	}
+
 	try {
 		switch (event.type) {
 			case 'product.created':
@@ -91,12 +109,22 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 			case 'invoice.payment_succeeded':
 			case 'invoice.payment_failed': {
-				const invoice = event.data.object as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null };
-				if (invoice.subscription) {
-					const subscriptionId =
-						typeof invoice.subscription === 'string'
-							? invoice.subscription
-							: invoice.subscription.id;
+				// Under 2026-03-25.dahlia the subscription id moved to
+				// invoice.parent.subscription_details.subscription. Older SDK payloads
+				// still expose it at the top level; check both so webhook replay across
+				// API versions keeps working.
+				const invoice = event.data.object as Stripe.Invoice & {
+					subscription?: string | Stripe.Subscription | null;
+					parent?: {
+						subscription_details?: {
+							subscription?: string | Stripe.Subscription | null;
+						} | null;
+					} | null;
+				};
+				const fromParent = invoice.parent?.subscription_details?.subscription ?? null;
+				const subRef = fromParent ?? invoice.subscription ?? null;
+				if (subRef) {
+					const subscriptionId = typeof subRef === 'string' ? subRef : subRef.id;
 					const sub = await stripe.subscriptions.retrieve(subscriptionId);
 					await upsertSubscription(sub);
 				}
