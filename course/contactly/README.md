@@ -50,29 +50,29 @@ Then open <http://localhost:5173>. Supabase Studio is at
 
 ## Scripts
 
-| Script                      | What it does                                                |
-| --------------------------- | ----------------------------------------------------------- |
-| `pnpm run dev`              | Vite dev server with HMR                                    |
-| `pnpm run build`            | Production build                                            |
-| `pnpm run preview`          | Serves the production build locally                         |
-| `pnpm run check`            | `svelte-check` — TypeScript + Svelte template type checking |
-| `pnpm run lint`             | Prettier (check) + ESLint                                   |
-| `pnpm run format`           | Prettier (write)                                            |
-| `pnpm run test:unit`        | Vitest unit tests                                           |
-| `pnpm run test:e2e`         | Playwright end-to-end tests                                 |
-| `pnpm run test`             | Both unit and e2e                                           |
-| `pnpm run db:start`         | Boot the local Supabase stack                               |
-| `pnpm run db:stop`          | Stop the local Supabase stack                               |
-| `pnpm run db:status`        | Print URLs + keys for the running stack                     |
-| `pnpm run db:reset`         | Drop and re-apply every migration + replay `seed.sql`       |
-| `pnpm run db:migration:new` | Create a new timestamped migration file                     |
-| `pnpm run db:push`          | Apply pending local migrations to the **linked** project    |
-| `pnpm run db:diff`          | Capture schema drift into a new migration                   |
-| `pnpm run types:generate`   | Regenerate `src/lib/database.types.ts` from the live schema |
-| `pnpm run seed:contacts`    | Generate N faker-based contacts for the `demo@contactly.test` org |
+| Script                      | What it does                                                       |
+| --------------------------- | ------------------------------------------------------------------ |
+| `pnpm run dev`              | Vite dev server with HMR                                           |
+| `pnpm run build`            | Production build                                                   |
+| `pnpm run preview`          | Serves the production build locally                                |
+| `pnpm run check`            | `svelte-check` — TypeScript + Svelte template type checking        |
+| `pnpm run lint`             | Prettier (check) + ESLint                                          |
+| `pnpm run format`           | Prettier (write)                                                   |
+| `pnpm run test:unit`        | Vitest unit tests                                                  |
+| `pnpm run test:e2e`         | Playwright end-to-end tests                                        |
+| `pnpm run test`             | Both unit and e2e                                                  |
+| `pnpm run db:start`         | Boot the local Supabase stack                                      |
+| `pnpm run db:stop`          | Stop the local Supabase stack                                      |
+| `pnpm run db:status`        | Print URLs + keys for the running stack                            |
+| `pnpm run db:reset`         | Drop and re-apply every migration + replay `seed.sql`              |
+| `pnpm run db:migration:new` | Create a new timestamped migration file                            |
+| `pnpm run db:push`          | Apply pending local migrations to the **linked** project           |
+| `pnpm run db:diff`          | Capture schema drift into a new migration                          |
+| `pnpm run types:generate`   | Regenerate `src/lib/database.types.ts` from the live schema        |
+| `pnpm run seed:contacts`    | Generate N faker-based contacts for the `demo@contactly.test` org  |
 | `pnpm run stripe:listen`    | Forward Stripe test events to `localhost:5173/api/webhooks/stripe` |
-| `pnpm run stripe:trigger`   | Fire a test Stripe event on demand (Module 6+)              |
-| `pnpm run stripe:fixtures`  | Create the Contactly product catalog in your Stripe account |
+| `pnpm run stripe:trigger`   | Fire a test Stripe event on demand (Module 6+)                     |
+| `pnpm run stripe:fixtures`  | Create the Contactly product catalog in your Stripe account        |
 
 ### Local Supabase ports
 
