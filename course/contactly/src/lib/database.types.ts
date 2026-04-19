@@ -255,6 +255,176 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			stripe_products: {
+				Row: {
+					id: string;
+					active: boolean;
+					name: string;
+					description: string | null;
+					metadata: Json;
+					tax_code: string | null;
+					stripe_created_at: string | null;
+					stripe_updated_at: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id: string;
+					active?: boolean;
+					name: string;
+					description?: string | null;
+					metadata?: Json;
+					tax_code?: string | null;
+					stripe_created_at?: string | null;
+					stripe_updated_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					active?: boolean;
+					name?: string;
+					description?: string | null;
+					metadata?: Json;
+					tax_code?: string | null;
+					stripe_created_at?: string | null;
+					stripe_updated_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			stripe_prices: {
+				Row: {
+					id: string;
+					product_id: string;
+					active: boolean;
+					lookup_key: string | null;
+					unit_amount: number | null;
+					currency: string;
+					type: Database['public']['Enums']['stripe_price_type'];
+					recurring_interval: Database['public']['Enums']['stripe_billing_interval'] | null;
+					recurring_interval_count: number | null;
+					tax_behavior: string | null;
+					metadata: Json;
+					stripe_created_at: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id: string;
+					product_id: string;
+					active?: boolean;
+					lookup_key?: string | null;
+					unit_amount?: number | null;
+					currency: string;
+					type: Database['public']['Enums']['stripe_price_type'];
+					recurring_interval?: Database['public']['Enums']['stripe_billing_interval'] | null;
+					recurring_interval_count?: number | null;
+					tax_behavior?: string | null;
+					metadata?: Json;
+					stripe_created_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					product_id?: string;
+					active?: boolean;
+					lookup_key?: string | null;
+					unit_amount?: number | null;
+					currency?: string;
+					type?: Database['public']['Enums']['stripe_price_type'];
+					recurring_interval?: Database['public']['Enums']['stripe_billing_interval'] | null;
+					recurring_interval_count?: number | null;
+					tax_behavior?: string | null;
+					metadata?: Json;
+					stripe_created_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'stripe_prices_product_id_fkey';
+						columns: ['product_id'];
+						isOneToOne: false;
+						referencedRelation: 'stripe_products';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			stripe_subscriptions: {
+				Row: {
+					id: string;
+					user_id: string;
+					stripe_customer_id: string;
+					status: Database['public']['Enums']['stripe_subscription_status'];
+					price_id: string;
+					cancel_at_period_end: boolean;
+					current_period_start: string | null;
+					current_period_end: string | null;
+					trial_start: string | null;
+					trial_end: string | null;
+					canceled_at: string | null;
+					cancel_at: string | null;
+					tier_snapshot: string | null;
+					stripe_created_at: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id: string;
+					user_id: string;
+					stripe_customer_id: string;
+					status: Database['public']['Enums']['stripe_subscription_status'];
+					price_id: string;
+					cancel_at_period_end?: boolean;
+					current_period_start?: string | null;
+					current_period_end?: string | null;
+					trial_start?: string | null;
+					trial_end?: string | null;
+					canceled_at?: string | null;
+					cancel_at?: string | null;
+					tier_snapshot?: string | null;
+					stripe_created_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					user_id?: string;
+					stripe_customer_id?: string;
+					status?: Database['public']['Enums']['stripe_subscription_status'];
+					price_id?: string;
+					cancel_at_period_end?: boolean;
+					current_period_start?: string | null;
+					current_period_end?: string | null;
+					trial_start?: string | null;
+					trial_end?: string | null;
+					canceled_at?: string | null;
+					cancel_at?: string | null;
+					tier_snapshot?: string | null;
+					stripe_created_at?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'stripe_subscriptions_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'profiles';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'stripe_subscriptions_price_id_fkey';
+						columns: ['price_id'];
+						isOneToOne: false;
+						referencedRelation: 'stripe_prices';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 		};
 		Views: {
 			[_ in never]: never;
@@ -271,6 +441,17 @@ export type Database = {
 		};
 		Enums: {
 			organization_member_role: 'owner' | 'admin' | 'member';
+			stripe_billing_interval: 'day' | 'week' | 'month' | 'year';
+			stripe_price_type: 'one_time' | 'recurring';
+			stripe_subscription_status:
+				| 'incomplete'
+				| 'incomplete_expired'
+				| 'trialing'
+				| 'active'
+				| 'past_due'
+				| 'canceled'
+				| 'unpaid'
+				| 'paused';
 		};
 		CompositeTypes: {
 			[_ in never]: never;

@@ -135,12 +135,14 @@ Three crucial properties:
 
 ## What's NOT here yet
 
-| Concern                          | Lands in                  |
-| -------------------------------- | ------------------------- |
-| Lazy `stripe_customers` creation | Module 7.3 (Checkout)     |
-| `subscriptions` mirror table     | Module 7.4 (Entitlements) |
-| `subscription_trials` audit      | Module 9.4 (Trial system) |
-| Replay UI on a stuck event       | Module 12.6               |
+| Concern                                  | Lands in                           |
+| ---------------------------------------- | ---------------------------------- |
+| `stripe_products` / `stripe_prices`      | Module 7.1 (Billing tables)        |
+| `stripe_subscriptions` mirror table      | Module 7.1 (Billing tables)        |
+| Lazy `stripe_customers` creation         | Module 7.3 (Customers service)     |
+| Subscription mirror writes + entitlement | Module 7.4 (Subscriptions service) |
+| `subscription_trials` audit              | Module 9.4 (Trial system)          |
+| Replay UI on a stuck event               | Module 12.6                        |
 
 All of those land as additive migrations on top of this one. The
 storage shape we just committed is the foundation.
