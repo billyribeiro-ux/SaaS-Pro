@@ -26,6 +26,13 @@ const DEMO_PUBLIC_SUPABASE_ANON_KEY =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 const DEMO_SUPABASE_SERVICE_ROLE_KEY =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+// Syntactically-valid placeholders so the env validator passes during
+// `pnpm run test:e2e` / `pnpm run build`. They are NOT real Stripe
+// credentials and any actual API call with them returns 401. Tests
+// that need Stripe must mock the SDK (Module 11.3) or override these
+// envs with real test-mode values from `stripe login`'s account.
+const DEMO_STRIPE_SECRET_KEY = 'sk_test_demo_e2e_placeholder_not_a_real_key_DO_NOT_USE';
+const DEMO_STRIPE_WEBHOOK_SECRET = 'whsec_demo_e2e_placeholder_not_a_real_signing_secret_xx';
 
 export default defineConfig({
 	testDir: './tests',
@@ -55,7 +62,9 @@ export default defineConfig({
 			PUBLIC_SUPABASE_ANON_KEY:
 				process.env.PUBLIC_SUPABASE_ANON_KEY ?? DEMO_PUBLIC_SUPABASE_ANON_KEY,
 			SUPABASE_SERVICE_ROLE_KEY:
-				process.env.SUPABASE_SERVICE_ROLE_KEY ?? DEMO_SUPABASE_SERVICE_ROLE_KEY
+				process.env.SUPABASE_SERVICE_ROLE_KEY ?? DEMO_SUPABASE_SERVICE_ROLE_KEY,
+			STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? DEMO_STRIPE_SECRET_KEY,
+			STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ?? DEMO_STRIPE_WEBHOOK_SECRET
 		}
 	}
 });
