@@ -31,12 +31,12 @@
 
 	// Shared email — when the user types it in one mode and toggles, we
 	// don't want them retyping. Two-way bound into both Superforms
-	// `$form.email` via `$effect`s below. The IIFE prevents Svelte's
-	// `state_referenced_locally` warning: we read each load-data field
-	// once at init and own the state from there.
-	let sharedEmail = $state(
-		(() => data.passwordForm.data.email || data.magicForm.data.email || '')()
-	);
+	// `$form.email` via `$effect`s below. We read `data.*Form.data.email`
+	// once at init (the value the load function shipped) and own the
+	// state from there; the explicit `state_referenced_locally` ignore
+	// captures that intent — Svelte's warning is structural, not a bug.
+	// svelte-ignore state_referenced_locally
+	let sharedEmail = $state(data.passwordForm.data.email || data.magicForm.data.email || '');
 
 	// svelte-ignore state_referenced_locally
 	const passwordSF = superForm(data.passwordForm, {

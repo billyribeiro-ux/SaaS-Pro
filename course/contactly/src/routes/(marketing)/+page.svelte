@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import Button from '$lib/components/ui/Button.svelte';
 
@@ -32,8 +33,10 @@
 
 	{#if !data.user}
 		<div class="mt-8 flex flex-wrap gap-3">
-			<Button href="/sign-up" variant="primary" size="lg">Get started — it's free</Button>
-			<Button href="/sign-in" variant="secondary" size="lg">Sign in</Button>
+			<Button href={resolve('/sign-up')} variant="primary" size="lg">
+				Get started — it's free
+			</Button>
+			<Button href={resolve('/sign-in')} variant="secondary" size="lg">Sign in</Button>
 		</div>
 	{/if}
 

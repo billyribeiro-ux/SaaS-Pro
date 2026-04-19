@@ -31,10 +31,10 @@
 				<span class="hidden text-sm text-slate-600 sm:inline" data-testid="nav-user-email">
 					{user.email}
 				</span>
-				<Button href="/dashboard" variant="primary" size="sm">Dashboard</Button>
+				<Button href={resolve('/dashboard')} variant="primary" size="sm">Dashboard</Button>
 			{:else}
-				<Button href="/sign-in" variant="ghost" size="sm">Sign in</Button>
-				<Button href="/sign-up" variant="primary" size="sm">Sign up</Button>
+				<Button href={resolve('/sign-in')} variant="ghost" size="sm">Sign in</Button>
+				<Button href={resolve('/sign-up')} variant="primary" size="sm">Sign up</Button>
 			{/if}
 		</div>
 	</nav>

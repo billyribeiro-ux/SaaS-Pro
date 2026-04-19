@@ -11,22 +11,31 @@
 	let showDeleteModal = $state(false);
 	let deleting = $state(false);
 
-	// Mirror the action's deleteError into local state so we can
-	// dismiss it when the user re-opens the modal — otherwise an
-	// already-acknowledged failure keeps shouting at them above the
-	// contact card. The mirror is one-way (SvelteKit owns `form`,
-	// we only pull from it).
-	let displayDeleteError: string | undefined = $state(undefined);
-	$effect(() => {
-		if (form?.deleteError) displayDeleteError = form.deleteError;
+	// "Dismiss" the action's deleteError when the user re-opens the
+	// modal: they're trying again, and an old banner about a previous
+	// failure is just noise. We snapshot the current error at the
+	// moment the modal opens; the displayed error is the action's
+	// `form.deleteError` UNLESS it equals the snapshot (i.e. nothing
+	// new has happened since we dismissed it).
+	//
+	// State-machine-shaped, but expressible as a pure `$derived` over
+	// `form?.deleteError` and `dismissedError` — no `$effect` ping-
+	// pong, no two writers fighting over the same `$state`.
+	let dismissedError: string | undefined = $state(undefined);
+	const displayDeleteError = $derived.by(() => {
+		const current = form?.deleteError;
+		if (!current) return undefined;
+		if (current === dismissedError) return undefined;
+		return current;
 	});
 
-	// Clear the stale error the moment the user re-opens the modal:
-	// they're trying again, and an old banner about a previous
-	// failure is just noise.
-	$effect(() => {
-		if (showDeleteModal) displayDeleteError = undefined;
-	});
+	function openDeleteModal() {
+		// Snapshot whatever error is showing (often `undefined`) so the
+		// banner disappears the instant the modal opens. The next
+		// failure ships a different string and the derived re-shows it.
+		dismissedError = form?.deleteError;
+		showDeleteModal = true;
+	}
 
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {
 		dateStyle: 'medium',
@@ -81,7 +90,7 @@
 			<Button
 				variant="danger"
 				type="button"
-				onclick={() => (showDeleteModal = true)}
+				onclick={openDeleteModal}
 				data-testid="delete-contact-button"
 			>
 				Delete
