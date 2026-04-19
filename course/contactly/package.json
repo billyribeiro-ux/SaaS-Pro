@@ -27,11 +27,13 @@
 		"db:push": "supabase db push",
 		"db:diff": "supabase db diff -f",
 		"db:migration:new": "supabase migration new",
-		"types:generate": "supabase gen types typescript --local --schema public > src/lib/database.types.ts"
+		"types:generate": "supabase gen types typescript --local --schema public > src/lib/database.types.ts",
+		"seed:contacts": "tsx scripts/seed-contacts.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",
 		"@eslint/js": "^10.0.1",
+		"@faker-js/faker": "^10.4.0",
 		"@playwright/test": "^1.59.1",
 		"@sveltejs/adapter-auto": "^6.1.0",
 		"@sveltejs/kit": "^2.57.0",
@@ -41,6 +43,7 @@
 		"@tailwindcss/vite": "^4.2.2",
 		"@types/node": "^24",
 		"@vitest/browser-playwright": "^4.1.3",
+		"dotenv": "^17.4.2",
 		"eslint": "^10.2.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.17.0",
@@ -53,6 +56,7 @@
 		"svelte": "^5.55.2",
 		"svelte-check": "^4.4.6",
 		"tailwindcss": "^4.2.2",
+		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
 		"typescript-eslint": "^8.58.1",
 		"vite": "^8.0.7",
