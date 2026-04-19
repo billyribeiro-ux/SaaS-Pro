@@ -57,11 +57,19 @@
  * the idempotency story (dedupe at the storage layer, not just the
  * API layer).
  */
-import Stripe, { type LatestApiVersion } from 'stripe';
+import Stripe from 'stripe';
 import { serverEnv } from '$lib/server/env';
 
-/** Pinned Stripe REST API version. See module-level comment. */
-export const STRIPE_API_VERSION = '2026-03-25.dahlia' satisfies LatestApiVersion;
+/**
+ * Pinned Stripe REST API version. See module-level comment.
+ *
+ * The literal `'2026-03-25.dahlia'` is type-checked against the SDK's
+ * `apiVersion` parameter at the `new Stripe(...)` call below: if a
+ * future SDK upgrade drops support for this exact string, the
+ * constructor invocation will fail `tsc`. That's the right place for
+ * the failure — louder than a runtime 400 from Stripe.
+ */
+export const STRIPE_API_VERSION = '2026-03-25.dahlia';
 
 let cached: Stripe | undefined;
 
